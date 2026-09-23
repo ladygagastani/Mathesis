@@ -1,0 +1,2054 @@
+/* ---------- palette: "Stoichedon" (2026-09-23) ----------
+   Light is a limestone stele, lamp-black ink; dark is the black gloss of an
+   Attic vase with text in the warm tone of reserved clay (red-figure). Two
+   painted accents with jobs, as before:
+     --accent    Egyptian blue — the text's own structure (links, nav, refs)
+     --accent-2  miltos red    — what the reader added (favourites, marks, notes);
+                                  in Byzantine books red was the second hand
+   Blue against red-orange also survives the common colour-blindnesses better
+   than the old teal and terracotta did. --ochre is ornament only (the
+   initial, section markers). Contrast of every pair used is ≥ 4.5:1 for text
+   and ≥ 3:1 for control borders (--rule-strong) in both themes. */
+:root{
+  --paper:#F5F3EE; --paper-2:#EBE8E0; --paper-3:#DFDBD1;
+  --ink:#1B1815; --ink-2:#46413A; --mute:#67615A;
+  --rule:#D5D0C5; --rule-soft:#E6E2D9; --rule-strong:#857E73;
+  --accent:#1F4E8C; --accent-2:#A1391F; --accent-soft:#E2E8F1; --accent-2-soft:#F4E3DC;
+  --hl:#F2E6C2; --ochre:#8C6B3C; --gold:var(--ochre); --danger:#8C1D2B;
+  --display:var(--ink); --on-accent:#F5F3EE;
+  /* The one colour for doing things: primary buttons and every selected
+     control. Lamp-black by day, reserved clay by night, so actions belong to
+     the same palette as the headings instead of borrowing the link blue. */
+  --solid:#1B1815; --solid-hover:#3A332C; --on-solid:#F5F3EE;
+  --r1:2px; --r2:4px; --r3:8px;
+  --shadow:0 1px 2px rgb(27 24 21 / .06),0 14px 36px -10px rgb(27 24 21 / .28);
+  --ease:cubic-bezier(.2,.7,.2,1);
+  /* Three faces doing three different jobs:
+       --serif      Gentium Book Plus — the Greek, and every display/heading setting.
+       --serif-eng  Source Serif 4 — the translation column ONLY. Two identical
+                    serifs side by side make the eye lose which column it is in,
+                    so the apparatus gets its own face at a smaller optical size.
+                    It has no polytonic Greek, so its stack falls back to the
+                    Greek face, not to a system font.
+       --sans       Inter — the whole UI, for its tabular figures.
+     Georgia is in none of these: it lacks 190 of the 233 polytonic letters.
+     Palatino Linotype and Times New Roman are complete (checked on Windows 11),
+     so they stand in when the web fonts cannot load, e.g. reading offline. */
+  --serif:"Gentium Book Plus","Cardo","Palatino Linotype","Times New Roman","Noto Serif",serif;
+  --serif-eng:"Source Serif 4","Gentium Book Plus","Palatino Linotype","Times New Roman",serif;
+  --sans:"Inter","Noto Sans","Segoe UI",Helvetica,Arial,sans-serif;
+  --body:var(--serif-eng);
+  --fs:1.18rem; --lh:1.72; --measure:34rem;
+  /* Reading measure for running prose at body size (~72 characters at 15px).
+     Distinct from the 88rem cap that card grids use — see "prose measure". */
+  --prose:34rem;
+  --lh-bump:0;            /* dark mode adds a little leading — see below */
+  /* Bounded in viewport terms as well as rem: at the largest text size 18rem
+     would be 440px of sidebar, crowding the text it exists to reach. */
+  --nav-w:min(18rem, 24vw);
+  /* Scrollbars. Mixed from --accent and --rule rather than hard-coded, so a
+     single definition follows both themes automatically. */
+  --sb-thumb:color-mix(in srgb, var(--accent) 38%, var(--rule));
+  --sb-thumb-hover:var(--accent);
+  --sb-track:transparent;
+  /* Bands painted into the page scrollbar's track for marked passages. A note
+     gets the full mark colour, a bare bookmark a softer one; the gradient
+     itself is rebuilt from the DOM by State.paintScrollMarks. */
+  --sb-mark:var(--accent-2);
+  --sb-mark-soft:color-mix(in srgb, var(--accent-2) 45%, transparent);
+  --sb-marks:none;
+}
+/* Warm black, never #000, and clay-white text, never #FFF: pure white on black
+   blooms around the thin strokes of breathings and acutes until they merge
+   with the letter beneath. Headings take the full clay of red-figure. Shadows
+   vanish on black, so the one elevation becomes a hairline ring. */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#13100D; --paper-2:#1C1814; --paper-3:#26211B;
+  --ink:#ECDFCD; --ink-2:#C8B49C; --mute:#9A8A74;
+  --rule:#3A3229; --rule-soft:#231E19; --rule-strong:#7A6D5E;
+  --accent:#A9BCD6; --accent-2:#E48A5E; --accent-soft:#222A36; --accent-2-soft:#3B2319;
+  --hl:#3A2F1B; --ochre:#C4995F; --danger:#F08A8A;
+  --display:#D9A27C; --on-accent:#13100D;
+  --solid:#D9A27C; --solid-hover:#E6B894; --on-solid:#13100D;
+  --shadow:0 0 0 1px #3A3229,0 18px 40px -8px rgb(0 0 0 / .6);
+  --lh-bump:.05;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#13100D; --paper-2:#1C1814; --paper-3:#26211B;
+  --ink:#ECDFCD; --ink-2:#C8B49C; --mute:#9A8A74;
+  --rule:#3A3229; --rule-soft:#231E19; --rule-strong:#7A6D5E;
+  --accent:#A9BCD6; --accent-2:#E48A5E; --accent-soft:#222A36; --accent-2-soft:#3B2319;
+  --hl:#3A2F1B; --ochre:#C4995F; --danger:#F08A8A;
+  --display:#D9A27C; --on-accent:#13100D;
+  --solid:#D9A27C; --solid-hover:#E6B894; --on-solid:#13100D;
+  --shadow:0 0 0 1px #3A3229,0 18px 40px -8px rgb(0 0 0 / .6);
+  --lh-bump:.05;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{margin:0;min-height:100%}
+/* rem, not px: the text-size control scales the root, and anything left in px
+   would sit stubbornly at one size while the rest of the page grew around it.
+   .9375rem is the 15px this was, at the default scale. */
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:.9375rem;line-height:1.55;-webkit-font-smoothing:antialiased}
+/* Thin strokes lose roughly a sixth of their apparent weight on a dark ground;
+   letting dark render normally instead of antialiased puts it back. */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body{-webkit-font-smoothing:auto} }
+:root[data-theme="dark"] body{-webkit-font-smoothing:auto}
+@media (max-width:900px){body{font-size:1rem}}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- header ---------- */
+/* The gaps and side padding are capped in viewport terms: the header's *type*
+   should scale with the text setting, but seven gaps growing by half again is
+   ~170px of pure air that pushed the tools off the right edge. */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:clamp(.4rem,.85vw,1rem);height:3.25rem;padding:0 clamp(.5rem,1vw,1rem);border-bottom:1px solid var(--rule);background:var(--paper)}
+.brand{font-family:var(--serif);font-size:1.35rem;letter-spacing:.02em;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.brand small{font-family:var(--sans);font-size:.72rem;color:var(--mute);margin-left:.6rem;letter-spacing:0}
+.crumbs{flex:1;min-width:0;display:flex;align-items:center;gap:.4rem;color:var(--ink-2);font-size:.92rem;overflow:hidden;white-space:nowrap}
+.crumbs span{overflow:hidden;text-overflow:ellipsis}
+.crumbs .sep{color:var(--mute)}
+.tools{display:flex;align-items:center;gap:.25rem}
+.ib{width:2.1rem;height:2.1rem;display:inline-grid;place-items:center;border-radius:6px;color:var(--ink-2)}
+.ib:hover{background:var(--paper-2);color:var(--ink)}
+.ib svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ib[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:var(--nav-w) 1fr;min-height:calc(100vh - 3.25rem)}
+nav.side{border-right:1px solid var(--rule);background:var(--paper);position:sticky;top:3.25rem;height:calc(100vh - 3.25rem);overflow:auto;overscroll-behavior:contain;padding:1rem .75rem 2rem}
+main{min-width:0}
+@media (max-width: 900px){
+  .shell{grid-template-columns:1fr}
+  nav.side{position:fixed;left:0;top:3.25rem;bottom:0;width:min(20rem,88vw);transform:translateX(-102%);transition:transform .2s ease;z-index:30;box-shadow:0 0 0 100vmax rgba(0,0,0,0);}
+  nav.side.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}
+  .crumbs{font-size:.85rem}
+  .crumbs span:not(:last-child){display:none}
+  .brand small{display:none}
+}
+
+/* ---------- side nav ---------- */
+.search{width:100%;padding:.5rem .7rem;border:1px solid var(--rule);border-radius:6px;background:var(--paper-2);margin-bottom:.9rem}
+.search::placeholder{color:var(--mute)}
+.author{margin:.15rem 0}
+.author>button{width:100%;text-align:left;padding:.45rem .5rem;border-radius:6px;display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.author>button:hover{background:var(--paper-2)}
+.author>button .grc{font-family:var(--serif);color:var(--mute);font-size:.95rem}
+.author.open>button{color:var(--accent)}
+.works{display:none;margin:.1rem 0 .4rem .5rem;border-left:1px solid var(--rule);padding-left:.5rem}
+.author.open .works{display:block}
+.work{display:block;width:100%;text-align:left;padding:.35rem .5rem;border-radius:5px;line-height:1.3}
+.work:hover{background:var(--paper-2)}
+.work.active{background:var(--accent-soft);color:var(--accent)}
+.work .grc{display:block;font-family:var(--serif);color:var(--mute);font-size:.92rem}
+.work .tag{font-size:.7rem;color:var(--mute);margin-left:.3rem;border:1px solid var(--rule);border-radius:3px;padding:0 .25rem;vertical-align:middle}
+.chunks{display:none;flex-wrap:wrap;gap:.25rem;padding:.35rem .5rem .6rem 1rem}
+.work.active + .chunks{display:flex}
+.chunks button{min-width:2rem;padding:.15rem .45rem;border:1px solid var(--rule);border-radius:4px;font-size:.8rem;color:var(--ink-2)}
+.chunks button:hover{border-color:var(--accent);color:var(--accent)}
+.chunks button.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.nav-empty{color:var(--mute);padding:1rem .5rem;font-size:.9rem}
+
+/* ---------- reader ---------- */
+.reader{padding:1.25rem clamp(1rem,3vw,2.5rem) 5rem;max-width:calc(2*var(--measure) + 12rem);margin:0 auto}
+.workhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem 1rem;padding:.25rem 0 1rem;border-bottom:1px solid var(--rule);margin-bottom:.5rem}
+.workhead h1{font-family:var(--serif);font-weight:400;font-size:1.9rem;margin:0;line-height:1.15}
+.workhead h1 .grc{color:var(--ink-2);margin-left:.6rem}
+.workhead .meta{color:var(--mute);font-size:.85rem;flex-basis:100%}
+.workhead .meta b{color:var(--ink-2);font-weight:500}
+.jump{display:flex;align-items:center;gap:.5rem;margin-left:auto}
+.jump input{width:7.5rem;padding:.35rem .5rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper-2)}
+.jump button,.pager button{padding:.35rem .7rem;border:1px solid var(--rule);border-radius:5px;color:var(--ink-2);font-size:.9rem}
+.jump button:hover,.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.5rem 0;color:var(--mute);font-size:.9rem}
+.pager button:disabled{opacity:.35;cursor:default}
+.colhead{display:grid;grid-template-columns:1fr 1fr;gap:0 2.5rem;position:sticky;top:3.25rem;background:var(--paper);z-index:5;font-size:.75rem;color:var(--mute);padding:.5rem 0 .35rem;border-bottom:1px solid var(--rule)}
+.colhead span{padding-left:3.2rem}
+
+/* A 250-segment page drawn with a full-strength rule under every segment reads
+   as a spreadsheet. Soften it, give it more air, and drop it entirely in verse —
+   the line-number gutter and the .ref label already carry the structure. */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:.2rem 2.5rem;padding:1.1rem 0;border-bottom:1px solid var(--rule-soft);scroll-margin-top:6rem}
+.seg[data-verse="1"]{border-bottom:0;padding:.75rem 0}
+.seg:target,.seg.flash{background:var(--hl)}
+.seg .ref{grid-column:1/-1;display:flex;align-items:center;gap:.6rem;font-size:.75rem;color:var(--mute);margin-bottom:.15rem}
+.seg .ref b{font-weight:500;color:var(--accent);font-variant-numeric:tabular-nums}
+.seg .ref .urn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.7rem;opacity:0;transition:opacity .15s;cursor:copy;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg:hover .ref .urn,.seg:focus-within .ref .urn{opacity:1}
+.col{font-family:var(--body);font-size:var(--fs);line-height:calc(var(--lh) + var(--lh-bump));max-width:var(--measure);min-width:0;padding-left:3.2rem;position:relative}
+/* Greek always in the serif with polytonic coverage. Ligatures off: some faces
+   ligate across Greek clusters and shove the diacritics off their vowels.
+   Tracking stays at 0 — positive letter-spacing visually detaches an accent
+   from the letter it belongs to, which is why there is no tracking control. */
+.col.grc{font-family:var(--serif);font-feature-settings:"kern" 1;font-variant-ligatures:none;text-rendering:optimizeLegibility;letter-spacing:0;word-spacing:.02em}
+.col.grc[data-sans="1"]{font-family:"Noto Sans",var(--sans)}
+/* The Greek is the text; the English is apparatus. Setting them at identical
+   size in identical type makes the eye lose which column it is in — hence a
+   different face (var(--body), i.e. Source Serif 4) at a smaller optical size.
+   Source Serif has a larger x-height than Cardo, so .94 lands close in
+   apparent size while staying clearly subordinate. */
+.col.eng{font-size:calc(var(--fs) * .94);font-optical-sizing:auto;font-feature-settings:"kern" 1}
+.col p{margin:0 0 .6em}
+.col p:last-child{margin-bottom:0}
+.speaker{display:block;font-family:var(--sans);font-size:.72em;letter-spacing:.06em;color:var(--ink-2);margin:.5em 0 .15em;text-transform:none;font-weight:600}
+.speaker:first-child{margin-top:0}
+.line{position:relative;display:block;padding-left:0;text-indent:-1.2em;margin-left:1.2em}
+.line .n{position:absolute;right:calc(100% + 2.6em);top:.5em;text-align:right;font-family:var(--sans);font-size:.65em;color:var(--mute);text-indent:0;font-variant-numeric:tabular-nums;user-select:none;white-space:nowrap}
+.mk{font-family:var(--sans);font-size:.62em;color:var(--accent);vertical-align:super;margin:0 .15em;user-select:none;font-weight:500}
+.col.eng .mk{color:var(--mute)}
+.col.eng.none{color:var(--mute);font-family:var(--sans);font-size:.9rem;font-style:italic}
+.w{cursor:pointer;border-radius:2px}
+.w:hover{background:var(--accent-soft)}
+.w.on{background:var(--accent);color:var(--on-accent)}
+
+/* column modes */
+.mode-grc .colhead,.mode-grc .seg{grid-template-columns:1fr}
+.mode-grc .col.eng,.mode-grc .colhead span:nth-child(2){display:none}
+.mode-eng .colhead,.mode-eng .seg{grid-template-columns:1fr}
+.mode-eng .col.grc,.mode-eng .colhead span:nth-child(1){display:none}
+.mode-grc .col,.mode-eng .col{max-width:calc(var(--measure) * 1.6)}
+@media (max-width: 760px){
+  .colhead{display:none}
+  .seg{grid-template-columns:1fr;gap:.6rem 0}
+  .col{padding-left:2.6rem;max-width:none}
+  .col.eng{border-left:2px solid var(--rule);padding-left:.9rem;margin-left:2.6rem;font-size:calc(var(--fs) * .92);color:var(--ink-2)}
+  .jump{margin-left:0}
+}
+
+/* ---------- landing / empty ---------- */
+.landing{max-width:52rem;margin:0 auto;padding:3rem clamp(1rem,4vw,3rem) 5rem}
+.landing .hero{font-family:var(--serif);font-size:clamp(1.9rem,4.5vw,3.2rem);line-height:1.2;margin:0 0 .5rem}
+.landing .hero .grc{display:block;color:var(--ink);font-weight:400}
+.landing .hero .en{display:block;color:var(--mute);font-size:.5em;font-family:var(--sans);margin-top:.4rem;line-height:1.5}
+.landing .hero .tr{display:block;font-family:var(--serif);font-style:italic;color:var(--ink-2);font-size:1.15em;margin-bottom:.5rem}
+.landing p{max-width:40rem;color:var(--ink-2)}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.6rem;margin-top:1.5rem}
+.pick{text-align:left;padding:.8rem .9rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);line-height:1.3}
+.pick:hover{border-color:var(--accent)}
+.pick .grc{font-family:var(--serif);font-size:1.15rem;display:block}
+.pick .en{color:var(--ink-2);font-size:.9rem}
+.pick .who{color:var(--mute);font-size:.8rem;display:block;margin-top:.25rem}
+.sources{margin-top:2.5rem;font-size:.82rem;color:var(--mute);border-top:1px solid var(--rule);padding-top:1rem}
+
+/* ---------- popovers ---------- */
+.pop{position:absolute;z-index:40;background:var(--paper);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);padding:.75rem .85rem;width:17rem;font-size:.9rem;display:none}
+.pop.show{display:block}
+.pop .hw{font-family:var(--serif);font-size:1.35rem;margin-bottom:.35rem}
+.pop .row{display:flex;flex-direction:column;gap:.25rem}
+.pop a{display:flex;justify-content:space-between;padding:.35rem .5rem;border-radius:5px;text-decoration:none;color:var(--ink)}
+.pop a:hover{background:var(--paper-2)}
+.pop a small{color:var(--mute)}
+.pop .hint{color:var(--mute);font-size:.75rem;margin-top:.5rem}
+.settings{position:fixed;right:1rem;top:3.6rem;z-index:40;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow);padding:1rem;width:17rem;display:none}
+.settings.show{display:block}
+.settings h3{margin:0 0 .6rem;font-size:.8rem;color:var(--mute);font-weight:500}
+.settings .grp{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.45rem 0}
+.settings label{color:var(--ink-2);font-size:.9rem}
+.segbtn{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.segbtn button{padding:.3rem .6rem;font-size:.85rem;color:var(--ink-2)}
+.segbtn button+button{border-left:1px solid var(--rule)}
+.segbtn button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.stepper{display:inline-flex;align-items:center;gap:.35rem}
+.stepper button{width:1.7rem;height:1.7rem;border:1px solid var(--rule);border-radius:5px}
+.stepper output{min-width:2.4rem;text-align:center;font-size:.85rem;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:.5rem .9rem;border-radius:6px;font-size:.85rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50;
+  display:flex;align-items:center;gap:.6rem;max-width:min(32rem,calc(100vw - 2rem))}
+/* Only the shown toast takes clicks — otherwise the invisible one would sit
+   over the page swallowing them. */
+.toast.show{opacity:1;pointer-events:auto}
+.toast-msg{flex:1;min-width:0}
+.toast-x{flex:none;color:inherit;opacity:.6;font-size:1.05rem;line-height:1;padding:0 .1rem;cursor:pointer}
+.toast-x:hover{opacity:1}
+
+/* ---------- loading ---------- */
+#loading{position:fixed;inset:0;background:var(--paper);display:grid;place-items:center;z-index:100;color:var(--mute)}
+#loading .box{text-align:center}
+#loading .g{font-family:var(--serif);font-size:2.4rem;color:var(--ink);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+#loading .err{color:var(--danger);max-width:28rem;margin-top:1rem}
+
+@media (min-width: 901px){
+  .shell.nav-hidden{grid-template-columns:1fr}
+  .shell.nav-hidden nav.side{display:none}
+}
+
+#jump[hidden]{display:none}
+
+/* ---------- mobile refinements ---------- */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:29}
+.backdrop.show{opacity:1;pointer-events:auto}
+.side-head{display:none;align-items:center;justify-content:space-between;padding:.25rem 0 .75rem;font-family:var(--serif);font-size:1.25rem}
+.side-head button{font-family:var(--sans);font-size:.9rem;color:var(--accent);padding:.4rem .6rem;border-radius:6px}
+.side-head button:hover{background:var(--paper-2)}
+@media (max-width: 900px){
+  nav.side{width:min(21rem,86vw);box-shadow:none!important;transition:transform .22s cubic-bezier(.2,.7,.3,1);padding-bottom:4rem;touch-action:pan-y;will-change:transform}
+  nav.side.open{box-shadow:0 0 40px rgba(0,0,0,.25)!important}
+  nav.side.dragging{transition:none}
+  .side-head{display:flex}
+  .author>button{padding:.7rem .5rem;font-size:1rem}
+  .work{padding:.6rem .5rem;font-size:1rem}
+  .chunks button{min-width:2.6rem;padding:.45rem .5rem;font-size:.95rem}
+  .parts-toggle{padding:.5rem}
+  .search{padding:.65rem .8rem;font-size:1rem}
+  #btnTheme{display:none}
+  /* The bottom sheet already scrolled, but reaching either end handed the
+     gesture to the page behind — hence `overscroll-behavior`, and
+     `-webkit-overflow-scrolling` for momentum inside the sheet itself. */
+  .settings{left:0;right:0;top:auto;bottom:0;width:auto;border-radius:16px 16px 0 0;padding:1.1rem 1.25rem calc(1.1rem + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.25);max-height:85vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .settings .grp{margin:.7rem 0}
+  .segbtn button{padding:.5rem .8rem;font-size:.95rem}
+  .stepper button{width:2.2rem;height:2.2rem}
+  .pop{position:fixed;left:0!important;right:0;top:auto!important;bottom:0;width:auto;border-radius:16px 16px 0 0;padding:1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+  .pop .hw{font-size:1.6rem}
+  .pop a{padding:.7rem .6rem;font-size:1rem}
+  .pop .hint{display:none}
+  .seg .ref .urn{display:none}
+  .workhead h1{font-size:1.5rem}
+  .workhead .meta{font-size:.8rem}
+  .pager button{padding:.6rem .9rem;font-size:.95rem}
+  .pick{padding:1rem}
+}
+
+@media (max-width: 900px){
+  .settings .grp{flex-direction:column;align-items:stretch;gap:.35rem}
+  .settings .grp label{font-size:.85rem;color:var(--mute)}
+  .settings .segbtn{display:flex;width:100%}
+  .settings .segbtn button{flex:1;text-align:center}
+  .settings .stepper{justify-content:space-between}
+  .settings .stepper output{flex:1}
+  .workhead .pickers{flex-direction:column;align-items:stretch;gap:.5rem}
+  .workhead .pickers label{display:flex;flex-direction:column;gap:.2rem}
+  .workhead select{max-width:100%;width:100%}
+  .crumbs span:not(:last-child){display:inline}
+  .crumbs span:nth-child(-n+2){display:none}
+}
+
+@media (max-width: 600px){ body.reading .brand{display:none} .crumbs{font-size:.95rem} }
+
+.filter{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:-.35rem 0 .9rem}
+.filter button{flex:1;padding:.4rem .3rem;font-size:.8rem;color:var(--ink-2);text-align:center}
+.filter button+button{border-left:1px solid var(--rule)}
+.filter button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.landing .filter{max-width:26rem;margin:1.4rem 0 0}
+.landing .filter button{padding:.55rem .5rem;font-size:.9rem}
+.landing .picks{margin-top:1rem}
+
+.cover-note{grid-column:1/-1;margin:.6rem 0 .2rem;padding:.6rem .8rem;border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;background:var(--paper-2);font-size:.88rem;color:var(--ink-2);line-height:1.5}
+.col.eng.none{font-style:normal}
+.col.eng.none b{display:block;color:var(--ink-2);font-weight:600;margin-bottom:.15rem}
+.author>button .cnt{font-size:.72rem;color:var(--mute);margin-left:auto}
+.author>button .grc{margin-left:0}
+.workhead .pickers{flex-basis:100%;display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;font-size:.85rem;color:var(--mute)}
+.workhead select{max-width:26rem;padding:.3rem .5rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper-2);font-size:.85rem;color:var(--ink)}
+.status{padding:3rem 1rem;text-align:center;color:var(--mute)}
+.status .g{font-family:var(--serif);font-size:1.6rem;color:var(--ink);animation:pulse 1.6s ease-in-out infinite}
+.status .err{color:var(--danger);max-width:38rem;margin:.75rem auto 0;text-align:left;line-height:1.5}
+.status code{font-size:.8rem;word-break:break-all}
+.status button{margin-top:1rem;padding:.4rem .8rem;border:1px solid var(--rule);border-radius:6px}
+.head-block{font-family:var(--sans);font-weight:600;font-size:.8em;color:var(--ink-2);margin:.4em 0}
+.pages{display:flex;flex-wrap:wrap;gap:.3rem;padding:.6rem 0 0}
+.pages button{padding:.15rem .5rem;border:1px solid var(--rule);border-radius:4px;font-size:.8rem;color:var(--ink-2)}
+.pages button.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.landing .stats{display:flex;gap:2rem;margin:1.2rem 0 0;color:var(--ink-2)}
+.landing .stats b{display:block;font-family:var(--serif);font-size:1.8rem;color:var(--ink);font-weight:400}
+.notice{font-size:.85rem;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--rule);border-radius:8px;padding:.7rem .9rem;margin-top:1.5rem;line-height:1.5}
+
+.srcpane{display:none;margin:.5rem 0 0}
+.srcpane.show{display:block}
+.srcinfo{font-size:.78rem;color:var(--mute);margin-top:.4rem;line-height:1.4}
+.srcinfo b{color:var(--ink-2);font-weight:500}
+.btn{padding:.35rem .7rem;border:1px solid var(--rule);border-radius:5px;color:var(--ink-2);font-size:.85rem}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.author>button .chev,.parts-toggle .chev{width:.8rem;height:.8rem;flex:none;transition:transform .15s;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--mute)}
+.author>button{gap:.4rem}
+.author>button .chev{transform:rotate(-90deg)}
+.author.open>button .chev{transform:none}
+.parts-toggle{display:flex;align-items:center;gap:.4rem;width:100%;text-align:left;padding:.25rem .5rem;font-size:.78rem;color:var(--mute)}
+.parts-toggle:hover{color:var(--accent)}
+.parts-toggle .chev{transform:rotate(-90deg)}
+.parts-toggle[aria-expanded="true"] .chev{transform:none}
+.chunks{display:none}
+.parts-toggle[aria-expanded="true"]+.chunks{display:flex}
+.work.active+.chunks{display:none}
+#jump{margin-left:0}
+#jump input{width:6.5rem}
+@media (max-width:600px){#jump input{width:4.5rem}#jump button{display:none}}
+
+.offline{margin-top:2rem;padding:1.2rem 1.4rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2)}
+.offline h2{font-family:var(--serif);font-weight:400;font-size:1.4rem;margin:0 0 .3rem}
+.offline p{margin:.3rem 0 .6rem}
+.offline ol{margin:0 0 1rem;padding-left:1.3rem;color:var(--ink-2);line-height:1.6}
+.offline .fine{font-size:.8rem;color:var(--mute);margin-top:.9rem}
+.btn.big{font-size:1rem;padding:.55rem 1.1rem;background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.big:hover{filter:brightness(1.08);color:var(--on-accent)}
+#landLocal{margin-top:.7rem;font-size:.9rem;color:var(--ink-2)}
+#landLocal:empty{display:none}
+body.dragging::after{content:"Drop the folder to connect it";position:fixed;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,transparent);border:3px dashed var(--accent);font-size:1.4rem;color:var(--accent);z-index:99;pointer-events:none}
+
+.filter{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:-.35rem 0 .9rem}
+.filter button{flex:1;padding:.4rem .3rem;font-size:.8rem;color:var(--ink-2);text-align:center}
+.filter button+button{border-left:1px solid var(--rule)}
+.filter button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.landing .filter{max-width:26rem;margin:1.4rem 0 0}
+.landing .filter button{padding:.55rem .5rem;font-size:.9rem}
+.landing .picks{margin-top:1rem}
+/* ---------- library / wiki ---------- */
+.quick{display:flex;gap:.4rem;margin:-.25rem 0 .75rem}
+.quick a{flex:1;text-align:center;padding:.45rem .3rem;border:1px solid var(--rule);border-radius:6px;font-size:.82rem;color:var(--ink-2);text-decoration:none}
+.quick a:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:.15rem .5rem;font-size:.78rem}
+/* Reveal on hover/focus like .urn does — a persistent column of bookmark icons
+   down the left of every segment is visual static. A *set* mark always shows. */
+.mk-btn{width:1.6rem;height:1.6rem;display:inline-grid;place-items:center;border-radius:4px;color:var(--mute);margin-left:auto;opacity:0;transition:opacity .15s}
+.mk-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.seg:hover .mk-btn,.seg:focus-within .mk-btn,.mk-btn:focus-visible,.mk-btn.on{opacity:1}
+.mk-btn.on{color:var(--accent-2)} .mk-btn.on svg{fill:currentColor}
+.mk-box,.mk-edit{grid-column:1/-1;margin-top:.5rem;font-family:var(--sans);font-size:.88rem}
+.mk-note{background:var(--hl);border-left:3px solid var(--accent-2);padding:.5rem .75rem;border-radius:0 6px 6px 0;margin:.35rem 0;line-height:1.5;color:var(--ink)}
+.mk-back{color:var(--mute);font-size:.8rem;margin:.3rem 0}
+.mk-back a,.mk-note a.xref{color:var(--accent)}
+.mk-edit textarea,#anote,#libJson{width:100%;padding:.5rem .6rem;border:1px solid var(--rule);border-radius:6px;background:var(--paper);font:inherit;font-size:.92rem;line-height:1.5;resize:vertical}
+.mk-tools{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.4rem 0;font-size:.82rem;color:var(--mute)}
+.mk-tools select,.mk-tools input{padding:.25rem .4rem;border:1px solid var(--rule);border-radius:4px;background:var(--paper-2);font-size:.82rem;max-width:16rem}
+.mk-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.fav-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .6rem;border:1px solid var(--rule);border-radius:6px;font-size:.82rem;color:var(--ink-2);margin-left:.5rem;vertical-align:middle}
+.fav-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.fav-btn.on{color:var(--accent-2);border-color:var(--accent-2)} .fav-btn.on svg{fill:currentColor}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.5rem}
+.home-card{min-width:0;border:1px solid var(--rule);border-radius:10px;padding:1rem 1.1rem;background:var(--paper-2)}
+.home-card h2{font-family:var(--serif);font-weight:400;font-size:1.25rem;margin:0 0 .5rem;display:flex;justify-content:space-between;align-items:baseline}
+.home-card .more{font-family:var(--sans);font-size:.85rem;text-decoration:none}
+.mini-list{display:flex;flex-direction:column;gap:.2rem;margin-bottom:.4rem}
+.mini{display:block;width:100%;min-width:0;max-width:100%;text-align:left;padding:.35rem .5rem;border-radius:5px;line-height:1.3;text-decoration:none;color:var(--ink)}
+.mini:hover{background:var(--paper)}
+.mini b{font-weight:500;display:block} .mini span{color:var(--mute);font-size:.8rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quiet{color:var(--mute);font-size:.9rem}
+.era-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.2rem 0 .6rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border:1px solid var(--rule);border-radius:999px;font-size:.8rem;color:var(--ink-2);text-decoration:none;background:var(--paper)}
+.chip span{color:var(--mute)} .chip:hover{border-color:var(--accent);color:var(--accent)} .chip.soft{border-style:dashed}
+.page{max-width:60rem;margin:0 auto;padding:1.5rem clamp(1rem,3vw,2.5rem) 5rem}
+.ph{font-family:var(--serif);font-weight:400;font-size:2rem;margin:0 0 .4rem} .ph .grc{color:var(--ink-2);margin-left:.5rem}
+.sh{font-family:var(--sans);font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:1.6rem 0 .5rem}
+.era-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.5rem;margin:1rem 0}
+.era-card{display:flex;flex-direction:column;padding:.7rem .8rem;border:1px solid var(--rule);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--paper-2)}
+.era-card b{font-weight:500} .era-card .yrs{font-size:.78rem;color:var(--mute)} .era-card .n{font-size:.78rem;color:var(--accent);margin-top:.25rem}
+.era-card.active{border-color:var(--accent);background:var(--accent-soft)}
+.era-note{color:var(--ink-2);max-width:44rem}
+.wiki-tools{display:flex;gap:.5rem;align-items:center;margin:.6rem 0} .wiki-tools .search{margin:0;flex:1}
+.author-list{display:flex;flex-direction:column}
+.author-row{display:grid;grid-template-columns:14rem 9rem 1fr auto;gap:.6rem;align-items:baseline;padding:.5rem .4rem;border-bottom:1px solid var(--rule);text-decoration:none;color:var(--ink);font-size:.92rem}
+.author-row:hover{background:var(--paper-2)}
+.ar-name{font-weight:500} .ar-name .grc{font-family:var(--serif);color:var(--mute);font-weight:400}
+.ar-dates{color:var(--mute);font-size:.82rem;font-variant-numeric:tabular-nums} .ar-desc{color:var(--ink-2);font-size:.85rem} .ar-n{color:var(--mute);font-size:.8rem;white-space:nowrap}
+.ap-meta{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;color:var(--ink-2);font-size:.9rem;margin:.2rem 0 .8rem}
+.ap-desc{color:var(--ink-2);margin:0 0 .5rem} .ap-summary,.ap-text{line-height:1.6;max-width:46rem} .ap-links a{margin-right:.8rem;font-size:.85rem}
+.ap-cols{display:grid;grid-template-columns:minmax(14rem,1fr) 2fr;gap:2rem;margin-top:.5rem}
+.ap-works{display:flex;flex-direction:column;gap:.25rem}
+.ap-work{text-align:left;padding:.45rem .6rem;border:1px solid var(--rule);border-radius:6px;line-height:1.3;background:var(--paper-2)}
+.ap-work:hover{border-color:var(--accent)} .ap-work b{font-weight:500;display:block} .ap-work .grc{font-family:var(--serif);color:var(--mute);font-size:.9rem;display:block}
+.timeline{list-style:none;margin:0;padding:0 0 0 .2rem;border-left:2px solid var(--rule)}
+.timeline li{display:grid;grid-template-columns:5.5rem 1fr;gap:.6rem;padding:.3rem 0 .3rem .9rem;position:relative;font-size:.9rem}
+.timeline li::before{content:"";position:absolute;left:-6px;top:.7rem;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.ty{color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ap-eds{padding-left:1.1rem;line-height:1.5;font-size:.9rem;color:var(--ink-2)} .ap-eds li{margin-bottom:.3rem}
+.lib-work{margin-bottom:1.2rem} .lib-work h3{font-family:var(--serif);font-weight:400;font-size:1.2rem;margin:0 0 .4rem}
+.lib-mark{border:1px solid var(--rule);border-radius:8px;padding:.6rem .8rem;margin-bottom:.5rem;background:var(--paper-2)}
+.lm-head{display:flex;gap:.6rem;align-items:center} .lm-head .lm-open{color:var(--accent)} .lm-head .lm-del{margin-left:auto}
+.lm-snip{font-family:var(--serif);color:var(--ink-2);margin:.3rem 0;font-size:1rem}
+.lib-io{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem}
+@media (max-width:760px){.home-grid,.ap-cols{grid-template-columns:1fr}.author-row{grid-template-columns:1fr auto;grid-template-areas:"name n" "dates dates" "desc desc"}.ar-name{grid-area:name}.ar-dates{grid-area:dates}.ar-desc{grid-area:desc}.ar-n{grid-area:n}}
+.wcrumbs{font-size:.85rem;color:var(--mute);margin-bottom:.5rem} .wcrumbs a{text-decoration:none}
+.wiki-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:.7rem;margin-top:1.2rem}
+.wcat{padding:1rem 1.1rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2)}
+.wcat:hover{border-color:var(--accent)} .wcat-main{text-decoration:none;color:var(--ink);display:block} .wcat b{font-family:var(--serif);font-weight:400;font-size:1.25rem;display:block} .wcat-main span{display:block;color:var(--ink-2);font-size:.88rem;margin:.25rem 0 .4rem}
+.wcat .sub{display:flex;flex-wrap:wrap;gap:.25rem} .wcat .sub a{font-size:.75rem;padding:.1rem .45rem;border:1px solid var(--rule);border-radius:999px;color:var(--mute);text-decoration:none} .wcat .sub a:hover{color:var(--accent);border-color:var(--accent)}
+.subcats{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.5rem 0} .subcats .chips{display:contents} .sc-label{font-size:.75rem;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin-right:.3rem}
+.chip.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)} .chip.on span{color:color-mix(in srgb,var(--on-accent) 75%,transparent)}
+.era-list{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem}
+.era-item{display:block;padding:.9rem 1rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2);text-decoration:none;color:var(--ink)} .era-item:hover{border-color:var(--accent)}
+.ei-head{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline} .ei-head b{font-family:var(--serif);font-weight:400;font-size:1.2rem} .ei-head .yrs{color:var(--mute);font-size:.85rem} .ei-head .n{color:var(--accent);font-size:.85rem;margin-left:auto}
+.era-item p{margin:.35rem 0 0;color:var(--ink-2);font-size:.9rem;line-height:1.5}
+.art-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.6rem}
+.art-item{display:block;padding:.8rem .9rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);text-decoration:none;color:var(--ink)} .art-item:hover{border-color:var(--accent)}
+.art-item b{font-weight:500} .art-item .ar-dates{margin-left:.5rem} .art-item p{margin:.3rem 0 0;font-size:.85rem;color:var(--ink-2);line-height:1.45}
+.ap-nav{display:flex;flex-wrap:wrap;gap:.3rem;margin:.6rem 0 0} .ap-nav a{font-size:.8rem;padding:.25rem .6rem;border:1px solid var(--rule);border-radius:999px;text-decoration:none;color:var(--ink-2)} .ap-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page .pager a{text-decoration:none}
+/* top navigation */
+.topnav{display:flex;gap:.15rem;margin-left:.25rem}
+.topnav a{padding:.35rem .6rem;border-radius:6px;font-size:.9rem;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.topnav a:hover{background:var(--paper-2);color:var(--ink)} .topnav a.active{color:var(--accent);background:var(--accent-soft)}
+.topnav svg{display:none}
+@media (max-width:900px){
+  .topnav{position:fixed;left:0;right:0;bottom:0;z-index:25;margin:0;background:var(--paper);border-top:1px solid var(--rule);padding:.3rem .5rem calc(.3rem + env(safe-area-inset-bottom));justify-content:space-around}
+  .topnav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;font-size:.7rem;padding:.25rem .8rem;flex:1}
+  .topnav svg{display:block;width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .reader,.landing,.page{padding-bottom:6rem}
+  nav.side{padding-bottom:5rem}
+}
+
+/* never let content widen the page on phones */
+.home-grid>*,.wiki-cats>*,.era-cards>*,.art-list>*,.picks>*,.ap-cols>*{min-width:0}
+@media (max-width:900px){ html,body{overflow-x:hidden;max-width:100vw} main{min-width:0;overflow-x:clip} .topnav{width:100%;max-width:100vw} .topnav a{min-width:0;padding:.25rem .3rem;white-space:normal;text-align:center} }
+
+/* ---------- wiki: readability & phones ---------- */
+.ph{line-height:1.15}
+.ar-desc{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.subcats{align-items:center}
+.chip{line-height:1.2}
+.chip.on::after{content:"×";margin-left:.1rem;font-weight:600;opacity:.85}
+@media (max-width:760px){
+  .page{padding:1rem 1rem 6rem}
+  .ph{font-size:1.7rem}
+  .sh{margin-top:1.4rem}
+  .wiki-cats{grid-template-columns:1fr;gap:.6rem}
+  .wcat{padding:.9rem 1rem}
+  .wcat .sub a{font-size:.8rem;padding:.25rem .6rem}
+  .subcats{flex-wrap:nowrap;overflow-x:auto;gap:.4rem;padding:.2rem 0 .5rem;margin:.3rem -1rem 0;padding-left:1rem;padding-right:1rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .subcats::-webkit-scrollbar{display:none}
+  .subcats .sc-label{flex:none;width:100%;margin:0 0 .1rem}
+  .subcats{flex-wrap:wrap}
+  .subcats .chips{display:flex;flex-wrap:nowrap;gap:.4rem;overflow-x:auto;width:100%;padding-bottom:.3rem;scrollbar-width:none}
+  .subcats .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:.45rem .8rem;font-size:.9rem;background:var(--paper-2)}
+  .wiki-tools{flex-direction:column;align-items:stretch}
+  .wiki-tools .btn{text-align:center;text-decoration:none}
+  .author-list{gap:.5rem;margin-top:.5rem}
+  .author-row{display:block;padding:.85rem .95rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2);font-size:1rem}
+  .author-row:hover{background:var(--paper-2);border-color:var(--accent)}
+  .ar-name{display:block;font-size:1.05rem} .ar-name .grc{display:block;font-size:.95rem}
+  .ar-dates{display:block;margin:.15rem 0 .3rem}
+  .ar-desc{display:-webkit-box;font-size:.92rem;line-height:1.45}
+  .ar-n{display:block;margin-top:.35rem;font-size:.8rem;color:var(--accent)}
+  .era-cards{grid-template-columns:1fr 1fr;gap:.5rem}
+  .era-card{padding:.75rem .8rem}
+  .era-item{padding:.9rem}
+  .art-list{grid-template-columns:1fr}
+  .ap-meta{gap:.35rem}
+  .ap-nav{overflow-x:auto;flex-wrap:nowrap;padding-bottom:.3rem;scrollbar-width:none} .ap-nav a{flex:none;padding:.4rem .8rem;font-size:.85rem}
+  .timeline li{grid-template-columns:5rem 1fr}
+  .home-card{padding:.9rem 1rem}
+  .mini{padding:.55rem .6rem}
+  .page .pager{flex-direction:column;gap:.5rem} .page .pager .btn{text-align:center}
+}
+
+.tag{display:inline-block;font-size:.68rem;padding:.05rem .4rem;border:1px solid var(--accent);border-radius:999px;color:var(--accent);vertical-align:middle;margin-left:.25rem;line-height:1.4;background:var(--paper)}
+
+.about .cred{padding:.8rem 1rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);margin-bottom:.6rem}
+.about .cred h3{font-family:var(--serif);font-weight:400;font-size:1.15rem;margin:0 0 .3rem}
+.about .cred p{margin:.25rem 0;line-height:1.55;font-size:.95rem;color:var(--ink-2)}
+.about .lic{font-size:.85rem;color:var(--mute)} .about .lic a{margin-right:.2rem}
+/* Repository URLs are one long unbreakable token; at larger text sizes they
+   would otherwise push the whole page wider than the window. */
+.about a,.about .cred a,.about .lic a{overflow-wrap:anywhere}
+.sources a{color:var(--accent)}
+
+.mk-lbl{display:flex;flex-direction:column;gap:.25rem;font-size:.85rem;color:var(--ink-2);width:100%}
+.mk-lbl select,.mk-row select{max-width:100%;width:100%;padding:.45rem .5rem;font-size:.9rem}
+.mk-more{width:100%;font-size:.85rem;color:var(--ink-2)} .mk-more summary{cursor:pointer;padding:.3rem 0;color:var(--accent)}
+.mk-row{display:grid;grid-template-columns:1fr auto auto;gap:.4rem;align-items:center;margin:.3rem 0} .mk-row input{padding:.4rem .5rem;width:7.5rem;max-width:100%;border:1px solid var(--rule);border-radius:4px;background:var(--paper-2);font-size:.9rem}
+.mk-tools{flex-direction:column;align-items:stretch}
+@media (max-width:600px){ .mk-row{grid-template-columns:1fr} .mk-row input{width:100%} .mk-actions .btn{padding:.5rem .8rem} }
+
+.mk-links{margin-top:.4rem;font-size:.85rem;color:var(--mute)} .mk-links .chip,.mk-chips .chip{margin:.1rem 0}
+.mk-linked{margin:.4rem 0} .mk-chips{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-top:.25rem}
+.chip-x{margin:0 .35rem 0 -.25rem;width:1.4rem;height:1.4rem;border-radius:50%;color:var(--mute);font-size:1rem;line-height:1} .chip-x:hover{background:var(--paper-2);color:var(--danger)}
+
+textarea{color:var(--ink);background:var(--paper)}
+.mk-edit textarea,#anote,#libJson{color:var(--ink);caret-color:var(--accent)}
+.mk-edit textarea::placeholder,#anote::placeholder,#libJson::placeholder{color:var(--mute)}
+
+.home-tools{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:1.4rem 0 .4rem}
+.home-tools .filter{margin:0;flex:none}
+.home-tools .search{margin:0;flex:1;min-width:14rem}
+.home-tools .lbl{font-size:.85rem;color:var(--mute)}
+.home-results{display:flex;flex-direction:column;gap:.2rem;margin:.4rem 0 .8rem}
+.home-results:empty{display:none}
+.hr{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;text-align:left;padding:.5rem .7rem;border:1px solid var(--rule);border-radius:6px;background:var(--paper-2);width:100%}
+.hr:hover{border-color:var(--accent)} .hr b{font-weight:500} .hr .grc{font-family:var(--serif);color:var(--mute);margin-left:.4rem} .hr .who{color:var(--mute);font-size:.85rem;white-space:nowrap}
+.picks-head{display:flex;justify-content:space-between;align-items:baseline;margin-top:.8rem}
+.picks-head .sh{margin:0}
+.more-link{display:block;text-align:right;margin-top:.5rem;font-size:.9rem;text-decoration:none}
+.more-link:hover{text-decoration:underline}
+.browse .search{margin-top:.6rem}
+@media (max-width:760px){.home-tools{flex-direction:column;align-items:stretch}.home-tools .search{min-width:0}}
+
+/* ---------- layout: anchor left, use the width ---------- */
+:root{--measure:40rem}
+.landing,.page,.reader{max-width:none;margin:0}
+.landing{padding:1.75rem clamp(1rem,3.5vw,3rem) 5rem}
+.page{padding:1.5rem clamp(1rem,3.5vw,3rem) 5rem}
+.reader{padding:1.25rem clamp(1rem,3.5vw,3rem) 5rem}
+.landing .hero-wrap{position:relative;overflow:hidden;padding:2.25rem clamp(1.25rem,3vw,2.5rem);border-radius:14px;background:linear-gradient(120deg,var(--paper-2) 0%,var(--paper) 70%);border:1px solid var(--rule);margin-bottom:1.5rem}
+.landing .hero{max-width:52rem;margin:0}
+.landing .stats{margin:1.4rem 0 0;gap:2.5rem}
+.landing .lead{max-width:60rem;color:var(--ink-2);margin:1rem 0 0}
+.picks{grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.7rem}
+.pick{transition:transform .12s,border-color .12s,box-shadow .12s}
+.pick:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.home-grid{grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:1rem}
+.home-card{transition:border-color .12s}
+.offline{max-width:none}
+.sources{max-width:none}
+.sh{position:relative;padding-left:.9rem}
+.sh::before{content:"";position:absolute;left:0;top:.2em;width:2px;height:.8em;background:var(--ochre)}
+.wiki-cats{grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));gap:.8rem}
+.wcat{transition:transform .12s,box-shadow .12s} .wcat:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.era-cards{grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
+.era-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(22rem,1fr));gap:.7rem}
+.art-list{grid-template-columns:repeat(auto-fill,minmax(19rem,1fr))}
+.author-row{grid-template-columns:16rem 10rem 1fr auto}
+.ap-cols{grid-template-columns:minmax(16rem,1fr) minmax(0,2fr);gap:2.5rem}
+.ap-text,.ap-summary,.era-note{max-width:62rem}
+.about .cred{max-width:none}
+.wcrumbs{margin-bottom:.35rem}
+.lib-work{max-width:none}
+.colhead,.seg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.col{max-width:calc(var(--measure) + 4rem)}
+.mode-grc .col,.mode-eng .col{max-width:calc(var(--measure) * 1.9)}
+.workhead{padding-bottom:1rem}
+.pager{max-width:none}
+@media (min-width:1500px){.reader,.page,.landing{padding-left:clamp(1rem,3.5vw,3rem)}}
+@media (max-width:760px){
+  .landing{padding:1rem 1rem 6rem}
+  .landing .hero-wrap{padding:1.4rem 1.1rem;border-radius:12px}
+  .author-row{grid-template-columns:1fr auto}
+  .col{max-width:none}
+}
+
+/* ---------- proportion & ornament ---------- */
+.landing .hero-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:center;max-width:88rem;background:linear-gradient(120deg,var(--paper-2) 0%,var(--paper) 75%);border-radius:0;position:relative}
+.landing .hero-wrap{border-left:1px solid var(--rule);border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.landing .hero-wrap .hero-body{min-width:0}
+.ph{position:relative;padding-bottom:.55rem;margin-bottom:.9rem}
+.landing .hero{padding-bottom:0} .landing .hero::after{content:none}
+main{position:relative}
+.home-tools{max-width:60rem}
+.home-tools .search{flex:0 1 20rem;min-width:12rem;background:var(--paper-2) url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22#6B6459%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%226%22/%3E%3Cpath d=%22M20 20l-4.5-4.5%22/%3E%3C/svg%3E") no-repeat .6rem center/16px 16px;padding-left:2.1rem}
+#browseQ,#wikiQ{max-width:26rem;background:var(--paper-2) url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22#6B6459%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%226%22/%3E%3Cpath d=%22M20 20l-4.5-4.5%22/%3E%3C/svg%3E") no-repeat .6rem center/16px 16px;padding-left:2.1rem}
+.home-results{max-width:60rem}
+.picks,.home-grid,.wiki-cats,.era-cards,.era-list,.art-list,.author-list,.about .cred,.ap-text,.ap-summary,.era-note,.offline,.sources,.lib-work,.lib-io,#libJson,.wiki-tools{max-width:88rem}
+.author-list{max-width:80rem}
+.picks{grid-template-columns:repeat(auto-fill,minmax(14rem,16rem))}
+.home-grid{grid-template-columns:repeat(auto-fit,minmax(20rem,28rem))}
+.wiki-cats{grid-template-columns:repeat(auto-fill,minmax(17rem,20rem))}
+.art-list{grid-template-columns:repeat(auto-fill,minmax(19rem,22rem))}
+.era-list{grid-template-columns:repeat(auto-fit,minmax(22rem,30rem))}
+.era-cards{grid-template-columns:repeat(auto-fill,minmax(11rem,13rem))}
+.pick{border-radius:10px;position:relative;overflow:hidden}
+span.ic{display:inline-grid;place-items:center;width:2.2rem;height:2.2rem;border-radius:8px;background:var(--accent-soft);color:var(--accent);margin-bottom:.5rem}
+.ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.home-card h2 .ic{margin:0 .5rem 0 0;width:1.8rem;height:1.8rem;vertical-align:middle;display:inline-grid}
+.home-card h2 .ic svg{width:16px;height:16px}
+.home-card h2{align-items:center}
+.era-card{position:relative;overflow:hidden}
+.era-card::after{content:attr(data-letter);position:absolute;right:.4rem;bottom:-.9rem;font-family:var(--serif);font-size:4rem;line-height:1;color:var(--accent);opacity:.10;pointer-events:none}
+.era-item{position:relative;overflow:hidden}
+.era-item::after{content:attr(data-letter);position:absolute;right:.6rem;top:-.4rem;font-family:var(--serif);font-size:5rem;line-height:1;color:var(--accent);opacity:.08;pointer-events:none}
+.wcat{position:relative}
+.about .cred{position:relative;padding-left:1.2rem}
+.about .cred::before{content:"";position:absolute;left:0;top:.9rem;bottom:.9rem;width:3px;border-radius:2px;background:var(--accent);opacity:.5}
+@media (max-width:760px){
+  .landing .hero-wrap{grid-template-columns:1fr}
+  .picks{grid-template-columns:repeat(auto-fill,minmax(14rem,1fr))}
+  .home-grid,.wiki-cats,.art-list,.era-list{grid-template-columns:1fr}
+  .home-tools .search,#browseQ,#wikiQ{max-width:none;flex:1}
+}
+
+/* ---------- home v3 ---------- */
+.landing .hero-wrap{display:block;max-width:74rem}
+.home-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:1.25rem;align-items:start;max-width:88rem;margin-top:1.4rem}
+.home-side{display:flex;flex-direction:column;gap:1rem}
+.home-block{margin-top:1.6rem;max-width:88rem}
+.picks-block .home-tools{margin:.2rem 0 .6rem}
+.picks-block .picks{grid-template-columns:repeat(auto-fill,minmax(13rem,15rem))}
+.pod .pod-q{margin:.4rem 0 .6rem;padding:.6rem .9rem;border-left:3px solid var(--accent);background:var(--paper)}
+.pod .pod-q .grc{display:block;font-family:var(--serif);font-size:1.25rem;line-height:1.4}
+.pod .pod-q .en{display:block;color:var(--ink-2);font-style:italic;margin-top:.3rem}
+.pod .pod-foot{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+.paths{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,19rem));gap:.7rem}
+.path{border:1px solid var(--rule);border-radius:10px;padding:.8rem .9rem;background:var(--paper-2)}
+.path>b{display:block;font-family:var(--serif);font-weight:400;font-size:1.15rem} .path>.quiet{display:block;margin-bottom:.4rem}
+.path ol{margin:0;padding-left:1.3rem;color:var(--mute)} .path li{margin:.15rem 0} .path li button{color:var(--ink);text-align:left;padding:.15rem 0} .path li button:hover{color:var(--accent)} .path .who{color:var(--mute);font-size:.8rem;margin-left:.35rem}
+.era-strip{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.3rem;scrollbar-width:thin}
+.es{flex:1 1 11rem;min-width:10rem;position:relative;overflow:hidden;padding:.7rem .8rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);text-decoration:none;color:var(--ink);display:flex;flex-direction:column}
+.es::after{content:attr(data-letter);position:absolute;right:.4rem;bottom:-.9rem;font-family:var(--serif);font-size:3.6rem;line-height:1;color:var(--accent);opacity:.1;pointer-events:none}
+.es b{font-weight:500} .es span{font-size:.78rem;color:var(--mute)} .es .n{color:var(--accent);margin-top:.2rem} .es:hover{border-color:var(--accent)}
+.cont{display:flex;flex-wrap:wrap;gap:.5rem}
+.cont-item{text-align:left;padding:.55rem .8rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);min-width:12rem} .cont-item:hover{border-color:var(--accent)}
+.cont-item b{display:block;font-weight:500} .cont-item span{color:var(--mute);font-size:.8rem}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,22rem));gap:.8rem}
+.howto>div{position:relative;padding:.8rem .9rem .8rem 3.1rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2)}
+.howto .num{position:absolute;left:.85rem;top:.8rem;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--serif);font-size:1rem}
+.howto b{display:block;font-weight:500;margin-bottom:.15rem} .howto>div>span:not(.num){color:var(--ink-2);font-size:.88rem;line-height:1.45}
+.offline{max-width:44rem;margin-top:1.8rem;padding:1rem 1.1rem}
+.offline h2{font-size:1.2rem}
+.offline ol{font-size:.92rem}
+/* header library button */
+.libbtn{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .7rem;border:1px solid var(--accent);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.85rem;font-weight:500;margin-right:.35rem;white-space:nowrap}
+.libbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.libbtn:hover,.libbtn.active{background:var(--accent);color:var(--on-accent)}
+@media (max-width:900px){.libbtn span{display:none}.libbtn{padding:.4rem;border-radius:50%;width:2.1rem;height:2.1rem;justify-content:center}}
+@media (max-width:760px){.home-top{grid-template-columns:1fr}.picks-block .picks{grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))}.paths,.howto{grid-template-columns:1fr}.offline{max-width:none}}
+
+/* ---------- home v4: symmetry ---------- */
+.landing{--home-w:88rem}
+.landing .hero-wrap,.home-top,.home-block,.home-bottom,.home-tools,.home-results,.sources{max-width:var(--home-w)}
+.home-tools{margin:1.4rem 0 0}
+.home-top{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:1rem;margin-top:.9rem;align-items:stretch}
+.home-side{gap:1rem}
+.home-side .home-card{flex:1 1 auto}
+.home-side .pod{display:flex;flex-direction:column} .home-side .pod .pod-q{flex:1}
+.picks-card{display:flex;flex-direction:column}
+.picks-card .picks{grid-template-columns:repeat(auto-fill,minmax(11.5rem,1fr));gap:.6rem;flex:1;align-content:start;margin-top:.2rem}
+.picks-card .picks .pick{height:100%}
+.home-card h2{margin-bottom:.6rem}
+.home-block{margin-top:1rem}
+.home-block .sh{margin-top:.6rem}
+.paths{grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.6rem}
+.path{height:100%}
+.era-strip{gap:.6rem;overflow:visible;flex-wrap:wrap} .es{flex:1 1 0;min-width:9rem}
+.cont{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem} .cont-item{min-width:0}
+.home-bottom{display:grid;grid-template-columns:1fr;gap:1rem;margin-top:1rem;align-items:stretch}
+.home-bottom.has-offline{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.home-bottom .home-block{margin-top:0;max-width:none}
+.home-bottom .howto{grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.6rem} .howto>div{height:100%}
+/* Inside the .home-bottom grid the offline block is a grid cell and supplies no
+   margin of its own. It is now a direct child of .landing instead, so it needs
+   the section gap back — without it the box sat flush against the block above. */
+.home-bottom .offline{margin:0;max-width:none;height:100%;box-sizing:border-box}
+.landing > .offline{margin-top:2rem}
+.sources{margin-top:1.4rem}
+.home-card,.pick,.path,.es,.cont-item,.howto>div,.offline{border-radius:10px}
+@media (max-width:1000px){.home-top{grid-template-columns:1fr}.home-bottom.has-offline{grid-template-columns:1fr}}
+@media (max-width:760px){.picks-card .picks{grid-template-columns:repeat(auto-fill,minmax(10rem,1fr))}.home-tools{margin-top:1rem}}
+
+@media (min-width:1001px){.paths{grid-template-columns:repeat(3,minmax(0,1fr))}.home-bottom .howto{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1001px) and (max-width:1300px){.picks-card .picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1301px){.picks-card .picks{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- mobile scaling guard ---------- */
+.home-top>*,.home-side>*,.picks-card>*,.home-bottom>*,.home-block>*,.landing>*{min-width:0;max-width:100%}
+.picks-card .picks{min-width:0}
+@media (max-width:1000px){
+  .home-top{grid-template-columns:minmax(0,1fr)}
+  .home-bottom,.home-bottom.has-offline{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px){
+  .picks-card .picks{grid-template-columns:repeat(auto-fill,minmax(min(10rem,100%),1fr))}
+  .picks{grid-template-columns:repeat(auto-fill,minmax(min(13rem,100%),1fr))}
+  .paths,.howto,.cont,.wiki-cats,.art-list,.era-list{grid-template-columns:minmax(0,1fr)}
+  .era-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .es{min-width:0}
+  .home-card h2{flex-wrap:wrap}
+  .pod .pod-foot{flex-direction:column;align-items:flex-start}
+}
+
+@media (max-width:760px){
+  .page,.landing,.reader{overflow-wrap:anywhere}
+  .sh,.ph,.ap-work b,.ap-eds li,.hr b,.path li button,.about a,.ap-links a,.lic a,.mini b,.mini span,.pick .grc,.pick .en{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+  .ap-nav,.subcats .chips{max-width:100%}
+  .ap-nav a,.chip{white-space:nowrap}
+  .ap-meta{max-width:100%}
+  .about .lic{overflow-wrap:anywhere}
+}
+
+@media (max-width:760px){ .ap-cols{grid-template-columns:minmax(0,1fr)} .ap-cols>*,.ap-cols details,.ap-eds{min-width:0;max-width:100%} .ap-eds{padding-left:1rem} }
+
+@media (max-width:760px){ .landing .stats{flex-wrap:wrap;gap:.8rem 1.6rem} .landing .stats>div{white-space:nowrap} .landing .stats b{font-size:1.5rem} }
+
+.cont-item{display:flex;align-items:stretch;padding:0;overflow:hidden}
+.cont-open{flex:1;text-align:left;padding:.55rem .8rem;min-width:0}
+.cont-open b{display:block;font-weight:500} .cont-open span{color:var(--mute);font-size:.8rem}
+.cont-x{flex:none;width:2.2rem;color:var(--mute);font-size:1.2rem;border-left:1px solid var(--rule)}
+.cont-x:hover{color:var(--danger);background:var(--paper)}
+.link-btn{font-family:var(--sans);font-size:.75rem;font-weight:500;letter-spacing:0;text-transform:none;color:var(--accent);margin-left:.6rem;vertical-align:baseline}
+.link-btn:hover{text-decoration:underline}
+@media (max-width:760px){.cont-x{width:2.6rem}}
+
+.offline-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.offline ol b{font-weight:600}
+
+/* ---------- icons fill their squares ---------- */
+span.ic{width:2.4rem;height:2.4rem;display:inline-grid;place-items:center;flex:none}
+.ic svg{width:1.4rem;height:1.4rem;display:block}
+.home-card h2 .ic{width:1.9rem;height:1.9rem} .home-card h2 .ic svg{width:1.1rem;height:1.1rem}
+.wcat .ic{margin-bottom:.55rem}
+/* ---------- alphabet & tips ---------- */
+.alpha{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.4rem;max-width:var(--home-w)}
+.al{display:flex;flex-direction:column;align-items:center;padding:.55rem .4rem;border:1px solid var(--rule);border-radius:8px;background:var(--paper-2);text-align:center}
+.al .grc{font-family:var(--serif);font-size:1.45rem;line-height:1.1} .al b{font-weight:500;font-size:.85rem;margin-top:.15rem} .al .t{color:var(--mute);font-size:.75rem}
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.6rem;max-width:var(--home-w)}
+.tips>div{position:relative;padding:.8rem .9rem .8rem 4.6rem;border:1px solid var(--rule);border-radius:10px;background:var(--paper-2)}
+.tips .grc{position:absolute;left:.7rem;top:.7rem;font-family:var(--serif);font-size:1.3rem;color:var(--accent);width:3.4rem;text-align:center;line-height:1.2;white-space:nowrap}
+.tips b{display:block;font-weight:500;margin-bottom:.15rem} .tips>div>span:not(.grc){color:var(--ink-2);font-size:.88rem;line-height:1.45}
+@media (min-width:1001px){.tips{grid-template-columns:repeat(5,minmax(0,1fr))}.tips>div{padding-left:.9rem;padding-top:3.2rem}.tips .grc{left:.9rem;top:.6rem;text-align:left}}
+/* ---------- phone: Greek above translation, collapsible sections ---------- */
+@media (max-width:760px){
+  .colhead,.seg{grid-template-columns:minmax(0,1fr)!important}
+  .col{max-width:none}
+  .col.eng{border-left:2px solid var(--rule);padding-left:.9rem;margin-left:2.6rem}
+  .mcol>.mhead{cursor:pointer;position:relative;padding-right:2rem;user-select:none}
+  .mcol>.mhead::after{content:"";position:absolute;right:.5rem;top:50%;width:.55rem;height:.55rem;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:translateY(-70%) rotate(45deg);transition:transform .15s}
+  .mcol.collapsed>.mhead::after{transform:translateY(-30%) rotate(-135deg)}
+  .mcol.collapsed>:not(.mhead){display:none!important}
+  .mcol.collapsed{padding-bottom:.6rem}
+  .home-block.mcol>.sh{margin-bottom:.4rem;padding-top:.2rem;padding-bottom:.2rem}
+  .home-block.mcol.collapsed>.sh{margin-bottom:0}
+  .home-card.mcol.collapsed h2{margin-bottom:0}
+  .home-card.mcol>.mhead{padding-right:2rem}
+  .home-card.mcol .mhead .more{margin-right:.2rem}
+  .alpha{grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem} .al{padding:.45rem .2rem} .al .grc{font-size:1.25rem} .al b{font-size:.72rem} .al .t{font-size:.68rem}
+  .tips{grid-template-columns:minmax(0,1fr)}
+  .home-block{margin-top:.8rem}
+  .landing .hero-wrap{padding:1.1rem 1rem}
+  .landing .hero .grc{font-size:1.7rem}
+  .landing .lead{font-size:.92rem}
+}
+
+/* ===========================================================================
+   home v5 — narrative order
+   The page now runs: continue → hero (hook + action) → how it works →
+   the corpus (provenance = the trust signal) → find something to read →
+   new to Greek → read offline → sources.
+   =========================================================================== */
+
+/* --- hero: the epigram becomes a kicker, the plain-English promise the H1,
+       and there is finally something to click above the fold. --- */
+/* The continue-reading rail now sits above the hero, so the hero needs the
+   gap that used to be implicit when it came first. */
+.landing .home-block + .hero-wrap{margin-top:1.25rem}
+.hero-kicker{margin:0 0 .9rem;line-height:1.35}
+.hero-kicker .grc{font-family:var(--serif);font-size:1.15rem;color:var(--ink-2);display:block}
+.hero-kicker .tr{font-family:var(--serif);font-style:italic;font-size:.95rem;color:var(--mute);display:block;margin-top:.1rem}
+.landing h1.hero{font-family:var(--serif);font-weight:400;font-size:clamp(1.85rem,4vw,2.9rem);line-height:1.15;margin:0;max-width:22ch;color:var(--ink)}
+.hero-sub{max-width:52ch;color:var(--ink-2);font-size:1.02rem;line-height:1.55;margin:.7rem 0 0}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.25rem 0 0}
+.hero-cta .btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn.ghost{background:var(--paper);border-color:var(--ink-2);color:var(--ink-2);font-size:1rem;padding:.55rem 1.1rem}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.landing .stats{margin:1.3rem 0 0;gap:1.8rem;font-size:.85rem;color:var(--mute);align-items:baseline}
+.landing .stats b{display:inline;font-family:var(--sans);font-size:1rem;font-weight:600;color:var(--ink-2);margin-right:.3rem;font-variant-numeric:tabular-nums}
+.landing .stats>div{display:flex;align-items:baseline;gap:0}
+
+/* --- the corpus block: provenance carried at full weight, not as 0.82rem
+       footer text. This is the social proof. --- */
+.corpus .lead{margin:.2rem 0 1rem;max-width:66ch;color:var(--ink-2)}
+.corpus .era-strip{margin-top:.2rem}
+.provenance{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;margin:0 0 1rem;font-size:.9rem;color:var(--ink-2)}
+.provenance a{text-decoration:none;border-bottom:1px solid var(--rule)}
+.provenance a:hover{border-bottom-color:var(--accent)}
+
+/* --- beginners lane: same content as before, but labelled, so it reads as
+       generosity rather than as filler floating mid-page. --- */
+.beginners .sh{margin-top:0}
+.beginners .sub-sh{font-size:.8rem;color:var(--mute);margin:1rem 0 .4rem}
+
+@media (max-width:760px){
+  .hero-cta{flex-direction:column;align-items:stretch}
+  .hero-cta .btn{text-align:center}
+  .landing .stats{gap:.6rem 1.2rem}
+  .hero-kicker .grc{font-size:1.05rem}
+}
+
+/* ===========================================================================
+   reader: fewer competing surfaces
+   =========================================================================== */
+
+/* The two full-width <select>s sat above every reading session and outweighed
+   the text itself. Collapsed to one quiet line that expands on demand. */
+.ed-pick{flex-basis:100%;margin-top:.15rem}
+.ed-pick>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--mute);padding:.2rem 0}
+.ed-pick>summary::-webkit-details-marker{display:none}
+.ed-pick>summary::after{content:"";width:.42rem;height:.42rem;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.ed-pick[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.ed-pick>summary:hover{color:var(--accent)}
+.ed-pick>summary b{font-weight:500;color:var(--ink-2)}
+.ed-pick .pickers{margin-top:.5rem}
+
+/* The reader collapses the library by default, so the way back has to announce
+   itself: the toggle becomes a labelled pill whenever the sidebar is hidden,
+   and returns to a bare icon on phones, where it opens the drawer instead. */
+/* Collapsing the library should mean less distraction, not a longer journey
+   for the eye between the Greek and its translation, so the reader stops
+   widening past a sane measure once the sidebar is out of the way. */
+.shell.nav-hidden .reader{max-width:104rem}
+
+.ib.nav-show{width:auto;height:2.1rem;grid-auto-flow:column;gap:.45rem;padding:0 .7rem;border:1px solid var(--rule)}
+.ib.nav-show:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
+.nav-show-label{font-size:.85rem;font-weight:500;white-space:nowrap}
+@media (max-width:900px){
+  .ib.nav-show{width:2.1rem;padding:0;border:0}
+  .nav-show-label{display:none}
+}
+
+/* ===========================================================================
+   reader: measure and breakpoints
+   Three separate failures, all of them about column width:
+     · single-column mode ran to 1.9 × the measure — about 123 characters a
+       line, roughly double what anyone can track back to the next line;
+     · two columns persisted down to 760px, where a Greek column was 32
+       characters wide and three hexameters in four wrapped;
+     · above ~1500px the columns simply kept growing, so short verse lines left
+       a void of 200px+ between the Greek and its translation.
+   =========================================================================== */
+
+/* A single column is still a column: cap it at a readable measure instead of
+   letting it run the width of the window. */
+.mode-grc .col,.mode-eng .col{max-width:calc(var(--measure) + 2rem)}
+
+/* Two columns need real room. Verse gets a narrower Greek column (a hexameter
+   is ~57 characters and never needs more); prose keeps them balanced. The pair
+   is anchored left rather than stretched, so extra window width becomes margin
+   instead of a longer journey for the eye. */
+@media (min-width:1001px){
+  .reader[data-shape="verse"] .colhead,
+  .reader[data-shape="verse"] .seg{grid-template-columns:minmax(0,34rem) minmax(0,40rem);justify-content:start}
+  .reader[data-shape="prose"] .colhead,
+  .reader[data-shape="prose"] .seg{grid-template-columns:minmax(0,39rem) minmax(0,39rem);justify-content:start}
+  /* Those two selectors outrank `.mode-grc .seg`, so the single-column modes
+     have to be restated here or they inherit the two-column template and end
+     up narrower than the one column actually needs. */
+  .mode-grc .reader .colhead,.mode-grc .reader .seg,
+  .mode-eng .reader .colhead,.mode-eng .reader .seg{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Below that there is not enough width for two columns of Greek and English,
+   so fall back to the stacked layout the phone already used: Greek first, the
+   translation indented behind a rule. */
+@media (max-width:1000px){
+  .colhead{display:none}
+  .seg{grid-template-columns:minmax(0,1fr);gap:.6rem 0}
+  .col{max-width:none;padding-left:2.9rem}
+  .col.eng{border-left:2px solid var(--rule);padding-left:.9rem;margin-left:2.9rem;
+    font-size:calc(var(--fs) * .92);color:var(--ink-2)}
+  .mode-grc .col,.mode-eng .col{max-width:none}
+}
+
+/* ===========================================================================
+   wiki + library: prose measure
+   A single blanket rule capped card grids AND running prose at 88rem, and
+   because it came after the earlier 62rem prose rule it won everywhere. At
+   1408px that is ~150 characters a line — about twice what a reader can track
+   back to the start of the next line. Grids still want the width; text does
+   not. So: grids keep 88rem, prose gets a reading measure.
+   =========================================================================== */
+.ap-text,.ap-summary,.era-note,
+.page > p,.page > .quiet,
+.about .cred p,.about .lic,
+.ap-eds li,
+.sources,
+.ar-desc,
+.mk-note,.lm-snip{max-width:var(--prose)}
+
+/* Cards that exist only to hold prose are sized from the prose, not the page:
+   a bookmark card stretched to 1100px made the library a wall of full-width
+   bars. The extra rem are the card's own padding. */
+.lib-work{max-width:calc(var(--prose) + 3rem)}
+.about .cred{max-width:calc(var(--prose) + 4rem)}
+
+/* The article column was 2fr of the page while its prose caps at --prose, so
+   it trailed ~160px of dead grid. Size the columns to what goes in them. */
+@media (min-width:761px){
+  .ap-cols{grid-template-columns:minmax(14rem,21rem) minmax(0,calc(var(--prose) + 1rem));justify-content:start}
+}
+
+/* Page rhythm, matched to the reader's. */
+.page{padding-top:2rem}
+.lib-mark{padding:.7rem .9rem;margin-bottom:.6rem}
+.lib-work{margin-bottom:1.6rem}
+.lib-work h3{margin-bottom:.5rem}
+@media (max-width:760px){
+  .page{padding-top:1.4rem}
+  .lib-work,.about .cred,.ap-text,.ap-summary,.era-note,
+  .page > p,.page > .quiet,.about .cred p,.about .lic,
+  .ap-eds li,.sources,.ar-desc,.mk-note,.lm-snip{max-width:none}
+}
+
+/* ---------- reader: vertical rhythm ----------
+   The title, its meta line, the edition line, the rule under them and the
+   column heading were stacked 0–9px apart and read as one compressed clump,
+   with the first passage starting flush against the heading's rule. And since
+   verse no longer draws a rule between segments, its 24px of separation was
+   *less* than the 32px between two lines inside a single passage — so one
+   citable passage ran into the next. Separation between passages has to beat
+   separation within them. */
+.reader{padding-top:2rem}
+.workhead{gap:.55rem 1rem;margin-bottom:1.5rem}
+.workhead .meta{margin-top:.1rem}
+.ed-pick{margin-top:.45rem}
+.colhead{padding:.5rem 0;margin-bottom:.9rem}
+.seg .ref{margin-bottom:.3rem}
+.seg[data-verse="1"]{padding:1.3rem 0}
+@media (max-width:1000px){
+  .reader{padding-top:1.4rem}
+  .workhead{margin-bottom:1.1rem}
+  .seg,.seg[data-verse="1"]{padding:1.15rem 0}
+}
+
+/* ===========================================================================
+   reading-path cards: one left edge
+   The card's title and subtitle sat at its padding edge while the ordered list
+   was pushed a further 1.3rem right by the list's own padding — three different
+   left edges inside a 361px card. The marker now hangs at the card's edge and
+   wrapped lines indent under the text, so everything shares one alignment.
+   =========================================================================== */
+.path ol{padding-left:0;margin:0;list-style-position:inside}
+.path li{padding-left:1.25rem;text-indent:-1.25rem}
+.path li button{text-indent:0}
+
+/* ===========================================================================
+   filling the page
+   Content was anchored hard left, so on a wide screen a page of prose or a
+   single stack of cards left the entire right half empty down its whole
+   length — About and the library used 0% of it, Editions 2%. Two changes:
+   the page is centred rather than pinned left, and stacks of independent
+   cards flow into two columns instead of one.
+   =========================================================================== */
+.landing,.page{margin-left:auto;margin-right:auto}
+.landing{max-width:calc(var(--home-w) + 6rem)}
+.page{max-width:82rem}
+
+@media (min-width:1080px){
+  /* Headings and running prose keep the full width (and their own reading
+     measure); only the repeated card blocks pair up. */
+  .page.about,.page.editions-page{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem 1.3rem;align-content:start}
+  .page.about > *,.page.editions-page > *{grid-column:1/-1}
+  .page.about > .cred{grid-column:auto;margin-bottom:0;height:100%}
+  .page.editions-page > details{grid-column:auto;margin:0}
+}
+
+/* The sources footer is a rule plus one run of small print. Capped at the prose
+   measure its rule stopped halfway across, under sections that ran the full
+   width. It spans again, and sets in two columns so the lines stay short. */
+.sources{max-width:none}
+@media (min-width:1080px){ .sources{columns:2;column-gap:2.5rem} }
+
+/* The cog carries far more path than its neighbours, so it needs a thinner
+   stroke to sit at the same visual weight — and to keep its teeth from closing
+   up into a blob at 18px. */
+#btnSettings svg{stroke-width:1.4}
+
+/* At large text sizes the header runs out of room, so the same things the
+   narrow-window rules drop step aside here too: the brand's tagline, the word
+   beside the library star, and the width of the go-to-reference box. Each is
+   either decoration or already said by an icon. */
+html.ui-compact .brand small{display:none}
+html.ui-compact .libbtn span{display:none}
+html.ui-compact .libbtn{padding:.35rem;border-radius:50%;width:2.1rem;height:2.1rem;justify-content:center}
+html.ui-compact #jump input{width:4.5rem}
+html.ui-compact .nav-show-label{display:none}
+html.ui-compact .ib.nav-show{width:2.1rem;padding:0;border:0}
+
+/* ---------- where the texts are coming from ----------
+   The source was previously only discoverable by opening Settings, which meant
+   "Local" could be selected with nothing connected and every text quietly
+   arriving from GitHub instead, with nothing on screen to say so. */
+.src-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .6rem;border:1px solid var(--rule);
+  border-radius:999px;font-size:.78rem;font-weight:500;color:var(--ink-2);background:var(--paper);white-space:nowrap}
+.src-chip svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.src-chip:hover{border-color:var(--accent);color:var(--accent)}
+.src-chip.src-local{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+.src-chip.src-local:hover{border-color:var(--accent)}
+.src-chip.warn{color:var(--accent-2);border-color:var(--accent-2);background:var(--paper)}
+@media (max-width:1100px){ .src-chip span{display:none} .src-chip{padding:.35rem;border-radius:50%;width:2rem;height:2rem;justify-content:center} }
+@media (max-width:600px){ .src-wrap{display:none} }
+
+/* The chip answers its own question: where texts come from is the one setting
+   it is about, so it opens a menu in place rather than handing off to the
+   settings sheet that the button beside it already opens. */
+.src-wrap{position:relative;display:inline-flex}
+.src-menu{position:absolute;right:0;top:calc(100% + .45rem);z-index:41;width:16rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:10px;
+  box-shadow:var(--shadow);padding:.6rem;display:none;text-align:left}
+.src-menu.show{display:block}
+.src-menu h3{font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--mute);margin:.1rem 0 .45rem .3rem}
+.src-opt{display:block;width:100%;text-align:left;padding:.45rem .5rem;border-radius:7px;
+  border:1px solid transparent;color:var(--ink);line-height:1.3}
+.src-opt b{display:block;font-weight:500;font-size:.9rem}
+.src-opt span{display:block;font-size:.76rem;color:var(--ink-2);margin-top:.05rem}
+.src-opt:hover{background:var(--paper-2);border-color:var(--rule)}
+.src-opt.on{background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent)}
+.src-opt.on span{color:var(--accent)}
+.src-menu-acts{display:flex;gap:.35rem;margin:.4rem 0 .1rem;padding:0 .5rem}
+.src-menu-acts .btn{flex:1;font-size:.76rem;padding:.3rem .4rem}
+.src-more{display:block;width:100%;text-align:left;margin-top:.45rem;padding:.4rem .5rem;
+  border-top:1px solid var(--rule);border-radius:0;font-size:.78rem;color:var(--ink-2)}
+.src-more:hover{color:var(--accent)}
+
+/* ---------- floating notes button ----------
+   Not in the header: it is dragged wherever it is least in the way of the
+   text, so it needs a corner of its own rather than a slot in a row. Its
+   resting place is the bottom right, clear of the phone tab bar. */
+.notes-fab{position:fixed;right:1.5rem;bottom:5rem;z-index:38;
+  display:inline-flex;align-items:center;gap:.4rem;padding:.6rem .9rem;
+  border-radius:999px;border:1px solid var(--rule);background:var(--paper);
+  color:var(--ink-2);font-family:var(--sans);font-size:.8rem;font-weight:500;
+  box-shadow:var(--shadow);cursor:grab;touch-action:none;user-select:none}
+.notes-fab svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.notes-fab:hover{border-color:var(--accent);color:var(--accent)}
+.notes-fab.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.notes-fab.dragging{cursor:grabbing;box-shadow:0 12px 28px rgba(0,0,0,.3)}
+@media (max-width:600px){ .notes-fab .fab-label{display:none} .notes-fab{padding:.7rem} }
+
+/* ---------- notes panel ----------
+   Floats over the reader and is dragged by its bar, so notes on the text stay
+   in view while you read rather than living a page away. Width is mirrored by
+   `notesPanelWidth` in State.fs, which clamps dragging to the viewport. */
+.notes-panel{position:fixed;right:1.5rem;top:6rem;z-index:39;width:320px;max-height:min(60vh,34rem);
+  display:none;flex-direction:column;background:var(--paper);border:1px solid var(--rule);
+  border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.notes-panel.show{display:flex}
+.notes-panel.dragging{user-select:none;box-shadow:0 18px 44px rgba(0,0,0,.3)}
+
+.np-bar{display:flex;align-items:baseline;gap:.45rem;padding:.5rem .6rem;cursor:grab;
+  background:var(--paper-2);border-bottom:1px solid var(--rule);touch-action:none}
+.notes-panel.dragging .np-bar{cursor:grabbing}
+.np-title{font-family:var(--sans);font-size:.72rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--mute)}
+.np-work{flex:1;min-width:0;font-size:.8rem;color:var(--ink-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.np-close{font-size:1.1rem;line-height:1;color:var(--mute);padding:0 .15rem;cursor:pointer}
+.np-close:hover{color:var(--accent)}
+
+.np-list{overflow-y:auto;padding:.5rem .6rem;flex:1}
+.np-empty{margin:.3rem .1rem;font-size:.8rem;line-height:1.5;color:var(--ink-2)}
+.np-note{padding:.45rem 0;border-bottom:1px solid var(--rule)}
+.np-note:last-child{border-bottom:0}
+.np-ref{display:block;font-weight:500;font-size:.8rem;color:var(--accent);
+  font-variant-numeric:tabular-nums;cursor:pointer;text-align:left}
+.np-ref:hover{text-decoration:underline}
+.np-ref:disabled{color:var(--mute);cursor:default;text-decoration:none}
+.np-body{margin-top:.15rem;font-size:.83rem;line-height:1.5;color:var(--ink)}
+.np-links{margin-top:.25rem;display:flex;flex-wrap:wrap;gap:.25rem}
+
+.np-foot{display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;
+  border-top:1px solid var(--rule);background:var(--paper-2)}
+.np-count{flex:1;font-size:.74rem;color:var(--mute)}
+.np-foot .btn{font-size:.76rem;padding:.25rem .5rem}
+
+@media (max-width:600px){
+  .notes-panel{left:0!important;right:0;top:auto!important;bottom:0;width:auto;
+    max-height:70vh;border-radius:16px 16px 0 0}
+  .np-bar{cursor:default}
+}
+
+/* Per-text origin in the reader's meta line: in local mode a text the copy
+   lacks still falls back to GitHub, so the setting alone cannot be trusted. */
+.origin{font-weight:500}
+.origin.from-local{color:var(--accent)}
+.origin.from-net{color:var(--mute)}
+
+/* Per-repository connection status in the settings pane. */
+.srcrows{display:flex;flex-direction:column;gap:.3rem;margin:.1rem 0 .6rem}
+.srcrow{display:flex;align-items:center;gap:.45rem;font-size:.82rem;color:var(--ink-2)}
+.srcrow b{font-weight:500;color:var(--ink)}
+.srcrow .detail{color:var(--mute);margin-left:auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srcrow .dot{flex:none;width:.5rem;height:.5rem;border-radius:50%;background:var(--mute)}
+.srcrow.on .dot{background:var(--accent)}
+.srcrow.session .dot{background:var(--ochre)}
+.srcrow.stale .dot{background:var(--accent-2)}
+.srcrow.off .dot{background:var(--rule);border:1px solid var(--mute)}
+
+/* ---------- settings sheet ----------
+   Every control now sits full width under its own label, instead of being
+   squeezed into the right half of a 17rem row: at that width a three-way group
+   like Both/Greek/Translation overflowed and the last option was clipped. The
+   phone layout already worked this way, so this simply makes it the only
+   layout, at a slightly wider panel. */
+/* The sheet had no height limit and no overflow, so on a short window it simply
+   ran off the bottom of the screen — in Local mode it reached 841px inside a
+   640px window, with 258px unreachable and the wheel falling through to the
+   page behind. It is now its own scroll container, and `overscroll-behavior`
+   stops that scroll chaining on to the page when it reaches either end. */
+.settings{width:20.5rem;padding:1rem 1.1rem 1.1rem;
+  max-height:calc(100vh - 4.6rem);overflow-y:auto;overscroll-behavior:contain}
+.settings h3{margin:0 0 .75rem;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.settings h3.sect{margin-top:1.15rem;padding-top:1rem;border-top:1px solid var(--rule)}
+.settings .grp{display:flex;flex-direction:column;align-items:stretch;gap:.35rem;margin:0 0 .85rem}
+.settings .grp:last-child{margin-bottom:0}
+.settings .grp label{font-size:.85rem;color:var(--ink-2);font-weight:500}
+.settings .segbtn{display:flex;width:100%}
+.settings .segbtn button{flex:1 1 0;min-width:0;text-align:center;padding:.42rem .3rem;font-size:.82rem;white-space:nowrap}
+.settings .stepper{display:flex;align-items:center;gap:.4rem}
+.settings .stepper button{flex:none;width:2rem;height:2rem;font-size:1.05rem;line-height:1}
+.settings .stepper output{flex:1;min-width:0;text-align:center;padding:.32rem 0;font-size:.88rem;color:var(--ink);
+  background:var(--paper-2);border:1px solid var(--rule);border-radius:5px;font-variant-numeric:tabular-nums}
+.settings .srcpane.show{margin-top:.1rem}
+/* Reconnect sits in the Text source section in every mode, so it needs its own
+   spacing rather than inheriting the local pane's. */
+.settings .src-reconnect{margin-top:.15rem}
+.settings .src-reconnect .btn{width:100%;text-align:center;padding:.45rem .7rem}
+.settings .src-reconnect .btn:disabled{opacity:.45;cursor:default}
+.settings .src-reconnect .btn:disabled:hover{border-color:var(--rule);color:var(--ink-2);background:none}
+.settings .src-reconnect .srcinfo{margin-top:.4rem}
+/* One button per row: side by side these labels ("Add downloaded ZIP…") broke
+   across two lines mid-phrase, which read worse than the extra row costs. */
+.src-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+.src-actions .btn{flex:1 1 100%;text-align:center;padding:.45rem .7rem}
+.settings .srcinfo{margin-top:.55rem;line-height:1.45}
+#baseUrl{width:100%;padding:.45rem .55rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper-2);color:var(--ink);font-size:.9rem}
+#baseUrl::placeholder{color:var(--mute)}
+@media (max-width:900px){
+  .settings{width:auto}
+  .settings .grp{margin-bottom:1rem}
+  .settings .segbtn button{padding:.55rem .35rem;font-size:.9rem}
+  .settings .stepper button{width:2.4rem;height:2.4rem}
+  .src-actions .btn{padding:.55rem .7rem}
+}
+
+/* ===========================================================================
+   marks on the scrollbar + passage readout
+   The scrollbar is the position indicator the page already has, so rather than
+   standing a second rail beside it, its own track is painted with a band at
+   every passage you have marked — in --accent-2, the colour reserved throughout
+   for the reader's marks rather than the edition's. The thumb continues to show
+   where you are; the bands show what is coming. `--sb-marks` is a gradient
+   rebuilt from the real segment offsets whenever the page or your marks change
+   (see `paintScrollMarks` in State.fs).
+   =========================================================================== */
+html::-webkit-scrollbar-track{background-image:var(--sb-marks,none);background-repeat:no-repeat}
+
+/* Phones have no classic scrollbar to paint — the OS draws an overlay one that
+   ::-webkit-scrollbar cannot reach, so the bands rendered nowhere at all there.
+   Where that is the case (flagged by `overlay-scrollbars`, set from the measured
+   gutter width), a strip stands in its place: same right edge, same full-height
+   scale, so a band sits at exactly the fraction of the page the note is at and
+   matches the orange dot beside the passage itself. It spans the whole viewport
+   because the percentages are of the whole document, and sits above the header
+   and tab bar so a note near either end is not hidden under them. */
+html.overlay-scrollbars::after{
+  content:"";position:fixed;top:0;bottom:0;right:2px;width:4px;z-index:26;
+  border-radius:2px;pointer-events:none;
+  background-image:var(--sb-marks,none);background-repeat:no-repeat}
+html.overlay-scrollbars[style*="--sb-marks: none"]::after{content:none}
+
+.scroll-readout{position:fixed;right:1.5rem;top:4.4rem;z-index:19;display:flex;align-items:baseline;gap:.5rem;
+  padding:.35rem .7rem;border:1px solid var(--rule);border-radius:999px;background:var(--paper);
+  box-shadow:0 4px 14px rgba(0,0,0,.10);font-size:.82rem;color:var(--ink-2);
+  pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .18s,transform .18s}
+.scroll-readout.show{opacity:1;transform:none}
+.ro-label{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.ro-mark{font-size:.72rem;color:var(--accent-2);text-transform:uppercase;letter-spacing:.05em}
+
+@media (max-width:760px){
+  .scroll-readout{right:.6rem;left:auto;top:3.7rem;font-size:.78rem}
+}
+@media (prefers-reduced-motion:reduce){ .scroll-readout{transition:none} }
+
+/* ===========================================================================
+   scrollbars
+   Default OS scrollbars sat outside the palette — a grey bar down the edge of
+   a vellum sidebar, and a light one still grey on the dark theme. Both the
+   standard properties and the WebKit pseudo-elements are set: Firefox and
+   Chrome 121+ honour the former, older Blink the latter, and since both read
+   the same two tokens they agree whichever path a browser takes.
+   =========================================================================== */
+html,nav.side,.settings,.np-list,.era-strip,
+.mk-edit textarea,#anote,#libJson,.ap-summary,.ap-text{
+  scrollbar-width:thin;
+  scrollbar-color:var(--sb-thumb) var(--sb-track);
+}
+
+::-webkit-scrollbar{width:11px;height:11px}
+/* background-COLOR, not the `background` shorthand: the shorthand would reset
+   background-image and wipe the mark bands painted onto the page's track. */
+::-webkit-scrollbar-track{background-color:var(--sb-track)}
+/* The transparent border plus padding-box clip insets the thumb, so it reads
+   as a rounded pill with air around it rather than a bar filling the gutter. */
+::-webkit-scrollbar-thumb{background:var(--sb-thumb);background-clip:padding-box;
+  border:3px solid transparent;border-radius:999px}
+::-webkit-scrollbar-thumb:hover,::-webkit-scrollbar-thumb:active{
+  background:var(--sb-thumb-hover);background-clip:padding-box;border:3px solid transparent}
+::-webkit-scrollbar-corner{background:transparent}
+
+/* Strips that scroll sideways by design keep no visible bar — they already
+   ask for none via `scrollbar-width`, and this says the same to older Blink so
+   the rules above don't hand them one back. */
+.subcats::-webkit-scrollbar,.subcats .chips::-webkit-scrollbar,
+.ap-nav::-webkit-scrollbar{display:none}
+
+/* ---------- close buttons on floating panels ----------
+   Every panel that floats over the page gets the same dismiss control in its
+   top-right corner, matching the notes panel's existing `.np-close`. */
+.panel-close{font-size:1.25rem;line-height:1;color:var(--mute);padding:.1rem .25rem;border-radius:5px;flex:none}
+.panel-close:hover{color:var(--accent);background:var(--paper-2)}
+/* A 21px glyph is a fine mouse target and a poor thumb one — give it the full
+   44px on touch-sized screens without changing how large the × itself looks. */
+@media (max-width:900px){
+  .panel-close{display:inline-grid;place-items:center;min-width:2.75rem;min-height:2.75rem;padding:0;font-size:1.5rem}
+  .settings .panel-close-bar{padding:.15rem .1rem 0}
+  .pop .panel-close{top:.1rem;right:.15rem}
+  .pop .hw{padding-right:2.9rem}
+}
+
+/* The settings sheet scrolls, so its close rides a sticky bar pinned to the top
+   of the scrollport; the negative side margins let the bar's background mask
+   content passing underneath it. */
+.settings{padding-top:0}
+.settings .panel-close-bar{position:sticky;top:0;z-index:3;display:flex;justify-content:flex-end;
+  background:var(--paper);margin:0 -1.1rem .1rem;padding:.4rem .55rem .25rem}
+
+/* The popover doesn't scroll, so its close simply sits in the corner. The
+   headword is padded clear of it so long words don't run underneath. */
+.pop .panel-close{position:absolute;top:.3rem;right:.4rem}
+.pop .hw{padding-right:1.5rem}
+
+/* The word popover is positioned from a viewport rect, so it must be fixed —
+   as an absolute box it drifted by the scroll offset down the page. */
+.pop{position:fixed}
+.pop .hw{font-family:var(--serif);font-feature-settings:"kern" 1;font-variant-ligatures:none}
+
+/* ==========================================================================
+   Study lenses — the rail beside the reader and the quiet row that opens it
+   ========================================================================== */
+
+/* The row above the column headings: text-sized, muted, one line. It is the
+   only thing the lenses add to the reading view when nothing is open. */
+.lens-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.15rem .25rem;margin:0 0 .35rem;font-family:var(--sans);font-size:.75rem;color:var(--mute)}
+.lens-bar .lb-label{text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;font-weight:600;margin-right:.25rem}
+.lens-bar button{padding:.18rem .5rem;border-radius:999px;color:var(--ink-2);border:1px solid transparent}
+.lens-bar button:hover{border-color:var(--rule);color:var(--accent)}
+.lens-bar button.on{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.lens-bar .lb-meter{margin-left:auto;display:inline-flex;align-items:center;gap:.15rem;cursor:pointer;color:var(--ink-2)}
+.lens-bar .lb-meter input{accent-color:var(--accent)}
+
+/* The per-passage ◇, revealed on hover like the bookmark beside it. */
+.ln-btn{width:1.6rem;height:1.6rem;display:inline-grid;place-items:center;border-radius:4px;color:var(--mute);opacity:0;transition:opacity .15s}
+.ln-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.seg:hover .ln-btn,.seg:focus-within .ln-btn,.ln-btn:focus-visible,.ln-btn.on{opacity:1}
+.ln-btn:hover{color:var(--accent)}
+.ln-btn.on{color:var(--accent)} .ln-btn.on svg{fill:currentColor}
+@media (hover:none){.ln-btn{opacity:.55}}
+
+/* The rail. Wide screens: a column of its own, the text shifts over to make
+   room. Mid widths: it floats over the right of the page. Phones: a sheet. */
+.lens-rail{position:fixed;right:0;top:3.25rem;bottom:0;width:min(25rem,30vw);z-index:24;display:flex;flex-direction:column;
+  background:var(--paper);border-left:1px solid var(--rule);font-family:var(--sans);font-size:.88rem;color:var(--ink)}
+@media (min-width:1200px){
+  .reader.with-lens{margin-right:min(25rem,30vw);margin-left:0}
+}
+@media (max-width:1199px) and (min-width:901px){
+  .lens-rail{width:min(24rem,46vw);box-shadow:-12px 0 34px rgba(0,0,0,.14)}
+}
+@media (max-width:900px){
+  .lens-rail{top:auto;left:0;width:auto;height:min(64vh,34rem);border-left:0;border-top:1px solid var(--rule);
+    border-radius:16px 16px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.25);z-index:35;padding-bottom:env(safe-area-inset-bottom)}
+  .reader.with-lens{padding-bottom:calc(min(64vh,34rem) + 1rem)}
+  .lens-bar .lb-meter{margin-left:0}
+}
+.ln-bar-top{display:flex;align-items:center;gap:.4rem;padding:.45rem .6rem .35rem;border-bottom:1px solid var(--rule);background:var(--paper-2)}
+.ln-tabs{display:flex;gap:.1rem;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.ln-tabs button{padding:.3rem .55rem;border-radius:6px;font-size:.8rem;color:var(--ink-2);white-space:nowrap}
+.ln-tabs button:hover{color:var(--accent)}
+.ln-tabs button.on{background:var(--paper);color:var(--accent);box-shadow:inset 0 0 0 1px var(--rule)}
+.ln-where{padding:.5rem .9rem .2rem;font-size:.75rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-body{flex:1;overflow-y:auto;padding:.2rem .9rem 1.2rem;overscroll-behavior:contain}
+.ln-sec{margin:.9rem 0 0}
+.ln-sec h4{margin:0 0 .45rem;font-size:.68rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.ln-quiet{color:var(--mute);font-size:.82rem;line-height:1.5;margin:.3rem 0}
+.ln-note{color:var(--mute);font-size:.75rem;line-height:1.5;margin:1.1rem 0 0;padding-top:.7rem;border-top:1px solid var(--rule-soft)}
+.ln-list{list-style:none;margin:0 0 .5rem;padding:0;display:flex;flex-direction:column;gap:.55rem}
+ol.ln-list{counter-reset:none}
+.ln-grc{font-family:var(--serif);font-size:1.02rem;line-height:1.5;color:var(--ink-2);font-variant-ligatures:none}
+.ln-grc mark,.ln-kwic mark{background:var(--hl);color:var(--ink);border-radius:2px;padding:0 .1em}
+.ln-echo{padding:.45rem .6rem;border:1px solid var(--rule-soft);border-radius:7px}
+.ln-echo-h{font-size:.8rem;margin-bottom:.15rem}
+.ln-shared{font-size:.72rem;color:var(--mute);margin-top:.2rem;font-family:var(--serif)}
+
+/* Words */
+.ln-word{display:flex;flex-direction:column;gap:.35rem;margin:.5rem 0 .2rem}
+.ln-hw{font-family:var(--serif);font-size:1.6rem;line-height:1.2}
+.ln-stem{font-size:.8rem;color:var(--ink-2)}
+.ln-stem input{font-family:var(--serif);font-size:1rem;width:8rem;padding:.15rem .35rem;margin:0 .2rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}
+.ln-stem input:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);border-color:var(--accent)}
+.ln-bars{display:flex;flex-direction:column;gap:2px;margin:.2rem 0 .6rem}
+.ln-bar{display:grid;grid-template-columns:4.2rem 1fr auto;align-items:center;gap:.5rem;font-size:.74rem;color:var(--ink-2);padding:1px 2px;border-radius:3px}
+.ln-bar.pick{cursor:pointer} .ln-bar.pick:hover{background:var(--paper-2)}
+.ln-bar-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-bar-t{height:.55rem;background:var(--paper-2);border-radius:2px;overflow:hidden}
+.ln-bar-f{display:block;height:100%;background:var(--accent);opacity:.7;border-radius:2px}
+.ln-bar-v{font-variant-numeric:tabular-nums;color:var(--mute);max-width:9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-forms{display:flex;flex-wrap:wrap;gap:.25rem .6rem;font-family:var(--serif);font-size:.95rem;color:var(--ink-2);margin:.2rem 0 .7rem}
+.ln-kwic{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.3rem}
+.ln-kwic li{display:grid;grid-template-columns:3.4rem 1fr;gap:.4rem;align-items:baseline}
+.ln-kwic .xref{font-size:.74rem;font-variant-numeric:tabular-nums}
+.ln-kwic .ln-grc{font-size:.95rem}
+.ln-ext{display:flex;flex-direction:column;gap:.3rem;margin-top:1rem;font-size:.82rem}
+
+/* Meter */
+.ln-meter-name{margin:.6rem 0 .3rem;font-size:.95rem;color:var(--accent);font-weight:500}
+.ln-check{display:flex;align-items:center;gap:.3rem;font-size:.8rem;color:var(--ink-2);cursor:pointer;margin:.2rem 0 .6rem}
+.ln-check input{accent-color:var(--accent)}
+.ln-scan{list-style:none;padding:0;margin:.4rem 0 0;display:flex;flex-direction:column;gap:.9rem}
+.ln-scan-h{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--mute);margin-bottom:.15rem}
+.ln-scan-n{font-variant-numeric:tabular-nums;min-width:1.6rem}
+.ln-scan-m{flex:1} .ln-scan-m.bad{color:var(--danger)}
+.ln-play{width:1.7rem;height:1.7rem;border-radius:50%;border:1px solid var(--rule);color:var(--accent);font-size:.62rem;display:inline-grid;place-items:center;flex:none}
+.ln-play:hover{border-color:var(--accent);background:var(--accent-soft)}
+.ln-syls{display:flex;flex-wrap:wrap;row-gap:.35rem;font-family:var(--serif);font-variant-ligatures:none}
+.ln-syl{display:inline-flex;flex-direction:column;align-items:center;padding:0 .08rem;border-radius:3px;transition:background .1s}
+.ln-syl .q{font-family:var(--sans);font-size:.72rem;line-height:1;color:var(--mute);height:.9rem}
+.ln-syl.long .q{color:var(--accent)}
+.ln-syl .t{font-size:1.08rem;line-height:1.35}
+.ln-syl.we{margin-right:.34rem}
+.ln-syl.fe{border-right:1px solid var(--rule);padding-right:.3rem;margin-right:.3rem}
+.ln-syl.cz{box-shadow:3px 0 0 -1px var(--accent-2)}
+.ln-syl.now{background:var(--hl)}
+
+/* Scansion over the reading text itself: the mark rides above each syllable,
+   so the line box is given room for it. */
+.reader.meter-on .col.grc{line-height:calc((var(--lh) + var(--lh-bump)) * 1.32)}
+.col.grc .syl{position:relative}
+.col.grc .syl::before{content:attr(data-q);position:absolute;left:50%;transform:translateX(-50%);top:-.95em;font-family:var(--sans);font-size:.5em;line-height:1;color:var(--mute);pointer-events:none}
+.col.grc .syl.long::before{color:var(--accent)}
+.col.grc .syl.fe::after{content:"";position:absolute;right:-.06em;top:-1em;height:.55em;border-right:1px solid var(--rule)}
+.col.grc .syl.cz::after{content:"‖";position:absolute;right:-.45em;top:-1.12em;font-size:.55em;color:var(--accent-2);border:0}
+.col.grc .syl.now{background:var(--hl);border-radius:2px}
+.line-play{margin-left:.4em;font-size:.55em;color:var(--mute);opacity:0;vertical-align:.15em;transition:opacity .15s}
+.line:hover .line-play,.line-play:focus-visible{opacity:1}
+.line-play:hover{color:var(--accent)}
+@media (hover:none){.line-play{opacity:.5}}
+
+/* Map */
+.ln-map{height:min(22rem,42vh);margin:.6rem 0 .4rem;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper-2)}
+.ln-map .leaflet-container{font-family:var(--sans)}
+.ln-places{list-style:decimal;padding-left:1.4rem;margin:0;display:flex;flex-direction:column;gap:.35rem;font-size:.84rem}
+.ln-places li.here b{color:var(--accent-2)}
+.ln-places li::marker{color:var(--mute);font-size:.75rem}
+.ln-refs{display:flex;flex-wrap:wrap;gap:.1rem .5rem;font-size:.74rem;font-variant-numeric:tabular-nums}
+
+/* Manuscript */
+.ln-seg{margin:.2rem 0 .5rem}
+.ln-ms{font-family:var(--serif);padding:.7rem .8rem;background:var(--paper-2);border:1px solid var(--rule-soft);border-radius:6px;max-height:16rem;overflow:auto;line-height:1.6;font-variant-ligatures:none}
+.ln-uncial{font-size:1.05rem;letter-spacing:.14em;word-break:break-all;color:#5b3a1e}
+:root[data-theme="dark"] .ln-uncial{color:#d8b98a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ln-uncial{color:#d8b98a}}
+.ln-minus{font-size:1.06rem}
+.ln-edited{font-size:1.02rem}
+.ln-url{display:flex;gap:.35rem;margin:.6rem 0}
+.ln-url input{flex:1;min-width:0;padding:.3rem .5rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink);font-size:.8rem}
+.ln-iiif{display:flex;flex-direction:column;gap:.4rem;margin-top:.4rem}
+.ln-iiif-t{font-size:.8rem;color:var(--ink-2)}
+.ln-image{height:min(26rem,48vh);background:#1b1a17;border-radius:8px;overflow:hidden}
+.ln-iiif-nav{display:flex;align-items:center;gap:.35rem}
+.ln-iiif-nav select{flex:1;min-width:0;font-size:.78rem;padding:.2rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}
+
+/* "Trace this word" in the lookup popover */
+.pop .pop-trace{margin:.1rem 0 .45rem}
+
+/* The floating Notes button sits bottom-right — exactly where the rail and the
+   phone sheet go. Step it clear of the rail; on phones the sheet has the whole
+   bottom of the screen, so the button waits until the sheet is closed. A button
+   the reader has dragged somewhere (inline left/top) is left where they put it. */
+@media (min-width:1200px){ body:has(.lens-rail) .notes-fab:not([style*="left"]){right:calc(min(25rem,30vw) + 1.5rem)} }
+@media (max-width:1199px) and (min-width:901px){ body:has(.lens-rail) .notes-fab:not([style*="left"]){right:calc(min(24rem,46vw) + 1.5rem)} }
+@media (max-width:900px){ body:has(.lens-rail) .notes-fab{display:none} }
+
+/* ===========================================================================
+   Centre-focused reading (2026-09-23)
+   The reading column was anchored to the left edge, so on a wide window the
+   text sat to one side of an empty field. It is now centred, and everything
+   in the reader (title, lens row, page control, pager) shares its width.
+   =========================================================================== */
+
+/* Greek never takes capitals from CSS: browsers strip the accents and
+   breathings when they uppercase it. */
+[lang="grc"],.grc{text-transform:none}
+
+/* The tagline steps back while a text is open; the crumbs say where you are. */
+@media (min-width:901px){ header.reading .brand small{display:none} }
+
+@media (min-width:1001px){
+  .reader{margin-left:auto;margin-right:auto;box-sizing:content-box}
+  /* Exactly the two columns plus their 2.5rem gap (see "measure and
+     breakpoints" above), so the pair itself is what gets centred. */
+  .shell .reader[data-shape="verse"]{max-width:76.5rem}
+  .shell .reader[data-shape="prose"]{max-width:80.5rem}
+  .shell main.mode-grc .reader,.shell main.mode-eng .reader{max-width:calc(var(--measure) + 2rem)}
+}
+/* With the study rail open, centre in the space the rail leaves. */
+@media (min-width:1200px){ .shell .reader.with-lens{margin-left:auto} }
+
+/* Greek carries accents and breathings above the letters (ἅ, ῥ, ᾧ), so it
+   gets a touch more size and leading than the translation beside it. Both
+   still follow the reader's own text-size and line-spacing settings. */
+.col.grc{font-size:calc(var(--fs) * 1.04);line-height:calc(var(--lh) + var(--lh-bump) + .08)}
+
+/* In prose the Greek column's left gutter (kept for verse line numbers) is
+   empty, so the passage number hangs there instead of taking a line of its
+   own above every paragraph. Verse keeps the row, because its line numbers
+   already use the gutter. The URN appears in the passage's top margin on hover. */
+@media (min-width:1001px){
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]){position:relative}
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref{position:absolute;left:0;top:1.1rem;width:2.9rem;margin:0;
+    flex-direction:column;align-items:flex-start;gap:.2rem;line-height:1.25}
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref b{font-size:.72rem;overflow-wrap:anywhere;padding-top:.45em}
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref .urn{position:absolute;left:3.2rem;top:-1.05rem;max-width:32rem}
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref .mk-btn,
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref .ln-btn{margin-left:-.35rem}
+}
+
+/* Page control: previous, a page picker, next, on one line. */
+.pages{display:flex;flex-wrap:nowrap;align-items:center;gap:.4rem;padding:.1rem 0 .7rem;font-size:.85rem;color:var(--mute)}
+.pages .pg-step{width:2rem;height:2rem;padding:0;display:inline-grid;place-items:center;border:1px solid var(--rule);border-radius:6px;font-size:1.15rem;line-height:1;color:var(--ink-2);background:transparent}
+.pages .pg-step:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.pages .pg-step:disabled{opacity:.35;cursor:default}
+.pages .pg-pick{display:inline-flex;align-items:center;gap:.45rem;min-width:0}
+.pages select{min-width:0;max-width:100%;padding:.3rem .5rem;border:1px solid var(--rule);border-radius:6px;background:var(--paper-2);color:var(--ink);font-size:.85rem;font-variant-numeric:tabular-nums}
+
+/* "About the Iliad" in the work header */
+.workhead .meta .wa-link{color:var(--accent);text-decoration:none;white-space:nowrap}
+.workhead .meta .wa-link:hover{text-decoration:underline}
+
+/* ===========================================================================
+   Genre chips: sidebar catalogue and My library
+   The wiki's .subcats chips, as buttons. "All" never shows the × that a
+   chosen genre does, since there is nothing to clear.
+   =========================================================================== */
+.genre-chips .chip{cursor:pointer;font:inherit;font-size:.8rem;line-height:1.2}
+.genre-chips .chip span{font-variant-numeric:tabular-nums}
+.chip.all.on::after{content:none}
+.side .genre-chips{flex-wrap:wrap;margin:-.25rem 0 .9rem;padding:0}
+.side .genre-chips .sc-label{flex:none;width:100%;margin:0 0 .2rem}
+/* Wrapped, not scrolled: in a sideways-scrolling row the chosen genre could
+   sit out of sight while it silently filtered the whole list. */
+.side .genre-chips .chips{display:flex;flex-wrap:wrap;gap:.3rem;width:100%}
+.side .genre-chips .chips::-webkit-scrollbar{display:none}
+.side .genre-chips .chip{flex:none;padding:.18rem .5rem;font-size:.76rem}
+/* The author rows below already carry counts; here they only cost width. */
+.side .genre-chips .chip span{display:none}
+.library-page .genre-chips{margin:1.1rem 0 .3rem}
+@media (max-width:760px){ .side .genre-chips{margin-left:0;margin-right:0;padding-left:0;padding-right:0} }
+
+/* ===========================================================================
+   My library
+   =========================================================================== */
+.library-page .lib-summary{margin:.1rem 0 .3rem;max-width:var(--prose)}
+.lib-empty{max-width:var(--prose);margin:.6rem 0 1.5rem;color:var(--ink-2);line-height:1.6}
+.lib-empty ul{padding-left:1.1rem;margin:.6rem 0 0}
+.lib-empty li{margin:.45rem 0}
+.lib-empty code{font-size:.85em;background:var(--paper-2);padding:.05rem .3rem;border-radius:4px}
+
+/* Bookmarks fold by work: a long library opens as a list of works. */
+details.lib-work{margin:0;padding:0;border-bottom:1px solid var(--rule)}
+details.lib-work:first-of-type{border-top:1px solid var(--rule)}
+details.lib-work>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;flex-wrap:wrap;gap:.2rem .7rem;padding:.75rem 0}
+details.lib-work>summary::-webkit-details-marker{display:none}
+details.lib-work>summary::before{content:"";flex:none;align-self:center;width:.42rem;height:.42rem;margin-right:.1rem;
+  border-right:1.5px solid var(--mute);border-bottom:1.5px solid var(--mute);transform:rotate(-45deg);transition:transform .15s}
+details.lib-work[open]>summary::before{transform:rotate(45deg)}
+details.lib-work>summary:hover .lw-title{color:var(--accent)}
+details.lib-work[open]{padding-bottom:.7rem}
+.lw-title{font-family:var(--serif);font-size:1.2rem;color:var(--ink)}
+.lw-n{margin-left:auto;font-size:.8rem;color:var(--mute);font-variant-numeric:tabular-nums}
+
+/* Back-up tools live at the bottom, closed, away from everyday use. */
+.lib-backup{margin-top:2.5rem;max-width:calc(var(--prose) + 3rem)}
+.lib-backup>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.4rem}
+.lib-backup>summary::-webkit-details-marker{display:none}
+.lib-backup>summary::after{content:"";width:.4rem;height:.4rem;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.lib-backup[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.lib-backup>summary:hover{color:var(--accent)}
+.lib-backup>p{margin:.2rem 0 .7rem}
+
+/* ===========================================================================
+   Articles on single works (author page)
+   =========================================================================== */
+.work-article{max-width:var(--prose);margin:0 0 1.8rem;padding-bottom:1.6rem;border-bottom:1px solid var(--rule);scroll-margin-top:4.5rem}
+.wa-title{font-family:var(--serif);font-weight:400;font-size:1.75rem;line-height:1.2;margin:1.4rem 0 .7rem}
+.wa-title .grc{color:var(--ink-2);margin-left:.6rem;font-size:.85em}
+.wa-epigraph{margin:0 0 1.3rem;padding:.15rem 0 .15rem 1rem;border-left:3px solid var(--accent)}
+.wa-epigraph .grc{display:block;font-family:var(--serif);font-size:1.3rem;line-height:1.6;color:var(--ink);font-feature-settings:"kern" 1;font-variant-ligatures:none}
+.wa-epigraph .tr{display:block;font-family:var(--serif);font-style:italic;color:var(--mute);font-size:.95rem;margin-top:.15rem}
+.work-article h3{font-family:var(--sans);font-weight:600;font-size:.95rem;color:var(--ink);margin:1.5rem 0 .35rem}
+.work-article .ap-text{margin:0 0 .8rem}
+.wa-open{margin:1.3rem 0 0}
+.ap-summary-wrap .ap-summary + .ap-summary{margin-top:.8rem}
+
+
+/* ===========================================================================
+   Stoichedon (2026-09-23)
+   The redesign's own layer: shape, controls, the three signature moments and
+   the reorganised pages. It comes last on purpose, so it wins over the
+   earlier passes without having to out-specify them.
+   =========================================================================== */
+
+/* --- shape: nearly square, as if cut rather than moulded; one elevation --- */
+.pick,.path,.home-card,.cont-item,.howto>div,.offline,.era-card,.era-item,.art-item,
+.ap-work,.lib-mark,.about .cred,.notice,.hr,.al,.tips>div,.cover-note,.ln-echo,.ln-map,.ln-ms,.ln-image{border-radius:var(--r2)}
+.pop,.settings,.src-menu,.notes-panel{border-radius:var(--r3)}
+.toast{border-radius:var(--r2);box-shadow:var(--shadow)}
+.pick,.path,.home-card,.howto>div,.al,.tips>div,.cont-item,.hr,.era-card,.era-item,.art-item{background:var(--paper)}
+.pick,.wcat,.home-card{transition:border-color .12s}
+.pick:hover,.wcat:hover{transform:none;box-shadow:none}
+
+/* Headings take the display colour: ink by day, reserved clay by night. */
+.ph,.landing h1.hero,.workhead h1,.home-card h2,.wa-title,.lw-title,.offline h2,.about .cred h3,.path>b,.lib-work h3{color:var(--display)}
+
+/* --- controls: borders at 3:1, one selected style (ink, not colour alone) --- */
+.search,.jump input,.jump button,.pager button,.btn,.segbtn,.filter,.stepper button,.workhead select,
+.pages select,.pages .pg-step,.mk-edit textarea,#anote,#libJson,.mk-tools select,.mk-tools input,.mk-row input,
+#baseUrl,.ln-url input,.ln-stem input,.chunks button,.fav-btn,.ib.nav-show,.status button,.chip,.lens-bar button:hover{
+  border-color:var(--rule-strong)}
+.search,.jump input,.jump button,.pager button,.btn,.segbtn,.filter,.stepper button,.workhead select,.pages select,
+.pages .pg-step,.mk-edit textarea,#anote,#libJson,#baseUrl,.chunks button,.fav-btn,.status button{border-radius:var(--r2)}
+.filter button+button,.segbtn button+button{border-left-color:var(--rule-strong)}
+.segbtn button[aria-pressed="true"],.filter button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip.on span{color:color-mix(in srgb,var(--paper) 72%,transparent)}
+.btn.big:focus-visible,.btn.primary:focus-visible,.chunks button.active:focus-visible{outline-offset:3px}
+.xref.chip{border-color:var(--accent-2);color:var(--accent-2)}
+
+/* --- header: underline for where you are, not a filled lozenge --- */
+@media (min-width:901px){
+  .topnav a.active{background:none;color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent);border-radius:0}
+}
+.topnav .tab-phone{display:none}
+/* Phones: the row is the tab bar, and gains Contents and My library, which
+   leave the header for the bottom of the screen where a thumb can reach them. */
+@media (max-width:900px){
+  #navToggle,.libbtn{display:none}
+  .topnav .tab-phone{display:flex;flex-direction:column;align-items:center;gap:.1rem;flex:1;min-width:0;
+    padding:.25rem .3rem;font:inherit;font-size:.7rem;color:var(--ink-2);text-align:center;border-radius:6px;text-decoration:none}
+  .topnav a,.topnav .tab-phone{min-height:3.1rem;justify-content:center;position:relative}
+  .topnav a.active,.topnav .tab-phone.active{color:var(--accent);background:none}
+  .topnav a.active::before,.topnav .tab-phone.active::before{content:"";position:absolute;top:-.3rem;left:28%;right:28%;height:2px;background:var(--accent)}
+  .topnav svg{stroke-width:1.6}
+}
+
+/* --- reading: words underline on hover, never flash a filled box --- */
+.w:hover{background:none;box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--accent) 55%,transparent)}
+.w.on{background:var(--accent-soft);color:inherit;box-shadow:inset 0 -1.5px 0 var(--accent)}
+.w:focus{outline:none}
+.w:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:2px}
+.col.grc:focus-visible{outline:1px solid var(--rule-strong);outline-offset:.35rem;border-radius:var(--r1)}
+/* The ochre initial on the first passage of a part: a raised capital, so a
+   verse line keeps its own height and its line numbers stay in register. */
+.col.grc .ini{font-size:1.85em;line-height:0;color:var(--ochre);margin-right:.02em}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mk-note{background:var(--accent-2-soft);border-radius:0 var(--r2) var(--r2) 0}
+
+/* Lookup popover: settles in rather than snapping. */
+@media (prefers-reduced-motion:no-preference){
+  .pop.show{animation:pop-in .16s var(--ease)}
+  @keyframes pop-in{from{opacity:0;translate:0 4px}to{opacity:1;translate:0 0}}
+}
+
+/* --- home: the hero, with Passage of the day beside it --- */
+.landing .hero-wrap{background:none;border:0;border-radius:0;overflow:visible;margin-bottom:.5rem;
+  padding:1.25rem 0 2.2rem;border-bottom:1px solid var(--rule)}
+.landing .hero-wrap.with-pod{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(1.5rem,4vw,3.5rem);align-items:start}
+@media (max-width:1000px){ .landing .hero-wrap.with-pod{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:760px){ .landing .hero-wrap{padding:.6rem 0 1.4rem} }
+
+/* The motto, cut stoichedon: 13 letters to a row on an exact grid. 13 cells
+   of 1.25rem fit a 320px phone inside its 16px gutters. */
+.stoi-wrap{margin:0 0 1.5rem}
+.stoi{--cell:clamp(1.25rem,3.6vw,2rem);display:grid;grid-template-columns:repeat(13,var(--cell));grid-auto-rows:calc(var(--cell) * 1.18);
+  width:max-content;max-width:100%;font-family:var(--serif);font-size:calc(var(--cell) * .74);line-height:1;color:var(--display);user-select:none}
+.stoi span{display:grid;place-items:center;border-radius:1px;transition:color .12s,background-color .12s}
+.stoi span.lit,.stoi-m span.lit{color:var(--accent);background:var(--accent-soft)}
+.stoi-m{font-family:var(--serif);font-size:1.2rem;line-height:1.45;margin:.8rem 0 .1rem;color:var(--ink);font-variant-ligatures:none}
+.stoi-m span{border-radius:1px;padding:0 .04em;cursor:default}
+.stoi-t{font-family:var(--serif-eng);font-style:italic;font-size:.98rem;color:var(--ink-2);margin:0}
+@media (prefers-reduced-motion:no-preference){
+  .stoi span{animation:stoi-ink .5s var(--ease) both;animation-delay:calc(var(--i) * 22ms)}
+  @keyframes stoi-ink{from{opacity:.12}to{opacity:1}}
+}
+
+/* Passage of the day, opening with a two-line ochre initial. A float rather
+   than initial-letter: Chrome reports support for the latter but applies it only
+   to ::first-letter, and the initial here is its own (uppercased) span. */
+.hero-wrap .pod{margin:0}
+.home-card.pod{background:var(--paper);border:1px solid var(--rule);padding:1.15rem 1.3rem 1.2rem}
+.pod .pod-label{font-family:var(--sans);font-size:.6875rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+.pod .pod-q{border-left:0;padding:0;background:none;margin:.75rem 0 .9rem}
+.pod .pod-q .grc{font-size:1.3rem;line-height:1.6;font-variant-ligatures:none}
+.pod .pod-q .ini{float:left;font-size:3.3em;line-height:.86;color:var(--ochre);margin:.06em .1em 0 0}
+.pod .pod-q .en{clear:both;font-style:normal;font-family:var(--serif-eng);margin-top:.75rem}
+.pod .pod-foot{border-top:1px solid var(--rule-soft);padding-top:.7rem}
+
+.landing .find>.sh{margin-top:.4rem}
+.find .picks-card{margin-top:.9rem}
+
+/* --- the eras band: width is years, height is works --- */
+.eras-band{margin:.4rem 0 0}
+.eb-cols{display:flex;align-items:flex-end;gap:3px;height:9rem;border-bottom:1px solid var(--rule-strong)}
+.eb-cols a{display:flex;flex-direction:column;justify-content:flex-end;flex:0 0 auto;height:100%;min-width:0;text-decoration:none}
+.eb-cols a b{font-family:var(--sans);font-size:.72rem;font-weight:600;color:var(--ink-2);text-align:center;font-variant-numeric:tabular-nums;margin-bottom:.2rem}
+.eb-cols a i{display:block;background:var(--accent);border-radius:1px 1px 0 0;transition:background-color .12s}
+.eb-cols a:hover i,.eb-cols a:focus-visible i{background:var(--ink)}
+.eb-labels{display:flex;gap:3px}
+.eb-labels div{flex:0 0 auto;min-width:0;font-family:var(--sans);font-size:.72rem;line-height:1.3;color:var(--mute);
+  padding:.4rem 0 0 .3rem;border-left:1px solid var(--rule);white-space:nowrap}
+.eb-labels div:nth-child(even){padding-top:2.3rem}
+.eb-labels span{display:block;color:var(--ink);font-weight:500}
+.eb-rows{display:none}
+.eb-note{font-family:var(--sans);font-size:.8rem;color:var(--mute);margin:.9rem 0 0;max-width:var(--prose)}
+.eb-rows{flex-direction:column;border-left:1px solid var(--rule-strong)}
+.eb-rows a{display:block;padding:.45rem 0 .45rem .7rem;border-bottom:1px solid var(--rule-soft);text-decoration:none;color:var(--ink);font-family:var(--sans);font-size:.85rem}
+.eb-rows a:hover b{color:var(--accent)}
+.eb-rows b{font-weight:500} .eb-rows small{color:var(--mute);font-size:.78rem}
+.eb-rows i{display:block;height:.5rem;background:var(--accent);margin-top:.35rem;border-radius:0 1px 1px 0}
+@media (max-width:760px){ .eb-cols,.eb-labels{display:none} .eb-rows{display:flex} }
+.wiki-eras .eb-cols,.wiki-eras .eb-labels{display:none}
+.wiki-eras .eb-rows{display:flex}
+
+/* --- wiki home: a book's table of contents, not a wall of tiles --- */
+.wiki-home-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,22rem);gap:clamp(2rem,5vw,4rem);align-items:start;margin-top:1.4rem;max-width:88rem}
+@media (max-width:1000px){ .wiki-home-cols{grid-template-columns:minmax(0,1fr)} }
+.wiki-home-cols .wiki-cats{display:block;margin:0;max-width:none}
+.wcat{display:grid;grid-template-columns:8.5rem minmax(0,1fr);gap:.15rem 1.4rem;align-items:baseline;padding:1.1rem 0;
+  border:0;border-top:1px solid var(--rule);border-radius:0;background:none}
+.wcat:last-child{border-bottom:1px solid var(--rule)}
+.wcat:hover{border-color:var(--rule)}
+.wcat-grc{font-family:var(--serif);font-size:1.05rem;color:var(--ochre);grid-row:1 / span 2}
+.wcat .wcat-main b{font-size:1.45rem;color:var(--display)}
+.wcat .wcat-main:hover b{color:var(--accent)}
+.wcat .sub{grid-column:2;margin-top:.35rem}
+.wiki-eras .sh{margin-top:.2rem}
+@media (max-width:760px){
+  .wcat{grid-template-columns:minmax(0,1fr);padding:.9rem 0}
+  .wcat-grc{display:none}
+  .wcat .sub{grid-column:1}
+}
+
+/* --- author page: the article at the prose measure, a rail of facts beside it --- */
+@media (min-width:761px){
+  .author-page .ap-cols{grid-template-columns:minmax(0,calc(var(--prose) + 1rem)) minmax(15rem,20rem);gap:3.5rem;justify-content:start}
+  .author-page .ap-rail{grid-column:2;grid-row:1}
+  .author-page .ap-main{grid-column:1;grid-row:1}
+}
+.ap-rail>.sh:first-child,.ap-main>:first-child,.ap-main>.ap-summary-wrap:first-child .ap-summary:first-child{margin-top:0}
+.ap-works{gap:0}
+.ap-work{background:none;border:0;border-top:1px solid var(--rule-soft);border-radius:0;padding:.55rem .1rem}
+.ap-work:hover b{color:var(--accent)}
+.ap-meta{gap:.2rem .5rem}
+.ap-meta>*+*::before{content:"·";color:var(--mute);margin-right:.5rem}
+.ap-meta .chip{border:0;background:none;padding:0;border-radius:0;font-size:inherit;color:var(--accent);white-space:normal}
+.ap-meta .chip.soft{color:var(--ink-2)}
+.ap-nav{position:sticky;top:3.25rem;z-index:6;background:var(--paper);padding:.45rem 0;margin-top:.8rem;border-bottom:1px solid var(--rule)}
+.ap-nav a{border:0;border-radius:0;padding:.3rem .1rem;margin-right:.8rem;color:var(--ink-2)}
+.ap-nav a:hover{border:0;color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.author-page [id^="ap-"]{scroll-margin-top:6.5rem}
+.ap-notes{border:1px solid var(--rule);border-radius:var(--r2);padding:.1rem 1rem 1rem;margin-top:1.6rem}
+.ap-notes .sh{color:var(--accent-2)}
+.ap-notes .sh::before{background:var(--accent-2)}
+
+/* --- My library: saved passages read like scholia; the rest sits in a rail --- */
+.lib-cols{display:grid;grid-template-columns:minmax(0,calc(var(--prose) + 5rem)) minmax(15rem,21rem);gap:3.5rem;align-items:start;justify-content:start;margin-top:.4rem}
+@media (max-width:1000px){ .lib-cols{grid-template-columns:minmax(0,1fr);gap:.5rem} }
+.lib-rail .picks{grid-template-columns:minmax(0,1fr)!important;gap:0;margin-top:.2rem}
+.lib-rail .pick{border:0;border-top:1px solid var(--rule-soft);border-radius:0;background:none;padding:.55rem .1rem;height:auto}
+.lib-rail .pick .grc{font-size:1.05rem}
+.lib-rail .pick:hover .en{color:var(--accent)}
+.lib-mark{border:0;border-top:1px solid var(--rule-soft);border-radius:0;background:none;padding:.8rem 0 .9rem;margin:0}
+.lm-head .lm-open b{color:var(--accent-2);font-variant-numeric:tabular-nums}
+.lm-snip{font-size:1.08rem;color:var(--ink-2)}
+.lib-anotes{display:flex;flex-direction:column}
+.lib-anote{display:block;padding:.55rem .1rem;border-top:1px solid var(--rule-soft);text-decoration:none;color:var(--ink)}
+.lib-anote b{display:block;font-weight:500}
+.lib-anote span{display:block;font-size:.82rem;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-anote:hover b{color:var(--accent)}
+.lib-rail .lib-backup{margin-top:2rem;max-width:none}
+
+/* --- settings: a line of real Greek that follows the controls --- */
+.set-sample{font-family:var(--serif);font-size:calc(var(--fs) * 1.04);line-height:calc(var(--lh) + var(--lh-bump) + .08);
+  margin:0 0 .9rem;padding:.3rem 0 .3rem .8rem;border-left:2px solid var(--ochre);color:var(--ink);font-variant-ligatures:none;overflow-wrap:anywhere}
+.set-sample[data-sans="1"]{font-family:"Noto Sans",var(--sans)}
+
+/* --- Start here: the beginner's guide (Views.Guide), rendered from Markdown.
+   Quotations from the texts take the epigraph's accent rule (they are the
+   edition speaking); everything else is plain ruled prose. --- */
+.guide .g-kicker{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:.3rem 0 .15rem}
+.g-body{line-height:1.65}
+.g-body>p,.g-body li,.g-body .g-h2,.g-body .g-h3{max-width:46rem}
+.g-body .grc{font-family:var(--serif);font-size:1.08em;font-variant-ligatures:none}
+.g-body strong{font-weight:600}
+.g-body .g-h2{font-family:var(--serif);font-weight:400;font-size:1.45rem;line-height:1.25;color:var(--display);margin:2.2rem 0 .6rem}
+.g-body .g-h2 .grc{font-size:1em}
+.g-body .g-h3{font-family:var(--sans);font-weight:600;font-size:.98rem;margin:1.5rem 0 .4rem}
+.g-list{padding-left:1.3rem;margin:.4rem 0 1rem}
+.g-list li{margin:.25rem 0}
+.g-list .g-list{margin:.2rem 0 .4rem}
+.g-list li>p{margin:.4rem 0}
+.g-quote{margin:1rem 0 1.3rem;padding:.15rem 0 .15rem 1rem;border-left:3px solid var(--accent);max-width:46rem}
+.g-quote .q-grc{font-family:var(--serif);font-size:1.22rem;line-height:1.55;color:var(--ink)}
+.g-quote .q-grc .grc{font-size:inherit}
+.g-quote .q-tr{font-family:var(--serif-eng);font-style:italic;color:var(--ink-2);margin-top:.15rem}
+.g-quote .q-ref{font-size:.85rem;color:var(--mute);margin-top:.3rem}
+.g-quote .q-text{color:var(--ink-2)}
+.g-quote .q-text+.q-text{margin-top:.3rem}
+.g-table{overflow-x:auto;margin:.8rem 0 1.3rem;max-width:62rem}
+.g-table table{border-collapse:collapse;width:100%;font-size:.9rem;line-height:1.45}
+.g-table th{text-align:left;font-weight:600;font-size:.8rem;color:var(--ink-2);border-bottom:1px solid var(--rule-strong);padding:.4rem .8rem .4rem 0;vertical-align:bottom}
+.g-table td{border-bottom:1px solid var(--rule-soft);padding:.45rem .8rem .45rem 0;vertical-align:top}
+/* .page breaks words anywhere; inside a table that splits "syllable" across
+   lines, so cells keep whole words and a wide table scrolls in its own box */
+.g-table th,.g-table td{overflow-wrap:normal;word-break:normal}
+.g-rule{border:0;border-top:1px solid var(--rule);margin:2rem 0;max-width:46rem}
+.g-ans{margin:.6rem 0 1.5rem;border:1px solid var(--rule-strong);border-radius:var(--r2);padding:0 1rem;max-width:46rem}
+.g-ans>summary{cursor:pointer;padding:.55rem 0;font-weight:500;color:var(--accent)}
+.g-ans[open]{padding-bottom:.5rem}
+.g-ans[open]>summary{border-bottom:1px solid var(--rule-soft);margin-bottom:.4rem}
+.guide .pager{max-width:46rem}
+.beginners .deeper{margin:.7rem 0 0;font-size:.9rem}
+.beginners .deeper a{text-decoration:none}
+.beginners .deeper a:hover{text-decoration:underline}
+@media (max-width:640px){
+  .g-body .g-h2{font-size:1.3rem}
+  .g-table table{font-size:.84rem}
+  .g-quote .q-grc{font-size:1.1rem}
+}
+
+/* ===========================================================================
+   Design language (2026-09-23, second pass)
+   One system for every control and surface, so nothing on the page is styled
+   on its own terms:
+     · actions      primary = --solid (ink by day, clay by night);
+                    secondary = outline; tertiary = a link with an arrow
+     · selection    every "this one is chosen" state is --solid, never blue
+     · blue         (--accent) is only for links, references and focus
+     · red          (--accent-2) is only for what the reader made
+     · ochre        (--ochre) is only for markers: icons in headings, numerals,
+                    timeline stops, the initial
+     · shape        rectangles at --r2 (4px); nothing is a pill except the
+                    floating notes button; one elevation, for floating things
+     · icons        one Greek set (Content.icons), 1.6 stroke, round caps
+   =========================================================================== */
+
+/* --- icons ---------------------------------------------------------------- */
+svg.icon{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.icon .fill{fill:currentColor;stroke:none}
+.ib svg.icon,#btnSettings svg.icon{width:20px;height:20px;stroke-width:1.6}
+.topnav svg.icon{stroke-width:1.6}
+.libbtn svg.icon{width:17px;height:17px}
+.fav-btn svg.icon{width:16px;height:16px;fill:none}
+.fav-btn.on svg.icon{fill:none}
+.fav-btn.on svg.icon path:nth-child(2){fill:currentColor}
+.mk-btn svg.icon,.ln-btn svg.icon{width:15px;height:15px}
+/* Icons that head a card are markers, so they take the ochre and lose the
+   tinted tile they used to sit in. */
+span.ic{background:none;color:var(--ochre);border-radius:0;width:auto;height:auto;margin:0 .45rem 0 0}
+span.ic svg.icon{width:1.35rem;height:1.35rem}
+.home-card h2 .ic{width:auto;height:auto;margin-right:.5rem}
+.home-card h2 .ic svg.icon{width:1.2rem;height:1.2rem}
+
+/* --- buttons ---------------------------------------------------------------- */
+.btn,.jump button,.pager button,.status button,.lib-io .btn,.offline-actions .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.5rem;padding:.45rem 1rem;
+  border:1px solid var(--rule-strong);border-radius:var(--r2);background:transparent;color:var(--ink);
+  font-family:var(--sans);font-size:.9rem;font-weight:500;line-height:1.2;letter-spacing:.005em;text-decoration:none;
+  transition:background-color .12s,border-color .12s,color .12s}
+.btn:hover,.jump button:hover,.pager button:hover:not(:disabled),.status button:hover{background:var(--paper-2);border-color:var(--ink-2);color:var(--ink)}
+.btn:active,.jump button:active,.pager button:active:not(:disabled){translate:0 1px}
+.btn:disabled,.pager button:disabled{opacity:.4;cursor:default}
+/* Primary: the one action a view is for. Same colour as the headings. */
+.btn.big,.btn.primary,.hero-cta .btn.big{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+.btn.big:hover,.btn.primary:hover{background:var(--solid-hover);border-color:var(--solid-hover);color:var(--on-solid);filter:none}
+.btn.big{min-height:2.75rem;padding:.55rem 1.3rem;font-size:.95rem}
+.btn.ghost{background:transparent;border-color:var(--rule-strong);color:var(--ink);font-size:.95rem;min-height:2.75rem;padding:.55rem 1.3rem}
+.btn.ghost:hover{border-color:var(--ink-2);color:var(--ink);background:var(--paper-2)}
+.btn.small,.src-menu-acts .btn,.np-foot .btn,.lm-del{min-height:2rem;padding:.2rem .65rem;font-size:.8rem}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 55%,var(--rule-strong))}
+.btn.danger:hover{background:color-mix(in srgb,var(--danger) 8%,transparent);border-color:var(--danger);color:var(--danger)}
+/* Tertiary: text with an arrow, in the link colour. */
+.link-btn,.home-card .more,.more-link{color:var(--accent);font-family:var(--sans);font-weight:500;text-decoration:none}
+.link-btn:hover,.home-card .more:hover,.more-link:hover{text-decoration:underline;text-underline-offset:.2em}
+
+/* Icon buttons: square, quiet until touched. */
+.ib{width:2.25rem;height:2.25rem;border-radius:var(--r2);color:var(--ink-2);transition:background-color .12s,color .12s}
+.ib:hover{background:var(--paper-2);color:var(--ink)}
+.ib[aria-pressed="true"]{background:var(--paper-3);color:var(--ink)}
+.ib.nav-show{border:1px solid var(--rule-strong);border-radius:var(--r2)}
+.ib.nav-show:hover{border-color:var(--ink-2);color:var(--ink);background:var(--paper-2)}
+.panel-close,.toast-x,.cont-x,.chip-x,.np-close{border-radius:var(--r2)}
+.panel-close:hover,.np-close:hover{background:var(--paper-2);color:var(--ink)}
+
+/* My library in the header: a secondary button that turns solid where you are. */
+.libbtn{border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink);min-height:2.25rem;padding:.3rem .75rem;gap:.45rem}
+.libbtn:hover{background:var(--paper-2);border-color:var(--ink-2);color:var(--ink)}
+.libbtn.active{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+@media (max-width:900px){ .libbtn{border-radius:var(--r2)} }
+html.ui-compact .libbtn{border-radius:var(--r2)}
+
+/* Where texts come from: the same rectangle, tinted only when it needs you. */
+.src-chip{border-radius:var(--r2);border-color:var(--rule-strong);color:var(--ink-2);min-height:2.25rem}
+.src-chip:hover{border-color:var(--ink-2);color:var(--ink)}
+.src-chip.src-local{background:transparent;border-color:var(--rule-strong);color:var(--ink)}
+.src-chip.warn{color:var(--accent-2);border-color:var(--accent-2)}
+@media (max-width:1100px){ .src-chip{border-radius:var(--r2);width:2.25rem;height:2.25rem} }
+.src-opt{border-radius:var(--r2)}
+.src-opt.on{background:var(--paper-2);border-color:transparent;color:var(--ink);box-shadow:inset 2px 0 0 var(--solid)}
+.src-opt.on span{color:var(--ink-2)}
+
+/* The floating notes button stays round (it is dragged, and a thumb-sized
+   disc reads as "movable"), but speaks the same colours. */
+.notes-fab{border-color:var(--rule-strong);color:var(--ink)}
+.notes-fab:hover{border-color:var(--ink-2);color:var(--ink);background:var(--paper-2)}
+.notes-fab.on{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+
+/* --- selection: one look for "this one" ------------------------------------- */
+.segbtn,.filter{border:1px solid var(--rule-strong);border-radius:var(--r2);overflow:hidden;background:transparent}
+.segbtn button,.filter button{min-height:2.25rem;color:var(--ink-2);transition:background-color .12s,color .12s}
+.segbtn button:hover,.filter button:hover{background:var(--paper-2);color:var(--ink)}
+.segbtn button[aria-pressed="true"],.filter button[aria-pressed="true"],
+.chunks button.active,.pages button.active,.chip.on,.lens-bar button.on{
+  background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+.chip.on span{color:color-mix(in srgb,var(--on-solid) 70%,transparent)}
+.lens-bar button{border-radius:var(--r2)}
+.lens-bar button:hover{border-color:var(--rule-strong);color:var(--ink);background:none}
+.ln-tabs button{border-radius:var(--r2)}
+.ln-tabs button.on{background:var(--solid);color:var(--on-solid);box-shadow:none}
+
+/* Chips are labels, cut square like the rest; filters and genres alike. */
+.chip{border-radius:var(--r2);border-color:var(--rule-strong);background:transparent;color:var(--ink-2);min-height:1.9rem;padding:.2rem .65rem}
+.chip:hover{border-color:var(--ink-2);color:var(--ink)}
+.xref.chip{border-color:color-mix(in srgb,var(--accent-2) 60%,var(--rule-strong));color:var(--accent-2)}
+.xref.chip:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.tag{border-radius:var(--r1);border-color:var(--rule-strong);color:var(--ink-2);background:transparent}
+.wcat .sub a{border-radius:var(--r2);border-color:var(--rule-strong)}
+.wcat .sub a:hover{border-color:var(--ink-2);color:var(--ink)}
+@media (max-width:760px){ .chip{background:transparent} }
+
+/* Steppers, part and page buttons: the same small square. */
+.chunks button,.pages button,.pages .pg-step,.stepper button{border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink-2);background:transparent}
+.chunks button:hover,.pages button:hover:not(.active),.pages .pg-step:hover:not(:disabled),.stepper button:hover{border-color:var(--ink-2);color:var(--ink);background:var(--paper-2)}
+
+/* Favourite: an olive sprig, red once it is yours. */
+.fav-btn{border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink-2);min-height:2rem;font-family:var(--sans)}
+.fav-btn:hover{border-color:var(--ink-2);color:var(--ink)}
+.fav-btn.on{color:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 60%,var(--rule-strong))}
+.mk-btn,.ln-btn{border-radius:var(--r2)}
+.mk-btn:hover,.ln-btn:hover{background:var(--paper-2)}
+
+/* --- fields ------------------------------------------------------------------- */
+.search,.jump input,#baseUrl,.workhead select,.pages select,.mk-tools select,.mk-tools input,.mk-row input,
+.ln-url input,.ln-iiif-nav select,.mk-edit textarea,#anote,#libJson{
+  border:1px solid var(--rule-strong);border-radius:var(--r2);background-color:var(--paper);color:var(--ink)}
+.search,.jump input,#baseUrl{min-height:2.5rem}
+.search:hover,.jump input:hover,#baseUrl:hover,.workhead select:hover,.pages select:hover{border-color:var(--ink-2)}
+.search:focus,.jump input:focus,#baseUrl:focus,.mk-edit textarea:focus,#anote:focus,#libJson:focus,
+.workhead select:focus,.pages select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 1px var(--accent)}
+
+/* --- surfaces: flat tablets --------------------------------------------------- */
+/* Every card is the same object: ground colour, one hairline, 4px corners,
+   no shadow. Hover says "this opens" by darkening the edge and turning the
+   title to link colour, never by lifting. */
+.pick,.path,.home-card,.cont-item,.howto>div,.offline,.era-card,.era-item,.art-item,.hr,.al,.tips>div,
+.about .cred,.notice,.g-ans,.ap-notes,.cover-note{
+  background:var(--paper);border:1px solid var(--rule);border-radius:var(--r2);box-shadow:none;transform:none}
+.pick,.era-card,.era-item,.art-item,.hr,.cont-item{transition:border-color .12s}
+.pick:hover,.era-card:hover,.era-item:hover,.art-item:hover,.hr:hover,.cont-item:hover{border-color:var(--rule-strong);transform:none;box-shadow:none}
+.pick:hover .grc,.pick:hover .en,.hr:hover b,.era-card:hover b,.era-item:hover .ei-head b,.art-item:hover b,.cont-open:hover b{color:var(--accent)}
+.era-card.active{border-color:var(--solid);background:var(--paper);box-shadow:inset 0 0 0 1px var(--solid)}
+.pick .grc,.al .grc,.path>b,.ei-head b,.home-card h2{color:var(--display)}
+.cover-note{border-left:2px solid var(--accent)}
+.offline{background:var(--paper-2)}
+.lib-rail .pick,.ap-work,.lib-mark{border:0;border-top:1px solid var(--rule-soft);border-radius:0;background:none}
+
+/* Numerals and stops are markers: ochre, cut square. */
+.howto .num{border-radius:var(--r1);background:transparent;color:var(--ochre);border:1px solid var(--ochre);font-family:var(--serif);font-size:1.05rem}
+.timeline{border-left:1px solid var(--rule-strong)}
+.timeline li::before{width:7px;height:7px;left:-4.5px;top:.78rem;border-radius:0;background:var(--ochre);transform:rotate(45deg)}
+.about .cred::before{background:var(--ochre);opacity:1;width:2px;border-radius:0}
+
+/* --- the sidebar catalogue: current item marked the same way as a menu ------ */
+.author>button,.work,.parts-toggle,.mini{border-radius:var(--r2)}
+.author.open>button{color:var(--ink)}
+.author.open>button .chev{color:var(--ink-2)}
+.work.active{background:var(--paper-2);color:var(--ink);box-shadow:inset 2px 0 0 var(--solid)}
+.work.active .grc{color:var(--ink-2)}
+
+/* --- header navigation ---------------------------------------------------------- */
+.topnav a{border-radius:var(--r2)}
+@media (min-width:901px){
+  .topnav a:hover{background:var(--paper-2)}
+  .topnav a.active{box-shadow:inset 0 -2px 0 var(--solid);color:var(--ink)}
+}
+@media (max-width:900px){
+  .topnav a.active,.topnav .tab-phone.active{color:var(--ink)}
+  .topnav a.active::before,.topnav .tab-phone.active::before{background:var(--solid)}
+  .topnav svg.icon{width:22px;height:22px}
+}
+/* The search fields' magnifier is a background image, so it cannot follow
+   currentColor; each theme supplies its own, in its --mute. */
+:root{--search-ico:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2367615A%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%226%22/%3E%3Cpath d=%22M20 20l-4.5-4.5%22/%3E%3C/svg%3E")}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--search-ico:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239A8A74%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%226%22/%3E%3Cpath d=%22M20 20l-4.5-4.5%22/%3E%3C/svg%3E")} }
+:root[data-theme="dark"]{--search-ico:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239A8A74%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%226%22/%3E%3Cpath d=%22M20 20l-4.5-4.5%22/%3E%3C/svg%3E")}
+.home-tools .search,#browseQ,#wikiQ{background:var(--paper) var(--search-ico) no-repeat .65rem center/16px 16px;padding-left:2.2rem}
+/* --- the wiki's hero: μάθησις, the philosophers, and why a wiki --------------- */
+.wiki-hero{max-width:88rem;padding:1.1rem 0 2.2rem;margin:0 0 1.6rem;border-bottom:1px solid var(--rule)}
+.wiki-hero .grc{font-family:var(--serif);font-variant-ligatures:none}
+.wh-top{display:grid;grid-template-columns:minmax(0,42rem) minmax(15rem,21rem);gap:clamp(2rem,5vw,4rem);align-items:start;justify-content:start}
+@media (max-width:1000px){ .wh-top{grid-template-columns:minmax(0,1fr);gap:1.4rem} }
+.wh-kicker{font-family:var(--sans);font-size:.6875rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 .5rem}
+.wh-title{display:flex;flex-direction:column;gap:.4rem;margin:0 0 1.2rem;line-height:1}
+.ph.wh-title .grc{font-size:clamp(2.8rem,7vw,4.4rem);line-height:1;color:var(--display);margin:0}
+.wh-gloss{font-family:var(--serif-eng);font-style:italic;font-size:1.1rem;line-height:1.3;color:var(--ink-2)}
+.wh-lead{font-family:var(--serif-eng);font-size:1.16rem;line-height:1.6;color:var(--ink);margin:0 0 1rem;max-width:42rem}
+.wh-text{font-family:var(--serif-eng);font-size:1.02rem;line-height:1.65;color:var(--ink-2);margin:0;max-width:42rem}
+.wh-lead .grc,.wh-text .grc,.wh-why .grc{font-size:1.06em;color:var(--ink)}
+.wh-cite{font-family:var(--sans);font-size:.78em;color:var(--mute);white-space:nowrap}
+.wh-ref,.wh-who{color:var(--accent);text-decoration:none;font-variant-numeric:tabular-nums}
+.wh-ref:hover,.wh-who:hover{text-decoration:underline;text-underline-offset:.2em}
+
+/* One root: the word family, as a small lexicon on a tablet. */
+.wh-family{border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper);padding:1rem 1.1rem .6rem}
+.wh-family .sh{margin:0 0 .4rem}
+.wh-family .sh .grc{text-transform:none;letter-spacing:0;font-size:1.05rem;color:var(--ochre);font-weight:400}
+.wh-family dl{margin:0}
+.wh-word{padding:.55rem 0;border-top:1px solid var(--rule-soft)}
+.wh-word:first-child{border-top:0}
+.wh-word dt{display:flex;align-items:baseline;flex-wrap:wrap;gap:.1rem .55rem}
+.wh-word dt .grc{font-size:1.22rem;color:var(--display)}
+.wh-tr{font-family:var(--serif-eng);font-style:italic;font-size:.9rem;color:var(--mute)}
+.wh-word dd{margin:.1rem 0 0;font-family:var(--sans);font-size:.82rem;line-height:1.45;color:var(--ink-2)}
+
+/* Three voices on learning: Plato, Aristotle, Aeschylus. */
+.wh-quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:2rem 0 0}
+@media (max-width:1000px){ .wh-quotes{grid-template-columns:minmax(0,1fr)} }
+.wh-quote{margin:0;display:flex;flex-direction:column;gap:.7rem;padding:1rem 1.15rem 1.05rem;border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper)}
+.wh-quote blockquote{margin:0;font-size:1.15rem;line-height:1.5;color:var(--ink)}
+.wh-quote figcaption{display:flex;flex-direction:column;gap:.4rem;margin-top:auto}
+.wh-en{font-family:var(--serif-eng);font-style:italic;font-size:.95rem;line-height:1.45;color:var(--ink-2)}
+.wh-who{font-family:var(--sans);font-size:.8rem;font-weight:500}
+
+/* Why a wiki; a language still spoken. */
+.wh-why{display:grid;grid-template-columns:repeat(2,minmax(0,40rem));gap:1.2rem clamp(2rem,5vw,4rem);margin-top:2.2rem;justify-content:start}
+@media (max-width:1000px){ .wh-why{grid-template-columns:minmax(0,1fr)} }
+.wh-why .sh{margin:0 0 .5rem}
+.wh-why p{font-family:var(--serif-eng);font-size:1rem;line-height:1.65;color:var(--ink-2);margin:0}
+.wiki-home .wh-contents{margin:0 0 .2rem}
+.wiki-home .wiki-home-cols{margin-top:.6rem}
+@media (max-width:760px){ .wiki-hero{padding-top:.4rem} .wh-quote blockquote{font-size:1.08rem} }
+/* Notes on phones: the floating button sat over the ends of lines, so below
+   the phone breakpoint it is replaced by a header button (Header.notesButton);
+   the panel itself opens as the bottom sheet it already was. Wider screens keep
+   the draggable floating button. */
+.notes-ib{display:none}
+@media (max-width:900px){
+  .notes-fab{display:none!important}
+  .notes-ib{display:inline-grid}
+  .notes-ib[aria-pressed="true"]{background:var(--paper-3);color:var(--ink)}
+}
+/* "Our translation" notes: wherever the site quotes a text in its own English
+   (wiki, author articles, Passage of the day, the guide), it says so, since the
+   reader shows the published translation that comes with each text instead. */
+.tr-note{font-family:var(--sans);font-size:.78rem;line-height:1.45;color:var(--mute);margin:.9rem 0 0;max-width:46rem}
+.tr-star{color:var(--ochre);font-weight:600}
+.pod .pod-q .tr-note{display:block;margin:.45rem 0 0;font-size:.72rem}
+.ap-main>.tr-note:first-child{margin:0 0 1.1rem;padding-bottom:.7rem;border-bottom:1px solid var(--rule-soft)}
+.wiki-hero .tr-note{margin-top:1rem}
+.guide .tr-note{margin:1.6rem 0 0;padding-top:.8rem;border-top:1px solid var(--rule-soft)}

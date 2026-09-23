@@ -1,0 +1,26 @@
+# Installed packages (recreated by `npm ci`)
+node_modules/
+
+# Build output (recreated by `npm run build`; Vercel builds its own)
+dist/
+
+# F# compiler output and Fable's generated JavaScript
+src/bin/
+src/obj/
+src/fable_modules/
+*.fs.js
+
+# .NET installed by the Vercel build script
+.dotnet/
+
+# Vercel's local link to the project
+.vercel/
+
+# Editor and system clutter
+.vs/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
