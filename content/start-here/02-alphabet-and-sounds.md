@@ -19,36 +19,36 @@ will meet are summed up at the end of this page.
 | Β β | beta | b | *b* in "bed" |
 | Γ γ | gamma | g | *g* in "go"; *ng* before γ, κ, ξ, χ |
 | Δ δ | delta | d | *d* in "dog" |
-| Ε ε | epsilon | e | *e* in "pet"; always short |
-| Ζ ζ | zeta | z | *zd* in "wisdom" |
-| Η η | eta | ē | *e* in "bed", held long |
-| Θ θ | theta | th | *t* in "top", with a puff of breath |
+| Ε ε | epsilon | e | *e* in "get"; always short |
+| Ζ ζ | zeta | z | *zd*, as in "Mazda" |
+| Η η | eta | ē | *ai* in "fair" (without the *r*), held long |
+| Θ θ | theta | th | *t* in "top": with a puff of breath |
 | Ι ι | iota | i | *ee* in "see" (short or long) |
-| Κ κ | kappa | k | *k* in "skin", no puff |
+| Κ κ | kappa | k | *k* in "scan": no puff |
 | Λ λ | lambda | l | *l* |
 | Μ μ | mu | m | *m* |
 | Ν ν | nu | n | *n* |
-| Ξ ξ | xi | x | *ks* in "box" |
-| Ο ο | omicron | o | *o* in "hot"; always short |
-| Π π | pi | p | *p* in "spin", no puff |
-| Ρ ρ | rho | r | a rolled *r*, as in Spanish |
+| Ξ ξ | xi | x | *x* in "taxi" |
+| Ο ο | omicron | o | *o* in Spanish "no", said quickly; always short |
+| Π π | pi | p | *p* in "spin": no puff |
+| Ρ ρ | rho | r | a rolled *r*, as in Italian "Roma" |
 | Σ σ ς | sigma | s | *s* in "sun" |
-| Τ τ | tau | t | *t* in "stop", no puff |
-| Υ υ | upsilon | y | French *u* in *tu*: say *ee* with rounded lips |
-| Φ φ | phi | ph | *p* in "pot", with a puff of breath |
-| Χ χ | chi | kh | *k* in "kit", with a puff of breath |
-| Ψ ψ | psi | ps | *ps* in "lapse" |
-| Ω ω | omega | ō | *aw* in "saw", held long |
+| Τ τ | tau | t | *t* in "stop": no puff |
+| Υ υ | upsilon | y | *ü* in German "über": say *ee* with rounded lips |
+| Φ φ | phi | ph | *p* in "pin": with a puff of breath |
+| Χ χ | chi | kh | *k* in "can": with a puff of breath |
+| Ψ ψ | psi | ps | *ps* in "lips" |
+| Ω ω | omega | ō | *or* in "for" (without the *r*), held long |
 
-**The puff of breath.** Hold your hand in front of your mouth and say "pot", then "spot".
-The *p* of "pot" comes with a puff of air; the *p* of "spot" does not. English never uses
+**The puff of breath.** Hold your hand in front of your mouth and say "pin", then "spin".
+The *p* of "pin" comes with a puff of air; the *p* of "spin" does not. English never uses
 this difference to tell words apart, but Greek does, with separate letters:
 
 | No puff | With a puff |
 |---|---|
-| π (*p* in "spot") | φ (*p* in "pot") |
+| π (*p* in "spin") | φ (*p* in "pin") |
 | τ (*t* in "stop") | θ (*t* in "top") |
-| κ (*k* in "skit") | χ (*k* in "kit") |
+| κ (*k* in "scan") | χ (*k* in "can") |
 
 The puffed sounds are called **aspirated** ("breathed on"). The Romans wrote them *ph*,
 *th*, *ch*, which is why English has *philosophy*, *theatre* and *chorus* (with a *k*
@@ -71,19 +71,19 @@ set free", and only the length of one vowel separates them.
 
 ## Diphthongs
 
-A **diphthong** is two vowels said together as one syllable, like *oi* in "coin". In Greek
+A **diphthong** is two vowels said together as one syllable, like *oy* in "boy". In Greek
 the second vowel is always ι or υ.
 
 | Diphthong | Written as | Say it like | Example |
 |---|---|---|---|
-| αι | ai | *ai* in "aisle" | καί *kai* "and" |
-| ει | ei | *ey* in "they", held steady (not the same as η) | εἰμί *eimi* "I am" |
-| οι | oi | *oi* in "coin" | οἶκος *oikos* "house" |
-| υι | ui | French *ui* in *lui* | υἱός *huios* "son" |
-| αυ | au | *ow* in "how" | αὐτός *autos* "self" |
-| ευ | eu | *e* of "pet" + *oo*, in one syllable | εὖ *eu* "well" |
+| αι | ai | like "eye" | καί *kai* "and" |
+| ει | ei | *ay* in "day", held steady (not η) | εἰμί *eimi* "I am" |
+| οι | oi | *oy* in "boy" | οἶκος *oikos* "house" |
+| υι | ui | *ü* + *ee* in one syllable, like French "huit" | υἱός *huios* "son" |
+| αυ | au | *ow* in "cow" | αὐτός *autos* "self" |
+| ευ | eu | *eh* + *oo* in one syllable | εὖ *eu* "well" |
 | ηυ | ēu | the same, with a long *ē* | ηὔδα *ēuda* "he spoke" ([*Odyssey* 1.213](read:tlg0012.tlg002:1.213)) |
-| ου | ou | *oo* in "food" | οὐ *ou* "not" |
+| ου | ou | *oo* in "moon" | οὐ *ou* "not" |
 
 **ᾳ, ῃ, ῳ.** The small iota written under a vowel (the **iota subscript**) is silent. Read
 ᾳ, ῃ, ῳ as long ā, ē, ō: τῷ λόγῳ *tōi logōi* "to the word". In capitals the iota stands
@@ -104,7 +104,7 @@ first three lines: Πηληϊάδεω *Pē-lē-i-a-deō*, Ἄϊδι *A-i-di*, π
 - **σ before β, γ, δ, μ sounds like *z*:** κόσμος "order, world" is said *koz-mos*.
 - **Sigma has two shapes:** σ inside a word, ς at the end: σοφός *sophos* "wise". Some
   editions use a third, moon-shaped ϲ everywhere.
-- **Double letters are held longer,** as in English "book-case": Ἀχιλλεύς *Akhilleus*,
+- **Double letters are held longer,** as in "bookkeeper" or "midday": Ἀχιλλεύς *Akhilleus*,
   θάλαττα *thalatta* "sea".
 
 ## Other pronunciations you will hear
@@ -132,14 +132,14 @@ standard account is W. Sidney Allen's *Vox Graeca* (3rd edition, 1987).
 <details><summary>Answers</summary>
 
 - θέατρον *theatron*: θ is the *t* of "top", with a puff.
-- φιλοσοφία *philosophia*: both φ are the *p* of "pot", with a puff.
+- φιλοσοφία *philosophia*: both φ are the *p* of "pin", with a puff.
 - ἄγγελος *angelos*: γγ is *ng-g*.
 - ζῷον *zōion*: say *zdō-on*; the small iota is silent.
-- ψυχή *psykhē*: υ like French *u*.
+- ψυχή *psykhē*: υ like German *ü*.
 - ξένος *xenos*: *ks*.
 - χάος *khaos*: two syllables, *kha-os*. αο is not a diphthong: a diphthong always ends in ι or υ.
 - κόσμος *kosmos*: said *koz-mos*.
-- αὐτός *autos*: *ow* as in "how".
+- αὐτός *autos*: *ow* as in "cow".
 - οὐρανός *ouranos* "sky": ου is *oo*.
 - ηὔδα *ēuda*: long *ē* gliding into *oo*.
 </details>
@@ -194,3 +194,4 @@ free". In Modern Greek both are said *líomen*, because vowel length has disappe
 - **ζ as *zd*.** This is the standard reconstruction for Classical Attic, but a minority of scholars argue for *dz*.
 - **Pindar's heading.** One heading in the app's Pindar text prints ΣΥΡΑΚΟΥΣΙῼ, with the small iota beside the capital (a third convention). I left it out to keep the explanation simple. It could be added as an example.
 - **Concise rewrite (24 Sep 2026).** The letter table was cut to one pronunciation (Classical Attic) with short cues; Erasmian and Modern Greek are summed up in one section at the end. Changed cues to check: α now "*a* in father (short or long)" (was: short = first *a* of "aha"); ι "*ee* in see" for both lengths (was: short = French *petit*); ο "*o* in hot" (was: Italian *otto*); θ φ χ now use "top / pot / kit" against "stop / spot / skit" instead of Allen's "hothouse / top-hat / blockhead"; ει "*ey* in they, held steady" (was: French *é* held long). The ἔθος/ἦθος and ἔπᾰθον examples and the Attic long-α rule (χώρᾱ) were dropped for length.
+- **Example words (24 Sep 2026, second pass).** Replaced words that sound different across English accents (hot, saw, they) or were obscure (lapse, skit, adze, book-case). Now: ζ "Mazda"; η "fair" without r; ο Spanish "no" said quickly; ω "for" without r; ξ "taxi"; ψ "lips"; ρ Italian "Roma"; υ German "über"; puff pairs spin/pin, stop/top, scan/can; αι "eye"; ει "day" held steady; οι "boy"; υι French "huit"; ευ *eh* + *oo*. Check η = "fair" and ω = "for" against Allen's [ɛː] and [ɔː]: both are the usual non-rhotic English approximations.

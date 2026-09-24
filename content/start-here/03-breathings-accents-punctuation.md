@@ -96,7 +96,7 @@ from Plato's Greek to Modern Greek:
 | ο / ω, ε / η | short / long | same length | late Hellenistic and Roman periods |
 | accents | a rise in pitch | a louder syllable | by the early centuries CE |
 | η, ι, υ, ει, οι, υι | six different sounds | all *ee* (**itacism**) | in stages, complete by about the 10th century |
-| αι | *ai* in "aisle" | *e* in "pet" | Roman period |
+| αι | like "eye" | *e* in "get" | Roman period |
 
 **Itacism** (from ἦτα, the name of the letter η) is the change you will notice most. It
 explains:
