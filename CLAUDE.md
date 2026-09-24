@@ -706,7 +706,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
-  notes, back-up. Phone tab bar (≤900px): Texts · Contents · My library · Wiki
+  notes, back-up. Phone tab bar (≤900px): Texts · Contents · Wiki · My library
   (`.tab-phone` items); the header's `#navToggle` and `.libbtn` hide there.
 - **Design language** (the "Design language" layer at the end of `style.css`):
   primary actions and *every* selected state use `--solid` / `--on-solid` (ink by
@@ -714,7 +714,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   focus; red only the reader's own things; ochre only markers (card-heading icons,
   `.howto .num`, timeline diamonds, the initial). Everything is a rectangle at
   `--r2`: buttons (`.btn` outline, `.btn.big`/`.primary` solid), chips, segmented
-  controls, fields, cards. Only the draggable `.notes-fab` stays round. Cards are
+  controls, fields, cards. (The old round `.notes-fab` is hidden; see §15.) Cards are
   flat tablets: `--paper`, one `--rule` hairline, no shadow; hover darkens the edge
   and turns the title to link colour.
 - **Icons.** One Greek set in `Content.icons`, rendered only via `Shared.icon` /
@@ -783,3 +783,25 @@ Token and class names did not change; values did, plus a final layer at the end 
 - Before changing any of these, diff passage refs before and after across the
   verse works. The 35-work check on this date left the Iliad, Odyssey, Sophocles,
   Euripides, Aristophanes, Hesiod and Hymns byte-identical.
+
+---
+
+## 15. Fixes of 24 September 2026
+
+- **Home sections on phones.** One list of fold-by-default keys,
+  `Views.Shared.collapsedByDefault` (State.fs calls it; the two copies had
+  drifted, so the first tap on "How it works" did nothing). Folded on first
+  open: picks, wiki, paths, eras, alphabet, tips, corpus. Passage of the day
+  stays open. How it works uses `Shared.fixedSection` and never folds.
+  `SetFilter` opens "picks" so the filter always shows its effect.
+- **Sticky header on phones** needs `overflow-x:clip` (not `hidden`) on
+  html/body, or body becomes its own scroll box and the header scrolls away.
+- **Prose gutter** (`.ref` hanging left of the Greek at ≥1001px) has
+  `z-index:2`; without it `.col.grc` covered the bookmark and study buttons.
+- **Marker-only passages** (Plato's bare Stephanus page "17" before 17a) get
+  `.seg-empty` (zero height, still in the DOM for links); the ochre initial
+  goes on the first passage with words.
+- No "more →" / "open →" links in home card headers (standing decision).
+- **Notes button** is `Header.notesButton` (`.notes-ib`) at every width: labelled
+  "Notes" above 1100px, icon only below. The floating `.notes-fab` covered the
+  ends of lines and is hidden with CSS (its code is still in NotesPanel.fs).

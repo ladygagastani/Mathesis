@@ -3,7 +3,11 @@
 *A beginner's guide to reading Ancient Greek in Μάθησις*
 
 You do not need to know any Greek, Latin or grammar to use these pages. Every technical
-word is explained the first time it appears. Read them in order, or jump to what you need.
+word is explained the first time it appears.
+
+**Where to begin.** To sound out the Greek beside the translation, read pages 2 and 3
+(about half an hour). To look words up, add pages 4 to 6. Pages 7 to 9 are for curiosity:
+the life stories of twelve common words.
 
 ## Contents
 
@@ -11,8 +15,8 @@ word is explained the first time it appears. Read them in order, or jump to what
 1. [Why Greek, and which Greek](01-which-greek.md): what the language is, its 3,400-year history, and where a beginner starts
 
 **Part II — Letters and sounds**
-2. [The alphabet and its sounds](02-alphabet-and-sounds.md): letters, vowels, vowel length, diphthongs, tricky consonants
-3. [Breathings, accents and punctuation](03-breathings-accents-punctuation.md): the small marks, and how pronunciation changed over the centuries
+2. [The alphabet and its sounds](02-alphabet-and-sounds.md): how to say each letter, vowel length and diphthongs
+3. [Breathings, accents and punctuation](03-breathings-accents-punctuation.md): the small marks over the letters, and how the sounds changed
 
 **Part III — Dictionaries**
 4. [How dictionaries list words](04-how-dictionaries-list-words.md): dictionary forms and principal parts
@@ -50,9 +54,9 @@ Accents are not shown in transliteration. Familiar names keep their usual Englis
 *neró*. So ψυχή is *psykhē* in Ancient Greek and *psichí* in Modern Greek. The difference in
 spelling is the history of its sound.
 
-**Pronunciation.** These pages teach the **reconstructed Classical Attic** pronunciation:
-our best estimate of how educated Athenians spoke in the 5th and 4th centuries BCE. Page 2
-explains why, and compares it with the two other pronunciations you will hear.
+**Pronunciation.** These pages use the **reconstructed Classical Attic** pronunciation:
+our best estimate of how Athenians spoke in Plato's time. The end of page 2 compares it with
+the two other pronunciations you will hear.
 
 **Dates** follow the app's own eras (see the Wiki's *Eras* pages): Archaic (to 480 BCE), Classical
 (480–323 BCE), Hellenistic (323–31 BCE), Roman Imperial (31 BCE–330 CE), Late Antique

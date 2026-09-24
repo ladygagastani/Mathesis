@@ -162,7 +162,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "search"
                 prop.id "q"
                 prop.type' "search"
-                prop.placeholder "Search 370+ authors and 1,800+ works"
+                prop.placeholder "Search authors and works"
                 prop.autoComplete "off"
                 prop.value model.NavQuery
                 prop.onChange (fun (v: string) -> dispatch (SetNavQuery v))

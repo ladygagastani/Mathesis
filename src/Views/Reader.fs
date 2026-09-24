@@ -61,6 +61,16 @@ let private plainGrcText (blocks: Block list) : string =
     |> fun s -> s.Trim()
     |> fun s -> if s.Length > 140 then s.Substring(0, 140) else s
 
+/// True when a passage holds nothing but page or line markers (⟦17⟧) on both
+/// sides, e.g. the bare Stephanus page number Perseus puts before 17a. Such a
+/// passage is kept (so links and "go to" still land) but drawn with no height.
+let private isMarkerOnly (seg: Segment) : bool =
+    let hasWords (blocks: Block list) =
+        let t = plainGrcText blocks
+        let t = System.Text.RegularExpressions.Regex.Replace(t, @"⟦[^⟧]*⟧", "")
+        System.Text.RegularExpressions.Regex.IsMatch(t, @"\p{L}")
+    not (hasWords seg.Grc) && not (seg.Eng |> Option.exists hasWords)
+
 // ---------------------------------------------------------------------------
 // word/marker tokenization and block rendering (no dangerouslySetInnerHTML)
 // ---------------------------------------------------------------------------
@@ -811,7 +821,7 @@ let private segmentView (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit)
         prop.custom ("data-ref", seg.Ref)
         prop.custom ("data-verse", (if isVerse then "1" else ""))
         prop.tabIndex -1
-        prop.className ("seg" + (if isFlash then " flash" else ""))
+        prop.className ("seg" + (if isFlash then " flash" else "") + (if isMarkerOnly seg && mark.IsNone && List.isEmpty backlinks && not isEditing then " seg-empty" else ""))
         prop.children [
             Html.div [
                 prop.className "ref"
@@ -1040,7 +1050,10 @@ let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactEleme
                    @ [ lensBar rm (shape = "verse") dispatch ]
                    @ [ columnHead rm ]
                    @ (let meters = if rm.MeterOn then Lens.chunkMeters rm else []
-                      [ for i, seg in Array.indexed pageSegs -> segment model rm dispatch d.Coverage meters (page = 0 && i = 0) seg ])
+                      // The initial goes on the first passage with words in it, not on
+                      // a bare page marker such as Plato's "17" before 17a.
+                      let firstReal = pageSegs |> Array.tryFindIndex (isMarkerOnly >> not) |> Option.defaultValue 0
+                      [ for i, seg in Array.indexed pageSegs -> segment model rm dispatch d.Coverage meters (page = 0 && i = firstReal) seg ])
                    @ [ Html.p [
                            prop.id "wordNavHint"
                            prop.hidden true

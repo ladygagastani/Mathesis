@@ -493,14 +493,19 @@ let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
 /// Sections collapsed by default on phones unless the user has toggled them —
 /// mirrors COL_DEFAULT (every other key, including any not listed here, opens
 /// by default).
-let private collapsedByDefault (key: string) : bool =
+/// On phones the home page opens with its sections folded (a standing
+/// decision). The hero with Passage of the day ("pod"), How it works and the
+/// offline setup stay open; How it works and the offline setup cannot fold at
+/// all. State.fs uses this same function, so a tap always does what it shows.
+let collapsedByDefault (key: string) : bool =
     match key with
+    | "picks"
+    | "wiki"
     | "paths"
     | "eras"
     | "alphabet"
-    | "tips" -> true
-    // "howto" and "corpus" now carry the narrative directly under the hero, so
-    // they open by default even on phones; the browsing aids below still don't.
+    | "tips"
+    | "corpus" -> true
     | _ -> false
 
 /// Note: despite the Model field's name, the stored bool means "is open" (it's
@@ -511,6 +516,13 @@ let private collapsedByDefault (key: string) : bool =
 /// "mhead" ("sh" for home-block sections, "" for home-card sections, whose header
 /// carries an icon + optional "more" link instead of plain text) — the two kinds
 /// of home section differ in more than just the outer wrapper.
+/// A home section that looks like a `collapsibleSection` but never folds.
+let fixedSection (sectionClass: string) (headerClass: string) (headerContent: ReactElement list) (children: ReactElement list) : ReactElement =
+    Html.section [
+        prop.className sectionClass
+        prop.children [ Html.h2 [ prop.className headerClass; prop.children headerContent ]; yield! children ]
+    ]
+
 let collapsibleSection
     (dispatch: Msg -> unit)
     (collapsedState: Map<string, bool>)

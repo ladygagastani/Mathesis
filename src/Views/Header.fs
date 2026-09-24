@@ -60,7 +60,7 @@ let brand (dispatch: Msg -> unit) : ReactElement =
 /// On phones this row becomes the bottom tab bar, and gains two tabs that the
 /// header carries on wider screens (the library drawer and My library), so the
 /// two things reached for most sit under the thumb rather than at the top of
-/// the screen. `.tab-phone` hides them above the phone breakpoint.
+/// the screen. Order on phones: Texts · Contents · Wiki · My library (far right). `.tab-phone` hides them above the phone breakpoint.
 let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let route = model.Route
     let active = Router.navKey route
@@ -90,15 +90,6 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 prop.children [ Shared.icon "contents"; Html.text "Contents" ]
             ]
             Html.a [
-                prop.href "#lib"
-                prop.custom ("data-nav", "lib")
-                prop.classes [ "tab-phone"; if active = "lib" then "active" ]
-                prop.onClick (fun e ->
-                    e.preventDefault ()
-                    dispatch (Navigate("#lib", false)))
-                prop.children [ Shared.icon "library"; Html.text "My library" ]
-            ]
-            Html.a [
                 prop.href "#wiki"
                 prop.custom ("data-nav", "wiki")
                 prop.classes [ if active = "wiki" then "active" ]
@@ -109,6 +100,15 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     Shared.icon "wiki"
                     Html.text "Wiki"
                 ]
+            ]
+            Html.a [
+                prop.href "#lib"
+                prop.custom ("data-nav", "lib")
+                prop.classes [ "tab-phone"; if active = "lib" then "active" ]
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#lib", false)))
+                prop.children [ Shared.icon "library"; Html.text "My library" ]
             ]
         ]
     ]
@@ -337,7 +337,8 @@ let notesButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
             prop.onClick (fun e ->
                 e.stopPropagation ()
                 dispatch ToggleNotesPanel)
-            prop.children [ Shared.icon "notes" ]
+            // The label shows on wide screens; phones show the icon alone.
+            prop.children [ Shared.icon "notes"; Html.span [ prop.className "nb-label"; prop.text "Notes" ] ]
         ]
 
 /// `reading` lets the stylesheet quiet the header while a text is open: the

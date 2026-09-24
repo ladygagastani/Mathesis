@@ -798,7 +798,7 @@ span.ic{width:2.4rem;height:2.4rem;display:inline-grid;place-items:center;flex:n
   .col.eng{border-left:2px solid var(--rule);padding-left:.9rem;margin-left:2.6rem}
   .mcol>.mhead{cursor:pointer;position:relative;padding-right:2rem;user-select:none}
   .mcol>.mhead::after{content:"";position:absolute;right:.5rem;top:50%;width:.55rem;height:.55rem;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:translateY(-70%) rotate(45deg);transition:transform .15s}
-  .mcol.collapsed>.mhead::after{transform:translateY(-30%) rotate(-135deg)}
+  .mcol.collapsed>.mhead::after{transform:translateY(-50%) rotate(-45deg)}
   .mcol.collapsed>:not(.mhead){display:none!important}
   .mcol.collapsed{padding-bottom:.6rem}
   .home-block.mcol>.sh{margin-bottom:.4rem;padding-top:.2rem;padding-bottom:.2rem}
@@ -1491,7 +1491,7 @@ ol.ln-list{counter-reset:none}
    already use the gutter. The URN appears in the passage's top margin on hover. */
 @media (min-width:1001px){
   .reader[data-shape="prose"] .seg:not([data-verse="1"]){position:relative}
-  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref{position:absolute;left:0;top:1.1rem;width:2.9rem;margin:0;
+  .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref{position:absolute;left:0;top:1.1rem;width:2.9rem;margin:0;z-index:2;
     flex-direction:column;align-items:flex-start;gap:.2rem;line-height:1.25}
   .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref b{font-size:.72rem;overflow-wrap:anywhere;padding-top:.45em}
   .reader[data-shape="prose"] .seg:not([data-verse="1"]) > .ref .urn{position:absolute;left:3.2rem;top:-1.05rem;max-width:32rem}
@@ -2068,3 +2068,53 @@ html.ui-compact .libbtn{border-radius:var(--r2)}
 .note-edit-foot .quiet{flex:1;font-size:.76rem}
 .lm-head .note-edit-btn{margin-left:auto}
 .lm-head .note-edit-btn + .lm-del{margin-left:0}
+
+/* ===========================================================================
+   Fixes, 24 Sep 2026
+   =========================================================================== */
+/* A passage that holds only a page marker (Plato's bare "17" before 17a) takes
+   no room: it stays in the page so links and "go to" still land on it. */
+.seg.seg-empty{height:0;min-height:0;padding:0!important;margin:0!important;border:0!important;overflow:hidden;visibility:hidden}
+
+/* Work title: when the Favourite button wraps to its own line (phones, long
+   titles) it lines up with the title's left edge instead of starting 8px in. */
+.workhead h1{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.6rem;row-gap:.4rem}
+.workhead h1 .grc,.workhead h1 .fav-btn{margin-left:0}
+.workhead h1 .fav-btn{align-self:center}
+
+/* Phone header: room for the whole "Passage…" hint in the go-to box. */
+@media (max-width:600px){
+  #jump input{width:6rem}
+  .crumbs{min-width:0}
+}
+
+/* Start here tables: Greek letters at a readable size. */
+.g-table .grc{font-size:1.15em}
+.g-table td:first-child .grc{font-size:1.3em}
+
+/* Section headings: the ochre tick sits level with the capitals (it rode
+   ~3px high, more on phones where the heading has top padding). */
+.sh::before{top:calc(var(--sh-pad, 0px) + .42em);height:.75em}
+@media (max-width:760px){ .home-block.mcol>.sh{--sh-pad:.2rem} }
+
+/* Phones: "overflow-x:hidden" on html and body turned body into its own scroll
+   box, so the sticky header scrolled away with the page. "clip" stops sideways
+   scrolling the same way without breaking the sticky header. */
+@media (max-width:900px){ html,body{overflow-x:clip} }
+
+/* Notes lives in the header at every width now (it was a floating button on
+   wider screens, which covered the ends of lines). On wide screens it is a
+   labelled button like the text-source chip beside it; phones keep the icon. */
+.notes-fab{display:none!important}
+@media (min-width:901px){
+  .notes-ib{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .6rem;width:auto;height:auto;min-height:2.25rem;
+    border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink-2);font-size:.82rem;font-weight:500;white-space:nowrap}
+  .notes-ib:hover{border-color:var(--ink-2);color:var(--ink)}
+  .notes-ib[aria-pressed="true"]{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+  .notes-ib svg.icon{width:15px;height:15px}
+}
+@media (max-width:900px){ .notes-ib .nb-label{display:none} }
+@media (min-width:901px) and (max-width:1100px){
+  .notes-ib .nb-label{display:none}
+  .notes-ib{width:2.25rem;height:2.25rem;padding:0;justify-content:center}
+}

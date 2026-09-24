@@ -104,10 +104,10 @@ is called **analogy**. Children do it in English when they say *goed* for *went*
 |---|---|---|
 | Mycenaean | c. 1400–1200 BCE | (before the catalogue begins) |
 | Homeric | the epic poems, c. 8th–7th century BCE | Archaic |
-| Classical | 5th–4th century BCE | Archaic and Classical |
+| Classical | 5th–4th century BCE | Classical (and the end of the Archaic) |
 | Koine | c. 323 BCE – 4th century CE | Hellenistic, Roman Imperial |
 | Byzantine | c. 4th century – 1453 | Late Antique, Byzantine |
-| Modern | after 1453, and today | Post-Byzantine |
+| Modern | after 1453, and today | (after the catalogue ends) |
 
 ---
 

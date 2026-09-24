@@ -108,14 +108,7 @@ let private fullUrn (workId: string) (suffix: string) : string option =
     elif suffix = "none" then Some "none"
     else Some(sprintf "urn:cts:greekLit:%s.%s" workId suffix)
 
-let private collapsedByDefault (key: string) : bool =
-    match key with
-    | "paths"
-    | "eras"
-    | "alphabet"
-    | "tips"
-    | "howto" -> true
-    | _ -> false
+let private collapsedByDefault (key: string) : bool = Views.Shared.collapsedByDefault key
 
 // ---------------------------------------------------------------------------
 // text loading pipeline
@@ -1260,7 +1253,12 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         | _ -> model, Cmd.none
 
     // -- shell / chrome ------------------------------------------------
-    | SetFilter f -> { model with Filter = f }, Cmd.ofEffect (fun _ -> Storage.saveFilter f)
+    | SetFilter f ->
+        // The results live in "Suggested starting points"; open it so the
+        // filter visibly changes something even when the section was folded.
+        let collapsed = Map.add "picks" true model.Collapsed
+        { model with Filter = f; Collapsed = collapsed },
+        Cmd.ofEffect (fun _ -> Storage.saveFilter f; Storage.saveCollapsed collapsed)
     | SetNavQuery q -> { model with NavQuery = q }, Cmd.none
     | SetGenre g -> { model with Genre = g }, Cmd.none
     | ToggleAuthor id ->

@@ -385,7 +385,7 @@ let private suggestedPicks (catalog: Catalog) (filter: WorksFilter) : Work list 
     picks |> List.truncate 12
 
 let private picksCardSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    Shared.collapsibleSection dispatch model.Collapsed "home-card picks-card" "picks" "" (cardHeader dispatch "authors" "Suggested starting points" (Some("#browse", "more →"))) [
+    Shared.collapsibleSection dispatch model.Collapsed "home-card picks-card" "picks" "" (cardHeader dispatch "authors" "Suggested starting points" None) [
         Html.div [
             prop.className "picks"
             prop.children [ for w in suggestedPicks model.Catalog model.Filter -> Shared.workCard model.Catalog dispatch w ]
@@ -401,7 +401,7 @@ let private wikiCardSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
         model.Meta.Eras
         |> List.filter (fun e -> model.Meta.Authors |> Map.exists (fun _ m -> m.Era = Some e.Id))
         |> List.map (fun e -> stripParenSuffix e.Name)
-    Shared.collapsibleSection dispatch model.Collapsed "home-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" (Some("#wiki", "open →"))) [
+    Shared.collapsibleSection dispatch model.Collapsed "home-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" None) [
         Html.div [
             prop.className "mini-list"
             prop.children [
@@ -592,7 +592,8 @@ let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
     ]
 
 let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    Shared.collapsibleSection dispatch model.Collapsed "home-block" "howto" "sh" [ Html.text "How it works" ] [
+    // Never collapses (a standing decision, like the hero and the offline setup).
+    Shared.fixedSection "home-block" "sh" [ Html.text "How it works" ] [
         Html.div [
             prop.className "howto"
             prop.children [
@@ -618,7 +619,7 @@ let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         Html.b [ prop.text "Bookmark and note" ]
                         Html.span [
                             prop.text
-                                "Press the bookmark beside a passage to save it with a note, and link it to your other saved passages. Everything you save is waiting under My library (★)."
+                                "Press the bookmark beside a passage to save it with a note, and link it to your other saved passages. Everything you save is waiting under My library."
                         ]
                     ]
                 ]

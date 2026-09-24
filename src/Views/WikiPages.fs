@@ -93,7 +93,6 @@ let private authorRow (dispatch: Msg -> unit) (showArticleTag: bool) (a: Author)
 // wiki home
 // ---------------------------------------------------------------------------
 
-let private firstWord (s: string) : string = s.Split(' ').[0].Replace(",", "")
 
 /// One row of the wiki's table of contents: a Greek word for the subject in
 /// the margin (decoration, so hidden from screen readers), the English name as
@@ -283,7 +282,7 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                 "Authors"
                                 (sprintf "Biographies and timelines for %d authors." nAuthors)
                                 ((eras |> List.map (fun (e, _) -> "#wiki/authors/era/" + e.Id, stripParenSuffix e.Name))
-                                 @ (genres |> List.map (fun (g, _) -> "#wiki/authors/genre/" + g.Id, firstWord g.Name)))
+                                 @ (genres |> List.map (fun (g, _) -> "#wiki/authors/genre/" + g.Id, g.Short)))
                             wcat
                                 dispatch
                                 "Χρόνοι"
