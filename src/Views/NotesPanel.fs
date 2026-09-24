@@ -28,10 +28,12 @@ let private beginDrag (el: obj) (x: float) (y: float) : unit = jsNative
 let private dragTo (el: obj) (x: float) (y: float) : float array = jsNative
 
 /// Notes saved against the work on screen, newest first — the panel is about
-/// the text you are reading, so it needs no picking or searching.
-let notesFor (library: Library) (workId: string) : Mark list =
+/// the text you are reading, so it needs no picking or searching. The note
+/// being edited stays listed even while its text is empty, so clearing it to
+/// retype doesn't make the editor vanish mid-word.
+let notesFor (library: Library) (editing: string option) (workId: string) : Mark list =
     library.Marks
-    |> List.filter (fun m -> m.Work = workId && (m.Note <> "" || not (List.isEmpty m.Links)))
+    |> List.filter (fun m -> m.Work = workId && (m.Note <> "" || not (List.isEmpty m.Links) || editing = Some m.Id))
     |> List.sortByDescending (fun m -> m.Ts)
 
 /// The chunk holding a passage, so jumping to a note lands in the right part of
@@ -42,9 +44,10 @@ let private chunkHolding (rm: ReaderModel) (segRef: string) : string option =
     |> Option.map (fun c -> c.Ref)
 
 let private noteRow (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) (mark: Mark) : ReactElement =
+    let editing = model.EditingNote = Some mark.Id
     Html.div [
         prop.key mark.Id
-        prop.className "np-note"
+        prop.className ("np-note" + (if editing then " editing" else ""))
         prop.children [
             Html.button [
                 prop.className "np-ref"
@@ -60,12 +63,21 @@ let private noteRow (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) (ma
                     | None -> ())
                 prop.text (if mark.Label <> "" then mark.Label else mark.Ref)
             ]
-            if mark.Note <> "" then
+            if editing then
+                Shared.noteEditor dispatch mark
+            elif mark.Note <> "" then
                 Html.div [ prop.className "np-body"; prop.children (Shared.noteBody model.Catalog dispatch mark.Note) ]
             if not (List.isEmpty mark.Links) then
                 Html.div [
                     prop.className "np-links"
                     prop.children (mark.Links |> List.map (Shared.linkChip model.Catalog dispatch None))
+                ]
+            if not editing then
+                Html.div [
+                    prop.className "note-edit-row"
+                    prop.children [
+                        Shared.editNoteButton (mark.Note <> "") (fun () -> dispatch (Library_(EditNote(Some mark.Id))))
+                    ]
                 ]
         ]
     ]
@@ -118,7 +130,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     match model.Reader with
     | None -> Html.none
     | Some rm ->
-        let notes = notesFor model.Library rm.Work.Id
+        let notes = notesFor model.Library model.EditingNote rm.Work.Id
 
         let panel =
             Html.div [

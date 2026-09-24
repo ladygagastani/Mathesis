@@ -10,7 +10,9 @@ open Types
 [<Emit("document.getElementById($0)?.classList.contains($1)")>]
 let private hasClass (id: string) (cls: string) : bool = jsNative
 
-[<Emit("$0 && $0.matches && $0.matches('input,select')")>]
+// Textareas count too: without them, typing "/" or "\" in a note was swallowed
+// by the shortcuts and the arrow keys turned the page instead of moving the cursor.
+[<Emit("$0 && $0.matches && $0.matches('input,select,textarea,[contenteditable]')")>]
 let private isFormTarget (target: obj) : bool = jsNative
 
 [<Emit("$0 && $0.closest && $0.closest($1)")>]
@@ -57,8 +59,7 @@ let private historySub: Sub<Msg> =
 
 /// Escape closes the popover/settings/sidebar unconditionally; the arrow keys,
 /// `/` (focus the library search) and `\` (collapse/restore the library) are
-/// ignored while typing in an input or select (mirrors the original's
-/// `if(e.target.matches('input,select')) return;`).
+/// ignored while typing in an input, select or text box.
 let private keydownSub: Sub<Msg> =
     [ [ "keydown" ],
       fun dispatch ->

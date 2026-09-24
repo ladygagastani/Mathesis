@@ -257,6 +257,7 @@ let init () : Model * Cmd<Msg> =
               Panel = { X = None; Y = None; Dragging = false }
               Button = { X = None; Y = None; Dragging = false }
               ButtonMoved = false }
+          EditingNote = None
           Popover = None
           Toast = None
           JumpInput = ""
@@ -727,6 +728,7 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let rm = model.Reader |> Option.map (fun r -> { r with OpenEditor = Some(workId, segRef) })
         { model with Library = lib; Reader = rm },
         Cmd.batch [ Cmd.ofEffect (fun _ -> Storage.saveLibrary lib); (if isNew then Cmd.ofMsg (ShowToast "Saved to My library") else Cmd.none) ]
+    | Library_(EditNote markId) -> { model with EditingNote = markId }, Cmd.none
     | Library_ CloseMarkEditor -> { model with Reader = model.Reader |> Option.map (fun r -> { r with OpenEditor = None }) }, Cmd.none
     | Library_(SetMarkNote(workId, segRef, note)) -> saveLib model (LibraryData.setMarkNote model.Library workId segRef note)
     | Library_(AddMarkLink(workId, segRef, link)) ->
@@ -738,7 +740,11 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Library_(RemoveMarkLink(workId, segRef, linkWork, linkRef)) -> saveLib model (LibraryData.removeMarkLink model.Library workId segRef linkWork linkRef)
     | Library_(RemoveMark(workId, segRef)) ->
         let rm = model.Reader |> Option.map (fun r -> if r.OpenEditor = Some(workId, segRef) then { r with OpenEditor = None } else r)
-        saveLib { model with Reader = rm } (LibraryData.removeMark model.Library workId segRef)
+        let editing =
+            match LibraryData.markFor model.Library workId segRef with
+            | Some m when model.EditingNote = Some m.Id -> None
+            | _ -> model.EditingNote
+        saveLib { model with Reader = rm; EditingNote = editing } (LibraryData.removeMark model.Library workId segRef)
     | Library_(SetAuthorNote(authorId, text)) -> { model with Library = LibraryData.setAuthorNote model.Library authorId text }, Cmd.none
     | Library_(SaveAuthorNote _) ->
         let m2, cmd = saveLib model model.Library

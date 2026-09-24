@@ -321,6 +321,7 @@ type Model =
       SettingsOpen : bool
       SourceMenuOpen : bool               // the header chip's own text-source menu
       Notes        : NotesPanel           // draggable notes panel, shown while reading
+      EditingNote  : string option        // mark id whose note is open for editing in the panel / My library
       Popover      : PopoverKind option
       Toast        : (int * string) option    // (id, message) — id lets Cmd cancel
       JumpInput    : string
@@ -379,6 +380,9 @@ type LibraryMsg =
     | ToggleFav of workId: string
     | OpenMarkEditor of workId: string * segRef: string * label: string * snippet: string
     | CloseMarkEditor
+    /// Open (Some mark id) or close (None) the small note editor used in the
+    /// notes panel and on My library. The reader has its own, fuller editor.
+    | EditNote of markId: string option
     | SetMarkNote of workId: string * segRef: string * note: string
     | AddMarkLink of workId: string * segRef: string * MarkLink
     | RemoveMarkLink of workId: string * segRef: string * work: string * ref_: string

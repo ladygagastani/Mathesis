@@ -621,6 +621,15 @@ let private markBox (model: Model) (dispatch: Msg -> unit) (mark: Mark option) (
                                          prop.className "mk-links"
                                          prop.children ([ Html.text "See also: " ] @ interspersed (Html.text " ") (m.Links |> List.map (Shared.linkChip model.Catalog dispatch None)))
                                      ] ])
+                            // Opens the same editor as the bookmark button, with
+                            // links and "Remove bookmark", in place of this box.
+                            @ [ Html.div [
+                                    prop.className "note-edit-row"
+                                    prop.children [
+                                        Shared.editNoteButton (m.Note <> "") (fun () ->
+                                            dispatch (Library_(OpenMarkEditor(m.Work, m.Ref, m.Label, m.Snippet))))
+                                    ]
+                                ] ]
                         )
                     ]
                 | _ -> Html.none

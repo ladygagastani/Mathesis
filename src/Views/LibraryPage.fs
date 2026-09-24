@@ -115,9 +115,10 @@ let private groupMarksByWork (marks: Mark list) : (string * Mark list) list =
 let private libMarkRow (model: Model) (dispatch: Msg -> unit) (m: Mark) : ReactElement =
     let backlinks = LibraryData.backlinks model.Library m.Work m.Ref
     let hasNoteContent = m.Note <> "" || not (List.isEmpty m.Links)
+    let editing = model.EditingNote = Some m.Id
     Html.div [
         prop.key m.Id
-        prop.className "lib-mark"
+        prop.className ("lib-mark" + (if editing then " editing" else ""))
         prop.custom ("data-id", m.Id)
         prop.children [
             Html.div [
@@ -129,6 +130,8 @@ let private libMarkRow (model: Model) (dispatch: Msg -> unit) (m: Mark) : ReactE
                         prop.children [ Html.b [ prop.text (if m.Label <> "" then m.Label else m.Ref) ] ]
                     ]
                     Html.span [ prop.className "quiet"; prop.text (toLocaleDateString m.Ts) ]
+                    if not editing then
+                        Shared.editNoteButton (m.Note <> "") (fun () -> dispatch (Library_(EditNote(Some m.Id))))
                     Html.button [
                         prop.className "btn small lm-del"
                         prop.text "Remove"
@@ -137,7 +140,9 @@ let private libMarkRow (model: Model) (dispatch: Msg -> unit) (m: Mark) : ReactE
                 ]
             ]
             Html.div [ prop.className "lm-snip"; prop.text m.Snippet ]
-            if hasNoteContent then
+            if editing then
+                Shared.noteEditor dispatch m
+            if hasNoteContent && not editing then
                 Html.div [
                     prop.className "mk-note"
                     prop.children (

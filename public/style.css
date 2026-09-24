@@ -2052,3 +2052,19 @@ html.ui-compact .libbtn{border-radius:var(--r2)}
 .ap-main>.tr-note:first-child{margin:0 0 1.1rem;padding-bottom:.7rem;border-bottom:1px solid var(--rule-soft)}
 .wiki-hero .tr-note{margin-top:1rem}
 .guide .tr-note{margin:1.6rem 0 0;padding-top:.8rem;border-top:1px solid var(--rule-soft)}
+
+/* ---------- Edit note (added 2026-09-24) ----------
+   One "Edit note" button wherever a passage note is shown: under the note in
+   the reader (opens the full editor), and in the notes panel and My library
+   (opens the small editor in place). The small editor reuses `.mk-edit`, so
+   its text box shares the reader editor's colours in both themes. */
+.note-edit-row{margin-top:.45rem}
+.np-note .note-edit-row{margin-top:.3rem}
+.np-note .note-edit-btn{min-height:1.75rem;padding:.1rem .55rem;font-size:.74rem}
+.note-edit{margin-top:.45rem}
+.np-note .note-edit{margin-top:.3rem}
+.np-note .note-edit textarea{font-size:.85rem}
+.note-edit-foot{display:flex;align-items:center;gap:.5rem;margin-top:.4rem}
+.note-edit-foot .quiet{flex:1;font-size:.76rem}
+.lm-head .note-edit-btn{margin-left:auto}
+.lm-head .note-edit-btn + .lm-del{margin-left:0}

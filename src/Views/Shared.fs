@@ -219,6 +219,51 @@ let noteBody (catalog: Catalog) (dispatch: Msg -> unit) (text: string) : ReactEl
         | LibraryData.NoteLink link -> [ renderLink link ]
         | LibraryData.NoteText t -> renderTextRun t)
 
+/// The small note editor used where the reader's full editor (links, removing
+/// the bookmark) would not fit: the floating notes panel and My library.
+/// It saves as you type, like the reader's own editor, so "Done" only closes it.
+/// Keyed by the mark, so switching to another note starts from that note's text.
+let noteEditor (dispatch: Msg -> unit) (mark: Mark) : ReactElement =
+    let where = if mark.Label <> "" then mark.Label else mark.Ref
+    Html.div [
+        prop.key ("ne-" + mark.Id)
+        prop.className "mk-edit note-edit"
+        prop.children [
+            Html.textarea [
+                prop.rows 4
+                prop.autoFocus true
+                prop.ariaLabel ("Note on " + where)
+                prop.placeholder "Write a note about this passage."
+                prop.defaultValue mark.Note
+                prop.onChange (fun (v: string) -> dispatch (Library_(SetMarkNote(mark.Work, mark.Ref, v))))
+            ]
+            Html.div [
+                prop.className "note-edit-foot"
+                prop.children [
+                    Html.span [ prop.className "quiet"; prop.text "Saved as you type." ]
+                    Html.button [
+                        prop.className "btn small primary"
+                        prop.text "Done"
+                        prop.onClick (fun e ->
+                            e.stopPropagation ()
+                            dispatch (Library_(EditNote None)))
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+/// The "Edit note" button, the same everywhere a note is shown. With no note
+/// written yet it offers to add one instead.
+let editNoteButton (hasNote: bool) (onClick: unit -> unit) : ReactElement =
+    Html.button [
+        prop.className "btn small note-edit-btn"
+        prop.text (if hasNote then "Edit note" else "Add note")
+        prop.onClick (fun e ->
+            e.stopPropagation ()
+            onClick ())
+    ]
+
 // ---------------------------------------------------------------------------
 // wiki breadcrumbs
 // ---------------------------------------------------------------------------
