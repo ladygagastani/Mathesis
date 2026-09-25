@@ -1025,3 +1025,118 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   line parses as a nested sequence (the second `if` only runs when the first
   is true): put each `if` on its own line. The header's active tab never
   showed on desktop because of this.
+
+
+---
+
+## 20. Wiki: Everyday life (added 2026-09-25)
+
+- **Articles** are Markdown in `content/life/NN-slug.md`, like the Start here guide:
+  the first paragraph is the summary (index + search), `---` after it, `##`
+  sections, quotations as `>` blocks (Greek line, "English", `([Author, *Work* ref](read:<workId>:<ref>))`),
+  and a closing `## For review (not for publication)` list, cut at build time by
+  the same `guide-markdown` loader. Links: `read:` (reader), `author:tlgNNNN`
+  (author page), `NN-slug.md` (another article), and `read:<workId>@<edition>:<ref>`
+  for a work split over several files (the Greek Anthology: `@perseus-grc7` for book 7). Don't write "step N" in them:
+  Guide's renderer auto-links it to the guide.
+- **Code:** `LifeData.fs` (after GuideData; one `importDefault` per file, with its
+  group and Greek label; `Works`/`Authors` are pulled from the links),
+  `Views/Life.fs` (after Views/Guide; renders through `Guide.markdown`),
+  route `WikiRoute(WikiLife of string option)` = `#wiki/life`, `#wiki/life/<slug>`.
+  The wiki home lists it (`WikiData.blurbLife`, `lifeShortcuts`); search matches
+  titles, summaries and (lower) whole article text (`Search.lifeBodies`).
+  Vite puts the Markdown in its own `life` chunk.
+- **Accuracy:** every quotation was checked against the TEI text and every
+  `read:` link was opened in the reader to confirm it lands on the passage
+  holding the quoted Greek. Refs are the reader's own (Athenaeus uses the
+  Perseus file's book.chapter numbering, not Casaubon pages; Diogenes Laertius
+  is book.chapter.section). Re-check links after any Aligner/Segmenter change.
+  Legend, dispute and later invention are said in the text, not only in the
+  review notes.
+
+
+---
+
+## 21. Real addresses, page files, share previews (added 2026-09-25)
+
+- **Addresses.** Online the browser shows paths, not hashes:
+  `/Mathesis/wiki/life/food/`, `/Mathesis/author/tlg0012/`, and for the reader
+  `/Mathesis/<workId>/?grc=…&eng=…&part=…&at=…` (only the slots that are set).
+  Inside the app nothing changed: routes are still hash strings
+  (`Router.toHash`, `Navigate("#…")`, `Model.CurrentHash`, `History`), and
+  `Router` converts at the edge: `url`/`href` (hash → address; `prop.href`
+  always goes through `Router.href`, which leaves external links and in-page
+  anchors like `#ap-…` alone), `pushState`/`replaceState`, `currentHash`
+  (address → hash). The site root is `Router.basePath`, worked out from the
+  module's own URL (`new URL('../', import.meta.url)`), so the same build
+  works at `/Mathesis/` (GitHub Pages) and `/` (Vercel).
+- **Hash mode** is kept for `file:` (dist/index.html opened from disk) and for
+  builds with `VITE_ROUTING=hash` (the private review page uses it). Old `#…`
+  links still open the right page, and the address bar is then rewritten to
+  the path (`Router.arrivedByHash`). The emailed sign-in link returns to the
+  site root with `#access_token=…`, which `currentHash` passes through.
+- **Page files** (`scripts/site-pages.mjs`, run by vite's `site-pages`
+  plugin after every build): a small `index.html` for every page the app
+  knows (home, library, study, guide steps, wiki pages, eras, the Everyday
+  life articles, every author and every work: about 2,240), each with its own
+  title, description, canonical URL and Open Graph/Twitter tags; the
+  catalogue and metadata moved to `dist/data/catalog.txt` and `meta.json`
+  (`Catalog.decodeEmbedded` fetches them when the page has no inline copy;
+  the front page keeps its inline copy so it works from disk); `sitemap.xml`
+  and `robots.txt`; and `404.html`, which sends any other address (forum
+  threads, passages) to the front page as `?/<address>`. The front page's
+  first script stores that in `window.__anagPath` for `Router.currentHash`
+  (it must not rewrite the address before the relative asset URLs load).
+  `404.html` assumes GitHub Pages' project folder (one path segment) on
+  `*.github.io` and the root anywhere else: revisit it for a custom domain.
+- **Site address** for canonical/share links: `VITE_SITE_URL` (default
+  `https://ladygagastani.github.io/Mathesis/`).
+- **Share image:** `public/og-card.png` (1200×630), drawn from
+  `scripts/og-card.html` (fonts: Gentium Book Plus, Inter).
+- **Titles:** reader pages are "Work — Author — Μάθησις" in both the page file
+  and the app (`State.pageTitle`). English titles for works the catalogue
+  names in Latin live in `Json.englishTitles`; the catalogue's own title is
+  kept in `Json.formerTitles` so search still finds it.
+- **Sign-in email limit:** Supabase's own sender allows only a few emails an
+  hour. `Server.sendCode` turns its 429 into a plain message; the fix is an
+  email sender (supabase/README.md, "2b"). The mock server answers
+  `ratelimit@example.com` with that 429.
+
+
+## 22. Forum safety, account deletion, privacy, licence, not found (added 2026-09-25)
+
+- **Report.** Every thread and reply shows Report (signed in, not your own)
+  and "Hide this person" (anyone, not your own) in `.f-post-acts`, from
+  `Views.Forum.postActions`. Report opens an inline form (`ReportDraft` on
+  `ForumState.Report`; reasons spam / abuse / offtopic / other, ids match the
+  schema's check) → `Server.reportContent` → `forum_reports`. A second report
+  of the same post is a 409, treated as sent. Moderators get a queue at the
+  top of the forum's front page (`LoadReports` on entering `ForumHome` and on
+  `ProfileLoaded` for an admin; "Dealt with" = `status = 'done'`).
+- **Hide** is client-only by design: `ForumState.Blocked` = (user id, name),
+  `anag:blocked`. Hidden people's posts fold to "Show it" (`Unhidden`, this
+  visit only); their threads are left out of lists with a count. The list,
+  with "Show again", is on the account page.
+- **Rules:** `ForumRoute ForumRules`, `#forum/rules` (parsed before
+  `forum/<board>`), linked from the forum welcome, the new-thread form and
+  the privacy page.
+- **Delete account:** account page, "Delete my account…" → type *delete* →
+  `Server.deleteAccount` (RPC `delete_my_account`, security definer, deletes
+  the `auth.users` row; everything else cascades). The browser's library is
+  kept and unlinked (`libOwner` cleared).
+- **Existing Supabase projects must re-run `supabase/schema.sql`** for
+  `forum_reports` and `delete_my_account`. The mock server and the review
+  page's pretend server implement both.
+- **Privacy** (`PrivacyRoute`, `#privacy`, `Views.About.privacy`): what is kept
+  in the browser, what an account stores, deletion, third parties. Keep it
+  true when adding storage keys, tables or outside services, and change its
+  "Last updated" date.
+- **Licence:** the site's own writing is CC BY-SA 4.0, stated on About
+  (`#licence` heading). About's typeface credits now match §13.
+- **Not found** (`NotFoundRoute hash`, `Views.About.notFound`): an unknown
+  top-level word or wiki page parses to it; an unknown work, author, era,
+  Everyday life slug, guide slug or forum board becomes it in
+  `State.loadForRoute` once the catalogue is loaded. The address stays as
+  typed. `Router.navKey` gives "" (no tab lit).
+- Page files: `privacy`, `forum/rules`.
+

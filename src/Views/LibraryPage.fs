@@ -37,7 +37,7 @@ let private whereSaved (model: Model) (dispatch: Msg -> unit) : ReactElement =
             | None, _ when acc.Configured ->
                 Html.text "Saved in this browser only. "
                 Html.a [
-                    prop.href "#account"
+                    prop.href (Router.href "#account")
                     prop.text "Sign in"
                     prop.onClick (fun e ->
                         e.preventDefault ()
@@ -175,7 +175,7 @@ let private libMarkRow (model: Model) (dispatch: Msg -> unit) (m: Mark) : ReactE
                                  let hash = Router.toHash (ReaderRoute(b.Work, "", "", None, (if b.Ref = "" then None else Some b.Ref)))
                                  Html.a [
                                      prop.className "xref"
-                                     prop.href "#"
+                                     prop.href (Router.href hash)
                                      prop.text (title + " " + (if b.Label <> "" then b.Label else b.Ref))
                                      prop.onClick (fun e ->
                                          e.preventDefault ()
@@ -406,7 +406,7 @@ let private WordRow (model: Model) (dispatch: Msg -> unit) (w: WordCard) =
                 let h = readerHash w.Work w.Ref
                 Html.a [
                     prop.className "xref w-from"
-                    prop.href h
+                    prop.href (Router.href h)
                     prop.text (whereFrom model w.Work w.Ref)
                     prop.onClick (fun e ->
                         e.preventDefault ()
@@ -611,7 +611,7 @@ let private placesSection (model: Model) (dispatch: Msg -> unit) : ReactElement 
                                                Html.a [
                                                    prop.key (w + r)
                                                    prop.className "xref"
-                                                   prop.href h
+                                                   prop.href (Router.href h)
                                                    prop.text (whereFrom model w r)
                                                    prop.onClick (fun e ->
                                                        e.preventDefault ()
@@ -653,7 +653,7 @@ let private authorNotesSection (model: Model) (dispatch: Msg -> unit) : ReactEle
                       Html.a [
                           prop.key id
                           prop.className "lib-anote"
-                          prop.href hash
+                          prop.href (Router.href hash)
                           prop.onClick (fun e ->
                               e.preventDefault ()
                               dispatch (Navigate(hash, false)))
@@ -783,7 +783,7 @@ let private tabs (model: Model) (dispatch: Msg -> unit) (current: LibTab) : Reac
         Html.a [
             prop.key label
             prop.className ("lib-tab" + (if t = current then " on" else ""))
-            prop.href h
+            prop.href (Router.href h)
             if t = current then prop.custom ("aria-current", "page")
             prop.onClick (fun e ->
                 e.preventDefault ()

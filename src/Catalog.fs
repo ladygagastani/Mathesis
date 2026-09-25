@@ -61,21 +61,33 @@ let searchWorks (catalog: Catalog) (filter: WorksFilter) (query: string) : (Auth
 // boot: decode the embedded #catalog (gzip+base64) and #meta (JSON) blobs
 // ---------------------------------------------------------------------------
 
+/// The catalogue and metadata as the page carries them. The site's front page
+/// has them inline (so it also works opened from disk); every other page's
+/// file leaves them out and they are fetched from data/, once, and cached.
+[<Emit("fetch(new URL('../data/' + $0, import.meta.url)).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })")>]
+let private fetchData (file: string) : JS.Promise<string> = jsNative
+
+let private blobs () : JS.Promise<string * string> =
+    let catalogEl = document.getElementById "catalog"
+    let metaEl = document.getElementById "meta"
+    if not (isNullOrUndefined catalogEl) && not (isNullOrUndefined metaEl) then
+        Promise.lift (catalogEl.textContent, metaEl.textContent)
+    else
+        Promise.all [| fetchData "catalog.txt"; fetchData "meta.json" |]
+        |> Promise.map (fun xs -> xs.[0], xs.[1])
+
 let decodeEmbedded () : JS.Promise<Catalog * Meta> =
     promise {
-        let catalogEl = document.getElementById "catalog"
-        let metaEl = document.getElementById "meta"
-        if isNullOrUndefined catalogEl || isNullOrUndefined metaEl then
-            return failwith "Missing catalog/meta data in the page."
-        elif not Interop.hasDecompressionStream then
+        if not Interop.hasDecompressionStream then
             return failwith "This browser doesn't support DecompressionStream (needs current Chrome, Safari, Firefox, or Edge)."
         else
-            let bytes = Interop.base64ToBytes (catalogEl.textContent.Trim())
+            let! catalogText, metaText = blobs ()
+            let bytes = Interop.base64ToBytes (catalogText.Trim())
             let! catalogJson = Interop.decompressToText "gzip" bytes
             match Json.parseCatalog catalogJson with
             | Error e -> return failwith ("Could not read the text catalogue: " + e)
             | Ok catalog ->
-                match Json.parseMeta metaEl.textContent with
+                match Json.parseMeta metaText with
                 | Error e -> return failwith ("Could not read author metadata: " + e)
                 | Ok meta -> return catalog, meta
     }

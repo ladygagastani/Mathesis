@@ -47,7 +47,7 @@ let private textRuns (dispatch: Msg -> unit) (key: string) (s: string) : ReactEl
         let k = key + "p" + string i
         if isRef then
             match GuideData.hashOfStep (int (stepRef.Match t).Groups.[1].Value) with
-            | Some h -> [ Html.a [ prop.key k; prop.href h; prop.text t; prop.onClick (navigateTo dispatch h) ] ]
+            | Some h -> [ Html.a [ prop.key k; prop.href (Router.href h); prop.text t; prop.onClick (navigateTo dispatch h) ] ]
             | None -> [ Html.text t ]
         else
             greekText k t)
@@ -58,9 +58,17 @@ let private resolveHref (href: string) : string * bool =
     if href.StartsWith "read:" then
         let rest = href.Substring 5
         let i = rest.IndexOf ':'
-        if i > 0 then Router.toHash (ReaderRoute(rest.Substring(0, i), "", "", None, Some(rest.Substring(i + 1)))), false
-        else Router.toHash (ReaderRoute(rest, "", "", None, None)), false
-    elif href.EndsWith ".md" then (GuideData.hashOfFile href |> Option.defaultValue "#start"), false
+        let work, ref = if i > 0 then rest.Substring(0, i), Some(rest.Substring(i + 1)) else rest, None
+        // `read:<workId>@<edition>:<ref>` names the Greek edition, for works
+        // split over several files (the Greek Anthology's volumes)
+        let work, edition =
+            match work.IndexOf '@' with
+            | j when j > 0 -> work.Substring(0, j), work.Substring(j + 1)
+            | _ -> work, ""
+        Router.toHash (ReaderRoute(work, edition, "", None, ref)), false
+    elif href.StartsWith "author:" then "#author/" + href.Substring 7, false
+    elif href.EndsWith ".md" then
+        (LifeData.hashOfFile href |> Option.orElse (GuideData.hashOfFile href) |> Option.defaultValue "#start"), false
     elif href.StartsWith "#" then href, false
     else href, true
 
@@ -76,7 +84,7 @@ let rec private inlines (dispatch: Msg -> unit) (key: string) (xs: Inline list) 
         | Link(href, ys) ->
             let h, external = resolveHref href
             [ Html.a (
-                  [ prop.key k; prop.href h; prop.children (inlines dispatch k ys) ]
+                  [ prop.key k; prop.href (Router.href h); prop.children (inlines dispatch k ys) ]
                   @ (if external then [ prop.target "_blank"; prop.rel "noopener" ]
                      else [ prop.onClick (navigateTo dispatch h) ])
               ) ])
@@ -169,16 +177,20 @@ and private listItems (dispatch: Msg -> unit) (key: string) (items: Block list l
         | Para xs :: rest -> Html.li [ prop.key k; prop.children (inlines dispatch k xs @ blocks dispatch k rest) ]
         | _ -> Html.li [ prop.key k; prop.children (blocks dispatch k item) ])
 
+/// Renders parsed Markdown the way the guide does (Greek runs, quotations,
+/// `read:`/`author:` links); the wiki's Everyday life articles use it too.
+let markdown (dispatch: Msg -> unit) (key: string) (bs: Block list) : ReactElement list = blocks dispatch key bs
+
 /// Home › Start here › page. The guide hangs off the home page, not the wiki.
 let private crumbs (dispatch: Msg -> unit) (parts: (string * string option) list) : ReactElement =
     Html.div [
         prop.className "wcrumbs"
         prop.children [
-            Html.a [ prop.href "#study"; prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
+            Html.a [ prop.href (Router.href "#study"); prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
             for label, hash in parts do
                 Html.text " › "
                 match hash with
-                | Some h -> Html.a [ prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+                | Some h -> Html.a [ prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ]
                 | None -> Html.span [ prop.text label ]
         ]
     ]
@@ -205,7 +217,7 @@ let path (dispatch: Msg -> unit) : ReactElement =
                                         prop.children [
                                             Html.a [
                                                 prop.className "gp-step"
-                                                prop.href h
+                                                prop.href (Router.href h)
                                                 prop.onClick (navigateTo dispatch h)
                                                 prop.children [
                                                     Html.span [ prop.className "num"; prop.text (string i) ]
@@ -237,7 +249,7 @@ let private progress (dispatch: Msg -> unit) (idx: int) : ReactElement =
                 let h = GuideData.hashOf p.Slug
                 Html.a [
                     prop.key p.Slug
-                    prop.href h
+                    prop.href (Router.href h)
                     prop.title (sprintf "Step %d: %s" i p.Title)
                     prop.className (if i = idx then "on" elif i < idx then "done" else "")
                     if i = idx then prop.custom ("aria-current", "step")
@@ -258,7 +270,7 @@ let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactE
     let body = Markdown.parse p.Markdown
     let pagerLink (i: int) (label: string) (cls: string) =
         let h = GuideData.hashOf pages.[i].Slug
-        Html.a [ prop.className cls; prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+        Html.a [ prop.className cls; prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ]
     Html.div [
         prop.className "page guide"
         prop.children [

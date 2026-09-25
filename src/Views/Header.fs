@@ -25,7 +25,7 @@ let brand (dispatch: Msg -> unit) : ReactElement =
     Html.a [
         prop.className "brand"
         prop.id "home"
-        prop.href "#"
+        prop.href (Router.href "#")
         prop.onClick (fun e ->
             e.preventDefault ()
             dispatch (Navigate("#", false)))
@@ -41,7 +41,7 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let active = Router.navKey model.Route
     let tab (hash: string) (key: string) (iconName: string) (label: string) (title: string) (phoneOnly: bool) =
         Html.a [
-            prop.href hash
+            prop.href (Router.href hash)
             prop.custom ("data-nav", key)
             prop.classes [
                 if phoneOnly then "tab-phone"
@@ -92,7 +92,7 @@ let accountButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
             | _ -> who, "Signed in as " + who + ". Your library is synced.", " on"
     Html.a [
         prop.className ("acct-btn" + cls + (if model.Route = AccountRoute then " active" else ""))
-        prop.href "#account"
+        prop.href (Router.href "#account")
         prop.title title
         prop.onClick (fun e ->
             e.preventDefault ()
@@ -115,7 +115,7 @@ let tools (model: Model) (dispatch: Msg -> unit) : ReactElement =
             // Phones only: the Forum's place in the tab bar went to Study.
             Html.a [
                 prop.className ("ib forum-ib" + (if Router.navKey route = "forum" then " active" else ""))
-                prop.href "#forum"
+                prop.href (Router.href "#forum")
                 prop.title "Forum"
                 prop.ariaLabel "Forum"
                 prop.onClick (fun e ->
@@ -127,7 +127,7 @@ let tools (model: Model) (dispatch: Msg -> unit) : ReactElement =
             Html.a [
                 prop.className ("libbtn" + (if Router.navKey route = "lib" then " active" else ""))
                 prop.id "libBtn"
-                prop.href "#lib"
+                prop.href (Router.href "#lib")
                 prop.title "My library"
                 prop.onClick (fun e ->
                     e.preventDefault ()

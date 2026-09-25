@@ -216,7 +216,7 @@ let linkChip (catalog: Catalog) (dispatch: Msg -> unit) (removeCtx: (string * st
     React.Fragment [
         Html.a [
             prop.className "xref chip"
-            prop.href "#"
+            prop.href (Router.href (Router.toHash (ReaderRoute(link.Work, "", "", None, (if link.Ref = "" then None else Some link.Ref)))))
             prop.text (xrefLabel catalog link)
             prop.onClick (fun e ->
                 e.preventDefault ()
@@ -240,7 +240,7 @@ let noteBody (catalog: Catalog) (dispatch: Msg -> unit) (text: string) : ReactEl
     let renderLink (link: MarkLink) : ReactElement =
         Html.a [
             prop.className "xref"
-            prop.href "#"
+            prop.href (Router.href (Router.toHash (ReaderRoute(link.Work, "", "", None, (if link.Ref = "" then None else Some link.Ref)))))
             prop.text (xrefLabel catalog link)
             prop.onClick (fun e ->
                 e.preventDefault ()
@@ -314,7 +314,7 @@ let wikiCrumbs (dispatch: Msg -> unit) (parts: (string * string option) list) : 
         prop.className "wcrumbs"
         prop.children [
             Html.a [
-                prop.href "#wiki"
+                prop.href (Router.href "#wiki")
                 prop.text "Wiki"
                 prop.onClick (fun e ->
                     e.preventDefault ()
@@ -325,7 +325,7 @@ let wikiCrumbs (dispatch: Msg -> unit) (parts: (string * string option) list) : 
                 match hash with
                 | Some h ->
                     Html.a [
-                        prop.href h
+                        prop.href (Router.href h)
                         prop.text label
                         prop.onClick (fun e ->
                             e.preventDefault ()
@@ -492,7 +492,7 @@ let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
                             Html.a [
                                 prop.key e.Id
                                 prop.className "eb-col"
-                                prop.href ("#wiki/eras/" + e.Id)
+                                prop.href (Router.href ("#wiki/eras/" + e.Id))
                                 prop.style [ style.custom ("flexBasis", widthOf from to_) ]
                                 prop.ariaLabel (name e + ", " + eraRange from to_ + ": " + works n)
                                 prop.onClick (go e.Id)
@@ -536,7 +536,7 @@ let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         for e, from, to_, n in eras do
                             Html.a [
                                 prop.key e.Id
-                                prop.href ("#wiki/eras/" + e.Id)
+                                prop.href (Router.href ("#wiki/eras/" + e.Id))
                                 prop.onClick (go e.Id)
                                 prop.style [ style.custom ("height", rowHeight from to_) ]
                                 prop.children [

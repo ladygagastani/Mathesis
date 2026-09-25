@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:G;src:url(GentiumBookPlus-Regular.ttf)}
+@font-face{font-family:GI;src:url(GentiumBookPlus-Italic.ttf)}
+@font-face{font-family:I;src:url(Inter.ttf)}
+html,body{margin:0}
+.card{width:1200px;height:630px;box-sizing:border-box;background:#F5F3EE;color:#1B1815;position:relative;overflow:hidden;
+  padding:78px 84px;display:flex;flex-direction:column;justify-content:space-between;border-bottom:10px solid #1B1815}
+.kicker{font:600 22px/1 I;letter-spacing:.14em;text-transform:uppercase;color:#67615A}
+h1{font:400 150px/1 G;margin:24px 0 0;letter-spacing:-.01em}
+.sub{font:400 36px/1.35 G;color:#46413A;max-width:720px;margin-top:22px}
+.foot{display:flex;gap:28px;font:500 24px/1 I;color:#46413A;align-items:center}
+.foot i{width:8px;height:8px;background:#8C6B3C;display:inline-block;transform:rotate(45deg)}
+.grid{position:absolute;right:70px;top:70px;display:grid;grid-template-columns:repeat(9,44px);grid-auto-rows:56px;
+  font:400 40px/56px G;color:#8C6B3C;opacity:.9;text-align:center}
+.grid span:nth-child(odd){color:#8C6B3C}
+.rule{position:absolute;left:84px;right:84px;top:460px;height:1px;background:#D5D0C5}
+</style></head><body><div class="card">
+<div><div class="kicker">Ancient Greek reader</div>
+<h1>Μάθησις</h1>
+<div class="sub">Greek texts with English translations alongside</div></div>
+<div class="foot"><span>Homer to Byzantium</span><i></i><span>Wiki</span><i></i><span>Learn to read Greek</span></div>
+<div class="grid" id="g"></div>
+</div>
+<script>
+const t='ΤΟΓΑΡΜΑΝΘΑΝΕΙΝΗΔΙΣΤΗΑΝΑΓΚΗ⁝'; const g=document.getElementById('g');
+for(const c of t) { const s=document.createElement('span'); s.textContent=c; g.appendChild(s) }
+</script></body></html>

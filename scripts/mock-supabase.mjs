@@ -15,6 +15,7 @@ const profiles = {};   // id -> { id, display_name, is_admin }
 const libraries = {};  // user_id -> { data, updated_at }
 let threads = [];      // rows
 let posts = [];
+let reports = [];
 const log = [];
 const ADMIN_EMAIL = 'mod@example.com';
 
@@ -57,7 +58,9 @@ http.createServer(async (req, res) => {
   const uid = who(req);
   log.push(req.method + ' ' + url.pathname + url.search);
   const p = url.pathname;
-  if (p === '/__log') return send(res, 200, { log, threads, posts, libraries, profiles });
+  if (p === '/__log') return send(res, 200, { log, threads, posts, libraries, profiles, reports, users });
+  // Supabase's answer when too many emails were sent: try it with this address
+  if (p === '/auth/v1/otp' && json.email === 'ratelimit@example.com') return send(res, 429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' });
   if (p === '/auth/v1/otp') { if (!users[json.email]) users[json.email] = { id: randomUUID(), email: json.email }; if (json.email === ADMIN_EMAIL) profiles[users[json.email].id] = { id: users[json.email].id, display_name: 'Moderator', is_admin: true }; return send(res, 200, {}); }
   if (p === '/auth/v1/verify') {
     const u = users[json.email];
@@ -103,6 +106,28 @@ http.createServer(async (req, res) => {
       const t = threads.find(t => t.id === json.thread_id); if (t) { t.reply_count++; t.last_post_at = now; }
       return send(res, 201); }
     if (req.method === 'DELETE') { const del = posts.filter(match).filter(x => x.author_id === uid || isMod(uid)); posts = posts.filter(x => !del.includes(x)); del.forEach(x => { const t = threads.find(t => t.id === x.thread_id); if (t) t.reply_count--; }); return send(res, 204); }
+  }
+  if (table === 'forum_reports') {
+    if (req.method === 'GET') return send(res, 200, isMod(uid) ? reports.filter(match).sort((a, b) => b.created_at.localeCompare(a.created_at)) : []);
+    if (req.method === 'POST') { if (!uid || json.reporter_id !== uid) return send(res, 401, { message: 'rls' });
+      if (reports.some(r => r.reporter_id === uid && r.thread_id === json.thread_id && (r.post_id || '') === (json.post_id || ''))) return send(res, 409, { message: 'duplicate key value violates unique constraint "forum_reports_once"' });
+      reports.push({ id: randomUUID(), thread_id: json.thread_id, post_id: json.post_id || null, reason: json.reason, note: json.note || '', thread_title: json.thread_title || '', excerpt: json.excerpt || '', reporter_id: uid, status: 'open', created_at: new Date().toISOString() });
+      return send(res, 201); }
+    if (req.method === 'PATCH') { if (!isMod(uid)) return send(res, 200, []); reports.filter(match).forEach(r => r.status = json.status); return send(res, 204); }
+  }
+  // deleting an account cascades to everything it owns, as in schema.sql
+  if (p === '/rest/v1/rpc/delete_my_account' && req.method === 'POST') {
+    if (!uid) return send(res, 401, { message: 'Sign in first.' });
+    const email = Object.keys(users).find(e => users[e].id === uid); if (email) delete users[email];
+    for (const t of Object.keys(tokens)) if (tokens[t] === uid) delete tokens[t];
+    for (const t of Object.keys(refresh)) if (refresh[t] === uid) delete refresh[t];
+    delete profiles[uid]; delete libraries[uid];
+    const gone = threads.filter(t => t.author_id === uid).map(t => t.id);
+    threads = threads.filter(t => t.author_id !== uid);
+    posts.filter(x => x.author_id === uid && !gone.includes(x.thread_id)).forEach(x => { const t = threads.find(t => t.id === x.thread_id); if (t) t.reply_count--; });
+    posts = posts.filter(x => x.author_id !== uid && !gone.includes(x.thread_id));
+    reports = reports.filter(r => r.reporter_id !== uid && !gone.includes(r.thread_id));
+    return send(res, 204);
   }
   send(res, 404, { message: 'no route ' + p });
 }).listen(54321, () => console.log('mock on 54321'));

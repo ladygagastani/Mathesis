@@ -94,7 +94,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     | Some _ ->
                         Html.a [
                             prop.className "btn small pop-save on"
-                            prop.href "#lib/words"
+                            prop.href (Router.href "#lib/words")
                             prop.title "This word is in My library › Words"
                             prop.onClick (fun e ->
                                 e.preventDefault ()
@@ -120,21 +120,21 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         prop.id "lnkLogeion"
                         prop.target "_blank"
                         prop.rel "noopener"
-                        prop.href (href "https://logeion.uchicago.edu/")
+                        prop.href (Router.href (href "https://logeion.uchicago.edu/"))
                         prop.children [ Html.text "Logeion "; Html.small [ prop.text "LSJ, Middle Liddell, Slater" ] ]
                     ]
                     Html.a [
                         prop.id "lnkPerseus"
                         prop.target "_blank"
                         prop.rel "noopener"
-                        prop.href (if isOpen then "https://www.perseus.tufts.edu/hopper/morph?l=" + enc + "&la=greek" else "#")
+                        prop.href (Router.href (if isOpen then "https://www.perseus.tufts.edu/hopper/morph?l=" + enc + "&la=greek" else "#"))
                         prop.children [ Html.text "Perseus word study "; Html.small [ prop.text "morphology" ] ]
                     ]
                     Html.a [
                         prop.id "lnkWikt"
                         prop.target "_blank"
                         prop.rel "noopener"
-                        prop.href (if isOpen then "https://en.wiktionary.org/wiki/" + enc + "#Ancient_Greek" else "#")
+                        prop.href (Router.href (if isOpen then "https://en.wiktionary.org/wiki/" + enc + "#Ancient_Greek" else "#"))
                         prop.children [ Html.text "Wiktionary "; Html.small [ prop.text "inflection tables" ] ]
                     ]
                 ]

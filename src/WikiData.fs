@@ -187,6 +187,10 @@ let excerpt (limit: int) (text: string) : string =
 /// home page's Wiki card so the two never describe a section differently.
 let blurbAuthors (n: int) : string = sprintf "Lives and timelines of %d authors, by era and by genre." n
 let blurbEras: string = "From Homeric epic to Byzantine Greek: the periods and their language."
+let blurbLife: string = "How people lived, the good and the grim: households, work and money, food and wine, gods and oracles, music and theatre, medicine, games, plague and war."
+
+/// Articles linked under the Everyday life row of the wiki's contents.
+let lifeShortcuts: string list = [ "food"; "wine-and-the-symposium"; "medicine"; "mysteries-and-oracles"; "music"; "strange-but-true" ]
 let blurbManuscripts: string = "How the texts reached us: papyri, codices and the key witnesses."
 let blurbVariants: string = "Lines added later, lines ancient editors doubted, disputed works and other puzzles."
 let blurbEditions: string = "The printed edition behind each text here, and the editions scholars cite."
@@ -305,7 +309,7 @@ let wikiIntro: WikiIntro =
           Greek "σχόλια"
           Plain " (skhólia), distilled from commentaries like theirs; and in the tenth century the "
           Title "Suda"
-          Plain " gathered what was known into an encyclopaedia of about 31,000 entries. A text that no one can explain is soon a text that no one copies. An open reference that anyone can use is the same work in its modern form, and it is what this wiki is for: who wrote each text and when, how it reached us, and which editions to trust." ]
+          Plain " gathered what was known into an encyclopaedia of about 31,000 entries. A text that no one can explain is soon a text that no one copies. An open reference that anyone can use is the same work in its modern form, and it is what this wiki is for: who wrote each text and when, how it reached us, which editions to trust, and how the people in it lived." ]
       Living =
         [ Plain "Greek has been written for well over three thousand years, from the Linear B tablets of the Bronze Age palaces to the Greek spoken today, and English still takes from it its words for learning itself: "
           Title "mathematics"

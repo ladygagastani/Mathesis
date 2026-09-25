@@ -463,3 +463,9 @@ let saveSession (s: Session option) =
 /// Searches a result was chosen for, newest first (the search box's "Recent").
 let loadSearches () : string list = getJson "searches" (Decode.list Decode.string) []
 let saveSearches (v: string list) = setJson "searches" (fun (xs: string list) -> Encode.list (List.map Encode.string xs)) v
+
+/// Forum authors this reader has chosen not to see: (user id, name).
+let loadBlocked () : (string * string) list =
+    getJson "blocked" (Decode.list (Decode.tuple2 Decode.string Decode.string)) []
+let saveBlocked (v: (string * string) list) =
+    setJson "blocked" (fun (xs: (string * string) list) -> Encode.list [ for (a, b) in xs -> Encode.tuple2 Encode.string Encode.string (a, b) ]) v

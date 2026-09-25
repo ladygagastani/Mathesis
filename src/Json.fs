@@ -43,13 +43,43 @@ let private englishTitles =
           "tlg0552.tlg001", "On the Sphere and Cylinder"
           "tlg0627.tlg003", "Prognostic"
           "tlg0641.tlg001", "Ephesian Tale"
-          "tlg1799.tlg001", "Elements" ]
+          "tlg1799.tlg001", "Elements"
+          // quoted in the wiki's Everyday life articles by their English names
+          "tlg0007.tlg078", "Advice to Bride and Groom"
+          "tlg0007.tlg080", "On Superstition"
+          "tlg0007.tlg082", "Sayings of Spartans"
+          "tlg0007.tlg082a", "Spartan Customs"
+          "tlg0007.tlg082b", "Sayings of Spartan Women"
+          "tlg0007.tlg101", "On Talkativeness"
+          "tlg0007.tlg111", "Consolation to his Wife"
+          "tlg0007.tlg131", "On Eating Meat I"
+          "tlg0007.tlg132", "On Eating Meat II"
+          "tlg0062.tlg031", "The Lover of Lies"
+          "tlg0062.tlg036", "On Funerals"
+          "tlg0062.tlg058", "A Slip of the Tongue in Greeting"
+          "tlg0627.tlg012", "Aphorisms"
+          "tlg0627.tlg013", "The Oath"
+          "tlg0627.tlg019", "On the Nature of Man"
+          "tlg0627.tlg027", "On the Sacred Disease"
+          "tlg0545.tlg002", "Historical Miscellany"
+          "tlg2703.tlg001", "Alexiad"
+          "tlg0096.tlg002", "Fables" ]
+
+/// The catalogue's own title for a work shown under an English one, so a
+/// search for "De esu carnium" or "Philopseudes" still finds it.
+let formerTitles = System.Collections.Generic.Dictionary<string, string>()
 
 let private decodeWork (authorId: string) : Decoder<Work> =
     Decode.object (fun get ->
         let id = get.Required.Field "id" Decode.string
         { Id = id
-          Title = englishTitles |> Map.tryFind id |> Option.defaultWith (fun () -> get.Required.Field "title" Decode.string)
+          Title =
+            let catalogTitle = get.Required.Field "title" Decode.string
+            match englishTitles.TryFind id with
+            | Some english ->
+                formerTitles.[id] <- catalogTitle
+                english
+            | None -> catalogTitle
           AuthorId = authorId
           Texts = get.Required.Field "texts" (Decode.list decodeTextMeta) })
 

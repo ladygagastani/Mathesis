@@ -10,9 +10,18 @@ let private cred (heading: ReactElement) (bodyParas: ReactElement list) (licence
     ]
 
 let private extLink (href: string) (text: string) : ReactElement =
-    Html.a [ prop.href href; prop.target "_blank"; prop.rel "noopener"; prop.text text ]
+    Html.a [ prop.href (Router.href href); prop.target "_blank"; prop.rel "noopener"; prop.text text ]
 
-let render (model: Model) : ReactElement =
+let private go (dispatch: Msg -> unit) (hash: string) (text: string) : ReactElement =
+    Html.a [
+        prop.href (Router.href hash)
+        prop.text text
+        prop.onClick (fun e ->
+            e.preventDefault ()
+            dispatch (Navigate(hash, false)))
+    ]
+
+let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let nAuthors = model.Catalog.Authors.Length
     let nWorks = model.Catalog.Authors |> List.sumBy (fun a -> a.Works.Length)
     Html.div [
@@ -121,8 +130,8 @@ let render (model: Model) : ReactElement =
 
             Html.h2 [ prop.className "sh"; prop.text "Typefaces" ]
             cred
-                (Html.text "Cardo, by David Perry")
-                [ Html.p [ prop.text "The Greek text and the headings. Designed for classicists, with full polytonic Greek." ] ]
+                (Html.text "Gentium Book Plus, by SIL International")
+                [ Html.p [ prop.text "The Greek text and the headings. Made for scholars, with full polytonic Greek." ] ]
                 (Some(Html.text "Licence: SIL Open Font License 1.1."))
             cred
                 (Html.text "Source Serif 4, by Frank Grießhammer for Adobe")
@@ -133,15 +142,33 @@ let render (model: Model) : ReactElement =
                 [ Html.p [ prop.text "Menus, labels and the rest of the interface." ] ]
                 (Some(Html.text "Licence: SIL Open Font License 1.1."))
             cred
-                (Html.text "Noto Sans Greek, by Google")
-                [ Html.p [ prop.text "The Greek in the optional sans-serif reading mode." ] ]
+                (Html.text "Noto Sans, by Google")
+                [ Html.p [ prop.text "The text in the optional sans-serif reading mode." ] ]
                 (Some(Html.text "Licence: SIL Open Font License 1.1. All four typefaces are served by Google Fonts."))
+
+            Html.h2 [ prop.id "licence"; prop.className "sh"; prop.text "Our own writing: licence" ]
+            Html.p [
+                prop.className "ap-text"
+                prop.children [
+                    Html.text "Everything written for this site (the wiki and Everyday life articles, the Start here guide, the Study lessons, and the other explanations on its pages) is licensed under "
+                    extLink "https://creativecommons.org/licenses/by-sa/4.0/" "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) ↗"
+                    Html.text ", the same licence as the Perseus and First1KGreek texts. You may copy it, adapt it and share it, for any purpose, as long as you credit Μάθησις with a link to the page and share what you make under the same licence."
+                ]
+            ]
+            Html.p [
+                prop.className "ap-text"
+                prop.text
+                    "The Greek texts and translations keep the licences set out above, and so do the quotations from them in the articles. Posts in the forum belong to the people who wrote them. Wikipedia summaries shown on author pages are Wikipedia's, under its own CC BY-SA licence."
+            ]
 
             Html.h2 [ prop.className "sh"; prop.text "Privacy" ]
             Html.p [
                 prop.className "ap-text"
-                prop.text
-                    "The reader has no accounts and no server of its own. Texts are downloaded from the projects' repositories, or read from a folder on your computer, when you open them. Your favourites, bookmarks and notes are stored in your browser and go nowhere unless you export them. Word lookups open external sites in a new tab. Two study lenses go online, and only when you open them: Map asks Wikidata about the places named in a passage and loads map tiles from the Digital Atlas of the Roman Empire, and Manuscript loads page images from the library that holds the manuscript. Both fetch their viewer code from cdnjs."
+                prop.children [
+                    Html.text "No advertising, no analytics and no tracking cookies. Your library stays in your browser unless you make an account to keep it in step between devices. "
+                    go dispatch "#privacy" "What is stored, where, and how to delete it"
+                    Html.text "."
+                ]
             ]
 
             Html.h2 [ prop.className "sh"; prop.text "Trademarks and reservations" ]
@@ -151,5 +178,166 @@ let render (model: Model) : ReactElement =
                     "Perseus, Logeion, Loeb Classical Library, Oxford Classical Texts, Teubner and other names are the marks of their respective owners and are used only to identify the sources. This reader is an independent, non-commercial project and is not affiliated with or endorsed by any of them. If you believe any material here is credited wrongly or should not be included, please open an issue with the source repositories or remove the work from your copy."
             ]
             Html.p [ prop.className "quiet"; prop.text (sprintf "This collection: %d authors, %s works." nAuthors (nWorks.ToString("N0"))) ]
+        ]
+    ]
+
+// ---------------------------------------------------------------------------
+// privacy (`#privacy`)
+// ---------------------------------------------------------------------------
+
+let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let section (title: string) (children: ReactElement list) =
+        Html.section [ prop.children (Html.h2 [ prop.className "sh"; prop.text title ] :: children) ]
+    let para (text: string) = Html.p [ prop.className "ap-text"; prop.text text ]
+    let row (what: string) (why: string) = Html.li [ Html.b [ prop.text (what + ": ") ]; Html.text why ]
+    Html.div [
+        prop.className "page privacy"
+        prop.children [
+            Html.h1 [ prop.className "ph"; prop.text "Privacy" ]
+            Html.p [
+                prop.className "ap-text lead-p"
+                prop.text
+                    "In short: no advertising, no analytics, no tracking cookies, and nothing to buy. You can use everything except the forum without an account, and then what you do here stays in your browser."
+            ]
+
+            section "Kept in your browser" [
+                para "These are saved on your own device, in the browser's storage for this site. Nobody else can see them, and they are not sent anywhere unless you make an account (below)."
+                Html.ul [
+                    prop.className "ap-text"
+                    prop.children [
+                        row "Your library" "favourites, bookmarks and their notes, saved words and their review schedule, saved places, author notes"
+                        row "Your reading" "the texts you opened recently and where you were, and your recent searches"
+                        row "Your settings" "columns, typeface, text size, line spacing, theme, text source, and which sections you folded"
+                        row "Study" "how far you have got in the lessons"
+                        row "The forum" "the people you chose to hide"
+                        row "Folders and ZIP files" "if you connected texts on your computer, the browser remembers which folder, so it can ask to open it again"
+                        row "Your sign-in" "if you have an account, the key that keeps you signed in"
+                    ]
+                ]
+                Html.p [
+                    prop.className "ap-text"
+                    prop.children [
+                        Html.text "To remove them, use "
+                        Html.b [ prop.text "Clear everything" ]
+                        Html.text " at the foot of "
+                        go dispatch "#lib" "My library"
+                        Html.text " (for the library), or clear this site's data in your browser's settings (for all of it)."
+                    ]
+                ]
+            ]
+
+            section "If you make an account" [
+                para "An account is only needed to post in the forum and to keep your library in step between devices. It is held by Supabase, the service that runs the site's database and sign-in. It stores:"
+                Html.ul [
+                    prop.className "ap-text"
+                    prop.children [
+                        row "Your email address" "to send you sign-in codes. It is never shown to anyone, and we send nothing else to it."
+                        row "The name you choose" "shown on your forum posts"
+                        row "A copy of your library" "so it syncs. Only you can read it, not even other signed-in readers."
+                        row "Your forum posts" "public: anyone can read them"
+                        row "Reports you send" "seen only by the moderators"
+                    ]
+                ]
+                para "There are no passwords. Sign-in codes are sent by email, so the email service that delivers them also sees your address."
+            ]
+
+            section "Deleting your account" [
+                Html.p [
+                    prop.className "ap-text"
+                    prop.children [
+                        Html.text "On "
+                        go dispatch "#account" "your account page"
+                        Html.text ", Delete account removes, at once and for good: your sign-in and email address, your name, the synced copy of your library, every thread and reply you posted (a thread goes with the replies others wrote in it), and any reports you sent. The library in this browser stays, until you clear it."
+                    ]
+                ]
+            ]
+
+            section "Other sites your browser talks to" [
+                para "Some parts of the site load things from other services. Your browser connects to them directly, so each of them sees your internet address, as any website does. Each has its own privacy policy."
+                Html.ul [
+                    prop.className "ap-text"
+                    prop.children [
+                        row "GitHub Pages" "hosts the site itself"
+                        row "Google Fonts" "the typefaces"
+                        row "GitHub" "the Greek texts and translations, fetched from the Perseus and First1KGreek collections when you open a work"
+                        row "Wikipedia" "the summary on an author's page"
+                        row "Wikidata, map tiles and cdnjs" "only when you open the Map lens"
+                        row "Library image servers and cdnjs" "only when you open the Manuscript lens"
+                        row "Logeion, Perseus and Wiktionary" "only when you click through to look up a word"
+                    ]
+                ]
+            ]
+
+            section "Questions" [
+                Html.p [
+                    prop.className "ap-text"
+                    prop.children [
+                        Html.text "Ask in the forum's "
+                        go dispatch "#forum/suggestions" "Suggestions"
+                        Html.text " board, or read "
+                        go dispatch "#forum/rules" "the community rules"
+                        Html.text ". What we owe the projects this site is built on is on "
+                        go dispatch "#about" "About & acknowledgments"
+                        Html.text "."
+                    ]
+                ]
+                Html.p [ prop.className "quiet"; prop.text "Last updated 25 September 2026." ]
+            ]
+        ]
+    ]
+
+// ---------------------------------------------------------------------------
+// page not found
+// ---------------------------------------------------------------------------
+
+let notFound (model: Model) (dispatch: Msg -> unit) (hash: string) : ReactElement =
+    let shown = Router.url hash
+    Html.div [
+        prop.className "page not-found"
+        prop.children [
+            Html.p [ prop.className "nf-grc grc"; prop.lang "grc"; prop.ariaHidden true; prop.text "οὐκ ἔστιν" ]
+            Html.h1 [ prop.className "ph"; prop.text "There is no page here" ]
+            Html.p [
+                prop.className "ap-text"
+                prop.children [
+                    Html.text "Nothing on this site lives at "
+                    Html.code [ prop.text shown ]
+                    Html.text ". The link may be mistyped, or the page may have moved."
+                ]
+            ]
+            Html.div [
+                prop.className "f-cta"
+                prop.children [
+                    Html.button [
+                        prop.className "btn primary"
+                        prop.text "Search the site"
+                        prop.onClick (fun e ->
+                            e.stopPropagation ()
+                            dispatch (Search_ OpenSearch))
+                    ]
+                    Html.a [
+                        prop.className "btn"
+                        prop.href (Router.href "#")
+                        prop.text "Home"
+                        prop.onClick (fun e ->
+                            e.preventDefault ()
+                            dispatch (Navigate("#", false)))
+                    ]
+                ]
+            ]
+            Html.p [
+                prop.className "ap-text"
+                prop.children [
+                    Html.text "Or go to the "
+                    go dispatch "#library" "Library"
+                    Html.text ", "
+                    go dispatch "#study" "Study"
+                    Html.text " or the "
+                    go dispatch "#wiki" "Wiki"
+                    Html.text ". If a link on this site brought you here, please "
+                    go dispatch "#forum/bugs" "tell us in Bug reports"
+                    Html.text "."
+                ]
+            ]
         ]
     ]

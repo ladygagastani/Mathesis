@@ -28,7 +28,7 @@ let private go (dispatch: Msg -> unit) (hash: string) (e: Browser.Types.MouseEve
     dispatch (Navigate(hash, false))
 
 let private link (dispatch: Msg -> unit) (cls: string) (hash: string) (children: ReactElement list) =
-    Html.a [ prop.className cls; prop.href hash; prop.onClick (go dispatch hash); prop.children children ]
+    Html.a [ prop.className cls; prop.href (Router.href hash); prop.onClick (go dispatch hash); prop.children children ]
 
 /// "just now", "5 minutes ago", "3 hours ago", "yesterday", then the date.
 let private ago (ts: float) : string =
@@ -39,6 +39,13 @@ let private ago (ts: float) : string =
     elif s < 172800.0 then "yesterday"
     elif s < 604800.0 then sprintf "%d days ago" (int (s / 86400.0))
     else fmtDate ts
+
+/// Why a post is reported (the ids are the schema's).
+let private reasons =
+    [ "spam", "Spam or advertising"
+      "abuse", "Rude, hateful or harassing"
+      "offtopic", "Off topic, or on the wrong board"
+      "other", "Something else" ]
 
 let private boardName (id: string) = Content.forumBoard id |> Option.map (fun b -> b.Name) |> Option.defaultValue id
 
@@ -98,7 +105,7 @@ let private notConfigured (dispatch: Msg -> unit) (model: Model) : ReactElement 
             Html.p [
                 Html.text "Found a bug in the meantime? "
                 Html.a [
-                    prop.href (githubIssueUrl model.CurrentHash)
+                    prop.href (Router.href (githubIssueUrl model.CurrentHash))
                     prop.target "_blank"
                     prop.rel "noopener"
                     prop.text "Report it on GitHub ↗"
@@ -122,10 +129,24 @@ let private remoteView (r: Remote<'T>) (ok: 'T -> ReactElement list) (retry: uni
           ] ]
     | Loaded x -> ok x
 
-let private threadList (model: Model) (dispatch: Msg -> unit) (showBoard: bool) (threads: ForumThread list) : ReactElement =
+let private threadList (model: Model) (dispatch: Msg -> unit) (showBoard: bool) (all: ForumThread list) : ReactElement =
+    let blocked = model.Forum.Blocked |> List.map fst |> Set.ofList
+    let threads = all |> List.filter (fun t -> not (blocked.Contains t.AuthorId))
+    let left = all.Length - threads.Length
+    let note =
+        if left = 0 then Html.none
+        else
+            Html.p [
+                prop.className "quiet f-hidden"
+                prop.text (sprintf "%d thread%s by people you've hidden %s not shown." left (if left = 1 then "" else "s") (if left = 1 then "is" else "are"))
+            ]
     if List.isEmpty threads then
-        Html.p [ prop.className "quiet f-empty"; prop.text "Nothing here yet. Be the first to start a thread." ]
+        Html.div [
+            Html.p [ prop.className "quiet f-empty"; prop.text "Nothing here yet. Be the first to start a thread." ]
+            note
+        ]
     else
+      Html.div [
         Html.ul [
             prop.className "f-threads"
             prop.children [
@@ -150,6 +171,8 @@ let private threadList (model: Model) (dispatch: Msg -> unit) (showBoard: bool) 
                     ]
             ]
         ]
+        note
+      ]
 
 // ---------------------------------------------------------------------------
 // home: the town hall
@@ -171,8 +194,11 @@ let private welcome (model: Model) (dispatch: Msg -> unit) : ReactElement =
             ]
             Html.p [
                 prop.className "f-rules"
-                prop.text
-                    "House rules, the Athenian ones minus the ostracism: speak freely, cite your text, disagree with the argument and not the person, and be kind to newcomers. Every one of us once read ρ as a p."
+                prop.children [
+                    Html.text
+                        "House rules, the Athenian ones minus the ostracism: speak freely, cite your text, disagree with the argument and not the person, and be kind to newcomers. Every one of us once read ρ as a p. "
+                    link dispatch "" "#forum/rules" [ Html.text "The community rules in full" ]
+                ]
             ]
             if model.Account.Configured then
                 Html.div [
@@ -236,11 +262,57 @@ let private sitePanels (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
+let private reasonLabel (id: string) =
+    reasons |> List.tryFind (fun (r, _) -> r = id) |> Option.map snd |> Option.defaultValue id
+
+/// Moderators only: what readers have reported, newest first, each with a
+/// link to the thread as it is now.
+let private reportsQueue (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    Html.section [
+        prop.className "f-reports notice"
+        prop.ariaLabel "Reports"
+        prop.children (
+            [ Html.h2 [ prop.className "sh"; prop.text "Moderators: reports to look at" ] ]
+            @ remoteView model.Forum.Reports (fun reports ->
+                if List.isEmpty reports then [ Html.p [ prop.className "quiet"; prop.text "No open reports." ] ]
+                else
+                    [ Html.ul [
+                          prop.children [
+                              for r in reports ->
+                                  Html.li [
+                                      prop.key r.Id
+                                      prop.className "f-rep"
+                                      prop.children [
+                                          Html.div [
+                                              prop.className "f-t-meta"
+                                              prop.children [
+                                                  Html.b [ prop.text (reasonLabel r.Reason) ]
+                                                  link dispatch "" ("#forum/t/" + r.ThreadId) [
+                                                      Html.text ((if r.PostId = "" then "Thread: " else "Reply in: ") + (if r.ThreadTitle = "" then "a thread" else r.ThreadTitle))
+                                                  ]
+                                                  Html.span [ prop.title (fmtFull r.Created); prop.text (ago r.Created) ]
+                                              ]
+                                          ]
+                                          if r.Excerpt <> "" then Html.blockquote [ prop.className "f-rep-ex"; prop.text r.Excerpt ]
+                                          if r.Note <> "" then Html.p [ prop.children [ Html.span [ prop.className "quiet"; prop.text "Note: " ]; Html.text r.Note ] ]
+                                          Html.button [
+                                              prop.className "btn small"
+                                              prop.text "Dealt with"
+                                              prop.onClick (fun _ -> dispatch (Forum_(ResolveReport r.Id)))
+                                          ]
+                                      ]
+                                  ]
+                          ]
+                      ] ]) (fun () -> dispatch (Forum_ LoadReports))
+        )
+    ]
+
 let private home (model: Model) (dispatch: Msg -> unit) : ReactElement list =
     [ welcome model dispatch
       if not model.Account.Configured then
           notConfigured dispatch model
       else
+          if model.Account.IsAdmin && model.Account.Session.IsSome then reportsQueue model dispatch
           sitePanels dispatch
           Html.div [
               prop.className "f-main"
@@ -319,8 +391,126 @@ let private postGate (model: Model) (dispatch: Msg -> unit) (what: string) : Rea
     elif model.Account.DisplayName = "" then Some(namePrompt model dispatch)
     else None
 
-let private thread (model: Model) (dispatch: Msg -> unit) (id: string) : ReactElement list =
+// ---------------------------------------------------------------------------
+// reporting and hiding
+// ---------------------------------------------------------------------------
+
+let private isBlocked (model: Model) (userId: string) =
+    userId <> "" && model.Forum.Blocked |> List.exists (fun (id, _) -> id = userId)
+
+let private excerptOf (text: string) =
+    let t = System.Text.RegularExpressions.Regex.Replace(text.Trim(), @"\s+", " ")
+    if t.Length > 300 then t.Substring(0, 299) + "…" else t
+
+/// The report form, open under the thread or reply being reported.
+let private reportForm (model: Model) (dispatch: Msg -> unit) (d: ReportDraft) (authorId: string) (authorName: string) : ReactElement =
+    let set d = dispatch (Forum_(SetReport d))
+    Html.div [
+        prop.className "f-report"
+        prop.role "group"
+        prop.ariaLabel "Report this post"
+        prop.children [
+            Html.p [ prop.className "f-f-label"; prop.text "Why are you reporting this?" ]
+            Html.div [
+                prop.className "f-r-reasons"
+                prop.children [
+                    for id, label in reasons do
+                        Html.label [
+                            prop.key id
+                            prop.children [
+                                Html.input [
+                                    prop.type' "radio"
+                                    prop.name ("fReason-" + d.PostId)
+                                    prop.isChecked (d.Reason = id)
+                                    prop.onCheckedChange (fun on -> if on then set { d with Reason = id })
+                                ]
+                                Html.span [ prop.text label ]
+                            ]
+                        ]
+                ]
+            ]
+            Html.textarea [
+                prop.rows 2
+                prop.maxLength 1000
+                prop.placeholder "Anything the moderators should know (optional)"
+                prop.ariaLabel "Note for the moderators"
+                prop.value d.Note
+                prop.onChange (fun (v: string) -> set { d with Note = v })
+                Shared.onEnterSave (fun () -> dispatch (Forum_ SubmitReport))
+            ]
+            Html.p [
+                prop.className "quiet"
+                prop.text "Only the moderators see reports, and they don't tell anyone who sent one."
+            ]
+            Html.div [
+                prop.className "f-cta"
+                prop.children [
+                    Html.button [
+                        prop.className "btn primary small"
+                        prop.disabled (model.Forum.Posting || d.Reason = "")
+                        prop.text (if model.Forum.Posting then "Sending…" else "Send report")
+                        prop.onClick (fun _ -> dispatch (Forum_ SubmitReport))
+                    ]
+                    Html.button [ prop.className "btn small"; prop.text "Cancel"; prop.onClick (fun _ -> dispatch (Forum_ CancelReport)) ]
+                    if authorId <> "" && not (isBlocked model authorId) then
+                        Html.button [
+                            prop.className "linkbtn"
+                            prop.text ("Also hide posts by " + authorName)
+                            prop.onClick (fun _ -> dispatch (Forum_(Block(authorId, authorName))))
+                        ]
+                ]
+            ]
+        ]
+    ]
+
+/// Delete (own posts, or any for moderators), Report and Hide (other people's).
+let private postActions (model: Model) (dispatch: Msg -> unit) (threadId: string) (postId: string) (authorId: string) (authorName: string) (text: string) (onDelete: unit -> unit) : ReactElement =
     let me = model.Account.Session |> Option.map (fun s -> s.UserId) |> Option.defaultValue ""
+    let own = authorId = me && me <> ""
+    let reporting =
+        match model.Forum.Report with
+        | Some d when d.ThreadId = threadId && d.PostId = postId -> Some d
+        | _ -> None
+    React.Fragment [
+      Html.div [
+        prop.className "f-post-acts"
+        prop.children [
+            if own || model.Account.IsAdmin then
+                Html.button [ prop.className "linkbtn"; prop.text (if postId = "" then "Delete thread" else "Delete"); prop.onClick (fun _ -> onDelete ()) ]
+            if not own then
+                Html.button [
+                    prop.className "linkbtn"
+                    prop.text "Report"
+                    prop.custom ("aria-expanded", reporting.IsSome)
+                    prop.onClick (fun _ ->
+                        if reporting.IsSome then dispatch (Forum_ CancelReport)
+                        else dispatch (Forum_(OpenReport(threadId, postId, excerptOf text))))
+                ]
+                if authorId <> "" && not (isBlocked model authorId) then
+                    Html.button [
+                        prop.className "linkbtn"
+                        prop.title "Fold away this person's posts, in this browser only. Undo on your account page."
+                        prop.text "Hide this person"
+                        prop.onClick (fun _ -> dispatch (Forum_(Block(authorId, authorName))))
+                    ]
+        ]
+      ]
+      match reporting with
+      | Some d -> reportForm model dispatch d authorId authorName
+      | None -> Html.none
+    ]
+
+/// What stands in for a post by someone the reader has hidden.
+let private folded (dispatch: Msg -> unit) (key: string) : ReactElement =
+    Html.p [
+        prop.className "f-hidden quiet"
+        prop.children [
+            Html.text "A post by someone you've hidden. "
+            Html.button [ prop.className "linkbtn"; prop.text "Show it"; prop.onClick (fun _ -> dispatch (Forum_(ShowHidden key))) ]
+        ]
+    ]
+
+let private thread (model: Model) (dispatch: Msg -> unit) (id: string) : ReactElement list =
     let isMod = model.Account.IsAdmin
     if not model.Account.Configured then
         [ crumbs dispatch []; notConfigured dispatch model ]
@@ -339,18 +529,12 @@ let private thread (model: Model) (dispatch: Msg -> unit) (id: string) : ReactEl
                               passageChip model dispatch t
                           ]
                       ]
-                      body model dispatch t.Body
-                      if t.AuthorId = me || isMod then
-                          Html.div [
-                              prop.className "f-post-acts"
-                              prop.children [
-                                  Html.button [
-                                      prop.className "linkbtn"
-                                      prop.text "Delete thread"
-                                      prop.onClick (fun _ -> if confirmDialog "Delete this thread and all its replies?" then dispatch (Forum_(DeleteThread t.Id)))
-                                  ]
-                              ]
-                          ]
+                      if isBlocked model t.AuthorId && not (model.Forum.Unhidden.Contains("t:" + t.Id)) then
+                          folded dispatch ("t:" + t.Id)
+                      else
+                          body model dispatch t.Body
+                          postActions model dispatch t.Id "" t.AuthorId t.AuthorName (t.Title + ": " + t.Body) (fun () ->
+                              if confirmDialog "Delete this thread and all its replies?" then dispatch (Forum_(DeleteThread t.Id)))
                   ]
               ]
               if t.Category = "bugs" && isMod then
@@ -381,15 +565,14 @@ let private thread (model: Model) (dispatch: Msg -> unit) (id: string) : ReactEl
                                       prop.children [
                                           Html.span [ prop.className "f-author"; prop.text p.AuthorName ]
                                           Html.span [ prop.title (fmtFull p.Created); prop.text (ago p.Created) ]
-                                          if p.AuthorId = me || isMod then
-                                              Html.button [
-                                                  prop.className "linkbtn"
-                                                  prop.text "Delete"
-                                                  prop.onClick (fun _ -> if confirmDialog "Delete this reply?" then dispatch (Forum_(DeletePost(t.Id, p.Id))))
-                                              ]
                                       ]
                                   ]
-                                  body model dispatch p.Body
+                                  if isBlocked model p.AuthorId && not (model.Forum.Unhidden.Contains p.Id) then
+                                      folded dispatch p.Id
+                                  else
+                                      body model dispatch p.Body
+                                      postActions model dispatch t.Id p.Id p.AuthorId p.AuthorName p.Body (fun () ->
+                                          if confirmDialog "Delete this reply?" then dispatch (Forum_(DeletePost(t.Id, p.Id))))
                               ]
                           ]
                   ]
@@ -586,16 +769,88 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
                               link dispatch "btn" ("#forum/" + cat) [ Html.text "Cancel" ]
                           ]
                       ]
+                      Html.p [
+                          prop.className "quiet f-agree"
+                          prop.children [
+                              Html.text "Posts are public. By posting you agree to the "
+                              link dispatch "" "#forum/rules" [ Html.text "community rules" ]
+                              Html.text "."
+                          ]
+                      ]
                   if isBug then
                       Html.p [
                           prop.className "quiet f-gh"
                           prop.children [
                               Html.text "Prefer GitHub? "
-                              Html.a [ prop.href (githubIssueUrl d.FromHash); prop.target "_blank"; prop.rel "noopener"; prop.text "Open an issue there instead ↗" ]
+                              Html.a [ prop.href (Router.href (githubIssueUrl d.FromHash)); prop.target "_blank"; prop.rel "noopener"; prop.text "Open an issue there instead ↗" ]
                           ]
                       ]
               ]
           ] ]
+
+// ---------------------------------------------------------------------------
+// the community rules
+// ---------------------------------------------------------------------------
+
+let private rules (model: Model) (dispatch: Msg -> unit) : ReactElement list =
+    let item (title: string) (text: string) =
+        Html.li [ Html.b [ prop.text (title + " ") ]; Html.text text ]
+    [ crumbs dispatch [ "Community rules", None ]
+      Html.div [
+          prop.className "f-board-head"
+          prop.children [
+              Html.p [ prop.className "f-kicker grc"; prop.lang "grc"; prop.text "Νόμοι" ]
+              Html.h1 [ prop.className "ph"; prop.text "Community rules" ]
+              Html.p [
+                  prop.className "f-lede"
+                  prop.text "The forum is for people reading Greek at every level, from the first week of the alphabet to a lifetime of it. These rules keep it a place where anyone can ask anything."
+              ]
+          ]
+      ]
+      Html.div [
+          prop.className "f-rulebook"
+          prop.children [
+              Html.h2 [ prop.className "sh"; prop.text "The rules" ]
+              Html.ol [
+                  item "Be kind, especially to beginners." "Every question is a fair question. Answer the question that was asked, not the one you wish had been."
+                  item "Argue with the reading, not the reader." "Disagree as sharply as the text deserves, but never about the person. No insults, sneering, or remarks about anyone's background, beliefs, body or ability."
+                  item "No hate or harassment." "Nothing that attacks people for who they are, no threats, and no following someone from thread to thread."
+                  item "Cite your text." "When you make a claim about a passage, link it ([[tlg0012.tlg001:1.1]] does it) or name the edition, so others can check."
+                  item "Keep it on topic." "Greek texts, language, history and this site. Use the right board, and start a new thread for a new subject."
+                  item "No spam or advertising." "Mentioning your own book, course or article is fine when it answers the question; posting it for its own sake is not."
+                  item "Respect other people's work." "Quote briefly and say where from. Don't paste whole copyrighted translations or articles."
+                  item "Keep private things private." "Don't post anyone's personal details, your own included, beyond the name you chose to show."
+              ]
+              Html.h2 [ prop.className "sh"; prop.text "When something goes wrong" ]
+              Html.p [
+                  prop.children [
+                      Html.b [ prop.text "Report it. " ]
+                      Html.text "Every thread and reply has a Report link for signed-in readers. Only the moderators see reports, and they don't tell anyone who sent one. Please report rather than reply to a post that breaks the rules: an argument only feeds it."
+                  ]
+              ]
+              Html.p [
+                  prop.children [
+                      Html.b [ prop.text "Hide someone. " ]
+                      Html.text "“Hide this person” folds away everything that person posts, for you only. They aren't told. Hidden people are listed on your account page, where you can bring them back."
+                  ]
+              ]
+              Html.p [
+                  prop.children [
+                      Html.b [ prop.text "What moderators do. " ]
+                      Html.text "Moderators read every report. They may remove a post or thread that breaks these rules, and an account that keeps breaking them may be closed. Moderators are volunteers, so it may take a day or two."
+                  ]
+              ]
+              Html.p [
+                  prop.children [
+                      Html.text "To reach the moderators about anything else, "
+                      link dispatch "" "#forum/suggestions" [ Html.text "post in Suggestions" ]
+                      Html.text ". How your account and posts are stored, and how to delete them, is on the "
+                      link dispatch "" "#privacy" [ Html.text "privacy page" ]
+                      Html.text "."
+                  ]
+              ]
+          ]
+      ] ]
 
 // ---------------------------------------------------------------------------
 
@@ -608,5 +863,6 @@ let render (model: Model) (dispatch: Msg -> unit) (route: ForumRoute) : ReactEle
             | ForumBoard cat -> board model dispatch cat
             | ForumThread id -> thread model dispatch id
             | ForumNew cat -> newThread model dispatch cat
+            | ForumRules -> rules model dispatch
         )
     ]

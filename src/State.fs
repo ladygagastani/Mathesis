@@ -190,7 +190,10 @@ let private pageTitle (model: Model) (route: Route) : string =
          | _ -> "")
         + "Forum" + suffix
     | ForumRoute(ForumNew _) -> "New thread — Forum" + suffix
+    | ForumRoute ForumRules -> "Community rules — Forum" + suffix
     | AboutRoute -> "About" + suffix
+    | PrivacyRoute -> "Privacy" + suffix
+    | NotFoundRoute _ -> "Page not found" + suffix
     | AuthorRoute(id, _) ->
         (model.Catalog.Authors |> List.tryFind (fun a -> a.Id = id) |> Option.map (fun a -> a.Name) |> Option.defaultValue "Authors") + suffix
     | WikiRoute WikiHome -> "Wiki" + suffix
@@ -199,12 +202,23 @@ let private pageTitle (model: Model) (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> "Manuscripts & transmission" + suffix
     | WikiRoute(WikiArticles Variants) -> "Textual variants" + suffix
     | WikiRoute WikiEditions -> "Editions & translations" + suffix
+    | WikiRoute(WikiLife slug) ->
+        (match LifeData.tryFind slug with
+         | Some p -> p.Title + " — Everyday life"
+         | None -> "Everyday life")
+        + suffix
     | GuideRoute slug ->
         (match GuideData.tryFind slug with
          | Some p when p.Slug <> "" -> p.Title + " — Study"
          | _ -> "Start here — Study")
         + suffix
-    | ReaderRoute(id, _, _, _, _) -> (model.Catalog.WorkById.TryFind id |> Option.map (fun w -> w.Title) |> Option.defaultValue "") + suffix
+    | ReaderRoute(id, _, _, _, _) ->
+        // "Iliad — Homer — Μάθησις", as the page's own file names it for search engines
+        (match model.Catalog.WorkById.TryFind id, model.Catalog.AuthorOfWork.TryFind id with
+         | Some w, Some a -> w.Title + " — " + a.Name
+         | Some w, None -> w.Title
+         | None, _ -> "")
+        + suffix
     | LearnRoute page ->
         (match page with
          | LearnWelcome | LearnPreface | LearnContents -> "Study"
@@ -250,25 +264,37 @@ let private savedPlacesMapCmd (model: Model) : Cmd<Msg> =
 /// kicks off `OpenWork` (unknown work ids fall back to Landing, mirroring the
 /// original `route()`'s `if(!w) return landing()`); for any other route, clears
 /// the reader and applies the page's title/body-class (mirrors `APP.leaveReader`).
-let private loadForRoute (model: Model) (route: Route) : Model * Cmd<Msg> =
+let rec private loadForRoute (model: Model) (route: Route) : Model * Cmd<Msg> =
+    // An address that parses but names nothing the site has (a mistyped work
+    // id, an author or article that isn't there) gets the "not found" page;
+    // the address stays as typed, so it can be corrected.
+    let missing =
+        match route with
+        | ReaderRoute(id, _, _, _, _) -> not (model.Catalog.WorkById.ContainsKey id)
+        | AuthorRoute(id, _) -> not (model.Catalog.Authors |> List.exists (fun a -> a.Id = id))
+        | WikiRoute(WikiLife(Some slug)) -> (LifeData.tryFind (Some slug)).IsNone
+        | WikiRoute(WikiEras(Some id)) -> not (model.Meta.Eras |> List.exists (fun e -> e.Id = id))
+        | GuideRoute(Some slug) -> (GuideData.tryFind (Some slug)).IsNone
+        | ForumRoute(ForumBoard c) -> (Content.forumBoard c).IsNone
+        | _ -> false
     match route with
+    | _ when missing ->
+        let nf = NotFoundRoute model.CurrentHash
+        loadForRoute { model with Route = nf } nf
     | ReaderRoute(id, grcSuffix, engSuffix, chunk, seg) ->
-        match model.Catalog.WorkById.TryFind id with
-        | Some _ -> model, Cmd.ofMsg (Reader_(OpenWork(id, fullUrn id grcSuffix, fullUrn id engSuffix, chunk, seg)))
-        | None ->
-            let model2 = { model with Route = Landing; Reader = None; CurrentHash = "#" }
-            model2, leaveReaderEffect (pageTitle model2 Landing)
+        model, Cmd.ofMsg (Reader_(OpenWork(id, fullUrn id grcSuffix, fullUrn id engSuffix, chunk, seg)))
     | ForumRoute fr ->
         let m2 = { model with Reader = None }
         let load =
             match fr with
-            | ForumHome -> Cmd.ofMsg (Forum_(LoadBoard ""))
+            | ForumHome -> Cmd.batch [ Cmd.ofMsg (Forum_(LoadBoard "")); Cmd.ofMsg (Forum_ LoadReports) ]
             | ForumBoard c -> Cmd.ofMsg (Forum_(LoadBoard c))
             | ForumThread id -> Cmd.ofMsg (Forum_(LoadThread id))
             | ForumNew c when model.Forum.Draft.Category <> c ->
                 // a link straight to the form: start a blank draft for that board
                 Cmd.ofMsg (Forum_(StartThread(c, "", "")))
             | ForumNew _ -> Cmd.none
+            | ForumRules -> Cmd.none
         m2, Cmd.batch [ leaveReaderEffect (pageTitle m2 route); load ]
     | AccountRoute ->
         let m2 = { model with Reader = None }
@@ -361,14 +387,20 @@ let init () : Model * Cmd<Msg> =
               Busy = false
               Error = None
               Sync = SyncOff
-              SyncToken = 0 }
+              SyncToken = 0
+              DeleteAsk = false
+              DeleteText = "" }
           Forum =
             { Board = NotAsked
               BoardOf = "\u0000"
               Thread = NotAsked
               Draft = Features.emptyDraft
               Reply = ""
-              Posting = false }
+              Posting = false
+              Blocked = Storage.loadBlocked ()
+              Unhidden = Set.empty
+              Report = None
+              Reports = NotAsked }
           Recent = Storage.loadRecent ()
           Collapsed = Storage.loadCollapsed ()
           TextCache = Map.empty
@@ -380,6 +412,8 @@ let init () : Model * Cmd<Msg> =
     model,
     Cmd.batch [
         Cmd.OfPromise.either Catalog.decodeEmbedded () (Ok >> Boot) (fun e -> Boot(Error e.Message))
+        // an old "#wiki/…" link: show the page's real address instead
+        Cmd.ofEffect (fun _ -> if Router.arrivedByHash () then Router.replaceState hash)
         Cmd.OfPromise.perform Sources.reconnectRemembered () (fun names -> Source_(RememberedFound names))
         // a renewed or ended session (renewal happens inside Server) comes back as a message
         Cmd.ofEffect (fun dispatch -> Server.onSessionChange <- (fun s -> dispatch (Account_(SessionRefreshed s))))
@@ -1029,7 +1063,7 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                     Cmd.ofEffect (fun _ ->
                         if targetHash <> model.CurrentHash then
                             if arrivedFromElsewhere then Router.pushState targetHash else Router.replaceState targetHash
-                        setDocumentTitle (w.Title + " — Μάθησις")
+                        setDocumentTitle (pageTitle model2 (ReaderRoute(w.Id, "", "", None, None)))
                         addBodyClass "reading"
                         Storage.saveRecent recent)
                     loadTextCmd token model.Source.Mode model.Source.BaseUrl model.TextCache model.OriginCache grc
@@ -1525,7 +1559,9 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | LibraryRoute tab -> Views.LibraryPage.render model dispatch tab
     | ForumRoute fr -> Views.Forum.render model dispatch fr
     | AccountRoute -> Views.Account.render model dispatch
-    | AboutRoute -> Views.About.render model
+    | AboutRoute -> Views.About.render model dispatch
+    | PrivacyRoute -> Views.About.privacy model dispatch
+    | NotFoundRoute h -> Views.About.notFound model dispatch h
     | AuthorRoute(id, section) -> Views.WikiPages.AuthorPage model dispatch id section
     | WikiRoute WikiHome -> Views.WikiPages.home model dispatch
     | WikiRoute(WikiAuthors scope) -> Views.WikiPages.authorsIndex model dispatch scope model.WikiQuery
@@ -1533,6 +1569,7 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | WikiRoute(WikiEras(Some id)) -> Views.WikiPages.era model dispatch id
     | WikiRoute(WikiArticles kind) -> Views.WikiPages.articleIndex model dispatch kind
     | WikiRoute WikiEditions -> Views.WikiPages.editions model dispatch
+    | WikiRoute(WikiLife slug) -> Views.Life.render model dispatch slug
     | GuideRoute slug -> Views.Guide.render model dispatch slug
     | LearnRoute LearnContents -> Views.Study.render model dispatch
     | LearnRoute page -> Views.Learn.render model dispatch page

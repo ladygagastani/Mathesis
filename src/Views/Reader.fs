@@ -373,7 +373,7 @@ let private workHead (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : 
                            [ Html.text " · "
                              Html.a [
                                  prop.className "wa-link"
-                                 prop.href hash
+                                 prop.href (Router.href hash)
                                  prop.text ("About the " + art.Title)
                                  prop.onClick (fun e ->
                                      e.preventDefault ()
@@ -678,7 +678,7 @@ let private markBox (model: Model) (dispatch: Msg -> unit) (mark: Mark option) (
                                      let hash = Router.toHash (ReaderRoute(b.Work, "", "", None, (if b.Ref = "" then None else Some b.Ref)))
                                      Html.a [
                                          prop.className "xref"
-                                         prop.href "#"
+                                         prop.href (Router.href hash)
                                          prop.text (title + " " + (if b.Label <> "" then b.Label else b.Ref))
                                          prop.onClick (fun e ->
                                              e.preventDefault ()
