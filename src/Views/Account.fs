@@ -291,18 +291,17 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "page account"
         prop.children (
-            [ Html.h1 [ prop.className "ph"; prop.text (if acc.Session.IsSome then "Your account" else "Sign in") ] ]
+            [ Html.h1 [ prop.className "ph"; prop.text (if not acc.Configured then "Accounts" elif acc.Session.IsSome then "Your account" else "Sign in") ] ]
             @ (if not acc.Configured then
                    [ Html.div [
                          prop.className "notice"
                          prop.children [
                              Html.p [
-                                 Html.b [ prop.text "Accounts aren't switched on for this copy of the site yet. " ]
+                                 Html.b [ prop.text "Accounts aren't switched on yet. " ]
                                  Html.text "Everything you save stays in this browser; use Back up in My library to move it to another."
                              ]
                          ]
-                     ]
-                     why ]
+                     ] ]
                else
                    match acc.Session with
                    | Some s -> signedIn model s dispatch

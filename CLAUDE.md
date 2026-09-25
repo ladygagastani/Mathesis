@@ -1139,4 +1139,10 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   `State.loadForRoute` once the catalogue is loaded. The address stays as
   typed. `Router.navKey` gives "" (no tab lit).
 - Page files: `privacy`, `forum/rules`.
-
+- **Accounts switch (live site):** `.github/workflows/pages.yml` passes the
+  Supabase variables only while the repository variable `ACCOUNTS` is `on`.
+  Off (the state since 25 Sept 2026, until the owner finishes the Supabase
+  setup), `Server.configured` is false: no Sign in button
+  (`Header.accountButton`), no "Your account" search hit, the forum and
+  account pages say accounts aren't switched on, and the privacy page
+  describes the site without accounts.

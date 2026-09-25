@@ -89,8 +89,13 @@ the **anon public** key. The anon key is meant to be public: what it can do
 is limited by the rules in `schema.sql`. Never use the `service_role` key.
 
 - **GitHub Pages:** in the repository, **Settings → Secrets and variables →
-  Actions → Variables**, add `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The next
-  publish picks them up.
+  Actions → Variables**, add `SUPABASE_URL` and `SUPABASE_ANON_KEY`, and a
+  third variable `ACCOUNTS` set to `on`. The next publish picks them up
+  (**Actions → Publish to GitHub Pages → Run workflow** publishes at once).
+  Without `ACCOUNTS` = `on` the site is built with accounts switched off,
+  even when the other two are set: set it only once the steps above,
+  including the email sender, are done. To switch accounts off again,
+  change it to `off` and publish.
 - **Vercel:** **Project → Settings → Environment Variables**, add
   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then redeploy.
 - **On your own computer:** create a file `.env.local` next to

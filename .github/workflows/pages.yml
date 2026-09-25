@@ -43,10 +43,12 @@ jobs:
       - name: Build the site
         # Accounts, sync and the forum: the Supabase project's address and
         # public key, set as repository variables (see supabase/README.md).
-        # Left empty, the site builds without them and says so where they'd be.
+        # They are only used while the repository variable ACCOUNTS is "on";
+        # otherwise the site builds without accounts (no Sign in button; the
+        # forum and account pages say accounts aren't switched on yet).
         env:
-          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.ACCOUNTS == 'on' && vars.SUPABASE_URL || '' }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.ACCOUNTS == 'on' && vars.SUPABASE_ANON_KEY || '' }}
         run: |
           dotnet fable src
           npx vite build
