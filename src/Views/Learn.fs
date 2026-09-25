@@ -1,12 +1,11 @@
 module Views.Learn
 
 // The Learn section (#learn): beginner's lessons ported from the "Arche"
-// design, set in the Stoichedon design language. Each page is one `.lx-leaf`,
-// the unit the page turn swings away (LearnFx); elements marked `data-ink`
-// blur into focus as a leaf opens, and `data-reveal` blocks do the same when
-// an answer appears. Messages that turn a leaf are dispatched through
-// `turning`, which snapshots the old leaf first — only those, or a snapshot
-// would sit over the page with nothing to turn it.
+// design, set in the Stoichedon design language. Each page is one `.lx-leaf`;
+// a new leaf simply appears, at the top of the page (no page-turn animation).
+// `data-reveal` blocks, and `data-ink` parts of a new exercise card, blur into
+// focus when an answer or the next card appears (LearnFx). Messages that
+// change the leaf go through `turning`.
 
 open Feliz
 open Browser.Types
@@ -23,20 +22,17 @@ let private ink = prop.custom ("data-ink", "1")
 let private grc = prop.custom ("lang", "grc")
 
 let private turning (dispatch: Dispatch) (msg: Msg) =
-    fun (_: MouseEvent) ->
-        LearnFx.snapshot ()
-        dispatch msg
+    fun (_: MouseEvent) -> dispatch msg
 
 let private navTo (page: LearnPage) : Msg = Navigate(Router.learnHash page, false)
 
-/// A link to another Learn page that turns the leaf on the way.
+/// A link to another Learn page.
 let private pageLink (dispatch: Dispatch) (page: LearnPage) (className: string) (children: ReactElement list) =
     Html.a [
         prop.className className
         prop.href (Router.href (Router.learnHash page))
         prop.onClick (fun e ->
             e.preventDefault ()
-            LearnFx.snapshot ()
             dispatch (navTo page))
         prop.children children
     ]
@@ -133,9 +129,7 @@ let private tabs (dispatch: Dispatch) (current: LearnPage) =
                     if page = current then prop.custom ("aria-current", "page")
                     prop.onClick (fun e ->
                         e.preventDefault ()
-                        if page <> current then
-                            LearnFx.snapshot ()
-                            dispatch (navTo page))
+                        if page <> current then dispatch (navTo page))
                     prop.text text
                 ]
         ]

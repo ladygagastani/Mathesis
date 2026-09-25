@@ -1,3 +1,4 @@
+@charset "UTF-8"; /* the content: strings (×, ›, Greek) need it wherever this file is served without a charset */
 /* ---------- palette: "Stoichedon" (2026-09-23) ----------
    Light is a limestone stele, lamp-black ink; dark is the black gloss of an
    Attic vase with text in the warm tone of reserved clay (red-figure). Two
@@ -2661,10 +2662,10 @@ header.reading .acct-btn{width:auto;padding:.3rem .7rem}
    Learn (2026-09-24) — the beginner's lessons at #learn, from the "Arche"
    design, set in this design language rather than the design's papyrus:
    leaves are flat tablets, actions and selections are --solid, section labels
-   and initials are ochre markers, links stay blue. Two things are the design's
-   own and kept: a page turn between leaves (a copy of the old leaf swings away
-   on its left edge, .lx-turning) and text that blurs into focus as a leaf
-   opens ([data-ink], LearnFx). Both are skipped under reduced motion.
+   and initials are ochre markers, links stay blue. The design's page turn
+   between leaves was removed (Sept 2026): a new leaf just appears. Answers and
+   the next exercise card still blur into focus ([data-reveal], [data-ink],
+   LearnFx), skipped under reduced motion.
    Answers need a colour for "right", which the palette lacked: --ok, an olive
    at ≥4.5:1 on --paper in both themes. "Wrong" is --danger.
    =========================================================================== */
@@ -2683,10 +2684,6 @@ header.reading .acct-btn{width:auto;padding:.3rem .7rem}
   .lx-leaf{border:0;border-radius:0;padding:1.1rem 1.1rem 2rem}
   .lx-lesson,.lx-welcome,.lx-done{min-height:calc(100dvh - 3.25rem - 4.2rem)}
 }
-/* The page turn: a copy of the old leaf, fixed where the reader saw it, under
-   the header and the phone tab bar. */
-.lx-turning{position:fixed;overflow:hidden;transform-origin:left center;z-index:19;pointer-events:none;will-change:transform}
-.lx-shade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgb(27 24 21/.04),rgb(27 24 21/.36))}
 
 /* --- type ----------------------------------------------------------------- */
 .lx-kicker{margin:0;font-family:var(--sans);font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);line-height:1.3}

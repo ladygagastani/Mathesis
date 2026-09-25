@@ -4,9 +4,9 @@ module LearnState
 // because none of it touches the reader, the catalogue or the library; State
 // routes `Learn_` messages here and calls `enterPage` from `loadForRoute`.
 //
-// Any message that turns a leaf returns `turn`; the view has already taken the
-// snapshot of the old leaf in its click handler (see LearnFx). Messages that
-// only reveal an answer return an `ink` of the part that appeared.
+// Any message that changes the leaf returns `turn` (back to the top; there is
+// no page-turn animation). Messages that only reveal an answer return an `ink`
+// of the part that appeared.
 
 open Elmish
 open Fable.Core

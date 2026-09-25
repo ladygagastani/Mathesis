@@ -328,6 +328,13 @@ let private editionOption (t: TextMeta) : ReactElement =
         prop.text (label + langTag + " · " + fmtKb t.Kb)
     ]
 
+/// "read from <address>"; an empty (or ".") base address means files next to
+/// the page itself.
+let private urlOriginLabel (b: string) : string =
+    match b.Trim() with
+    | "" | "." | "./" -> "read from this site"
+    | b -> "read from " + b
+
 let private workHead (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactElement =
     let w = rm.Work
     let author = Catalog.authorOf model.Catalog w.Id
@@ -363,7 +370,7 @@ let private workHead (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : 
                                | OriginLocalZip name -> "from-local", "read from " + name
                                | OriginLocalFolder name -> "from-local", "read from " + name
                                | OriginLocalFiles -> "from-local", "read from your chosen folder"
-                               | OriginUrl b -> "from-local", "read from " + b
+                               | OriginUrl b -> "from-local", urlOriginLabel b
                                | OriginGitHub -> "from-net", "downloaded from GitHub"
                            [ Html.text " · "; Html.span [ prop.className ("origin " + cls); prop.text text ] ]
                        | None -> [])
