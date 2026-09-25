@@ -186,6 +186,9 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
 // ---------------------------------------------------------------------------
 
 let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    // While accounts are switched off (no server configured) the page says so
+    // instead of describing what an account would store.
+    let accounts = model.Account.Configured
     let section (title: string) (children: ReactElement list) =
         Html.section [ prop.children (Html.h2 [ prop.className "sh"; prop.text title ] :: children) ]
     let para (text: string) = Html.p [ prop.className "ap-text"; prop.text text ]
@@ -196,12 +199,18 @@ let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
             Html.h1 [ prop.className "ph"; prop.text "Privacy" ]
             Html.p [
                 prop.className "ap-text lead-p"
-                prop.text
-                    "In short: no advertising, no analytics, no tracking cookies, and nothing to buy. You can use everything except the forum without an account, and then what you do here stays in your browser."
+                prop.text (
+                    "In short: no advertising, no analytics, no tracking cookies, and nothing to buy. "
+                    + (if accounts then "You can use everything except the forum without an account, and then what you do here stays in your browser."
+                       else "There are no accounts: what you do here stays in your browser.")
+                )
             ]
 
             section "Kept in your browser" [
-                para "These are saved on your own device, in the browser's storage for this site. Nobody else can see them, and they are not sent anywhere unless you make an account (below)."
+                para (
+                    "These are saved on your own device, in the browser's storage for this site. Nobody else can see them"
+                    + (if accounts then ", and they are not sent anywhere unless you make an account (below)." else ", and they are not sent anywhere.")
+                )
                 Html.ul [
                     prop.className "ap-text"
                     prop.children [
@@ -211,7 +220,7 @@ let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         row "Study" "how far you have got in the lessons"
                         row "The forum" "the people you chose to hide"
                         row "Folders and ZIP files" "if you connected texts on your computer, the browser remembers which folder, so it can ask to open it again"
-                        row "Your sign-in" "if you have an account, the key that keeps you signed in"
+                        if accounts then row "Your sign-in" "if you have an account, the key that keeps you signed in"
                     ]
                 ]
                 Html.p [
@@ -226,7 +235,12 @@ let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 ]
             ]
 
-            section "If you make an account" [
+            if not accounts then
+                section "Accounts" [
+                    para "Accounts aren't switched on yet, so the site keeps nothing about you anywhere but your own browser. When they are, this page will say what an account stores and how to delete it."
+                ]
+            if accounts then
+             section "If you make an account" [
                 para "An account is only needed to post in the forum and to keep your library in step between devices. It is held by Supabase, the service that runs the site's database and sign-in. It stores:"
                 Html.ul [
                     prop.className "ap-text"
@@ -241,7 +255,8 @@ let privacy (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 para "There are no passwords. Sign-in codes are sent by email, so the email service that delivers them also sees your address."
             ]
 
-            section "Deleting your account" [
+            if accounts then
+             section "Deleting your account" [
                 Html.p [
                     prop.className "ap-text"
                     prop.children [

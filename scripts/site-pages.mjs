@@ -92,11 +92,13 @@ export function generateSitePages (dist, root) {
   add('privacy', 'Privacy' + SUFFIX, 'What this Ancient Greek reader stores, where, and who can see it: no advertising, no analytics, no tracking cookies. How to delete your account.')
 
   // pages that belong to one reader (not for search engines), and the forms
-  const personal = 'Your own page on this device: sign in to keep it in step across devices.'
+  // accounts are switched on when the build has a server to talk to
+  const accounts = !!(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY)
+  const personal = 'Your own page on this device' + (accounts ? ': sign in to keep it in step across devices.' : '.')
   add('lib', 'My library' + SUFFIX, 'Your bookmarks, notes, saved words and places. ' + personal, true)
   for (const [tab, name] of [['words', 'Words'], ['places', 'Places'], ['favourites', 'Favourites'], ['notes', 'Notes']])
     add('lib/' + tab, name + ' — My library' + SUFFIX, `Your ${name.toLowerCase()} in My library. ` + personal, true)
-  add('account', 'Your account' + SUFFIX, 'Sign in to keep your library in step across devices and to post in the forum.', true)
+  add('account', 'Your account' + SUFFIX, accounts ? 'Sign in to keep your library in step across devices and to post in the forum.' : 'Accounts are not switched on yet.', true)
   add('forum/t', 'Forum' + SUFFIX, 'A discussion in the forum.', true)
   add('forum/new', 'New thread — Forum' + SUFFIX, 'Start a discussion in the forum.', true)
   const contentFs = readFileSync(join(root, 'src', 'Content.fs'), 'utf8')

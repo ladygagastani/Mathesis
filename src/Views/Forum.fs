@@ -99,8 +99,8 @@ let private notConfigured (dispatch: Msg -> unit) (model: Model) : ReactElement 
         prop.className "notice f-off"
         prop.children [
             Html.p [
-                Html.b [ prop.text "The forum isn't open on this copy of the site yet. " ]
-                Html.text "It needs the site's server, which hasn't been connected. Everything else works as usual, and your library stays safe in this browser."
+                Html.b [ prop.text "The forum isn't open yet. " ]
+                Html.text "Posting needs accounts, which aren't switched on yet. Everything else works as usual, and your library stays safe in this browser."
             ]
             Html.p [
                 Html.text "Found a bug in the meantime? "

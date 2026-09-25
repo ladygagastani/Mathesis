@@ -78,8 +78,11 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
-/// Sign in, or who is signed in and whether their library is synced.
+/// Sign in, or who is signed in and whether their library is synced. Not
+/// shown at all while accounts are switched off (no server configured).
 let accountButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
+  if not model.Account.Configured then Html.none
+  else
     let acc = model.Account
     let label, title, cls =
         match acc.Session with

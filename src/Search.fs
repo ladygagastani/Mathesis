@@ -290,7 +290,7 @@ let private guidePages (model: Model) : (string * string * string * string) list
       "About & acknowledgments", "About", "Sources, licences, credits", "#about"
       "Forum", "Town hall", "Discuss passages, debate, ask, report bugs", "#forum"
       "Report a bug", "Forum", "Something broken or confusing", "#forum/bugs"
-      "Your account", "Account", "Sign in, sync your library", "#account" ]
+      if model.Account.Configured then "Your account", "Account", "Sign in, sync your library", "#account" ]
     @ steps
     @ eras
     @ (LifeData.pages |> List.map (fun p -> p.Title, "Wiki · Everyday life", p.Summary, LifeData.hashOf p.Slug))
