@@ -1,7 +1,8 @@
 module LearnFx
 
-// Everything in the Learn section that the DOM has to do imperatively: the page
-// turn, the ink that blurs into focus as a leaf opens, the small feedback
+// Everything in the Learn section that the DOM has to do imperatively: going
+// to the top when a leaf changes, the ink that blurs into focus as an answer
+// appears, the small feedback
 // animations (a card flipping, a wrong pair shaking), tracing a letter on a
 // canvas, dragging word tiles, the device's Greek voice and the synthesised
 // pitch tones. All of it lives in one object on `window.__lx`, bound once when
@@ -13,12 +14,9 @@ module LearnFx
 // *new* DOM waits two animation frames (`paint`). Everything that animates is
 // skipped under prefers-reduced-motion.
 //
-// The page turn has two halves. `snapshot` runs in the click handler, before
-// dispatch, while the old leaf is still on screen: it lays a copy of it over
-// the page, fixed where the reader sees it. `turn` runs from the update's
-// command once the new leaf is rendered, and swings the copy away like a page
-// of a codex. A snapshot nobody turns (the click led out of Learn) removes
-// itself after 1.5 s.
+// A new leaf simply appears (`turn` only scrolls to the top): the animated
+// page turn and the blur-in of the new leaf were removed on 25 Sept 2026 at
+// the owner's request.
 
 open Fable.Core
 open Fable.Core.JsInterop
@@ -28,7 +26,6 @@ let private fx: obj =
   const RM = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const paint = f => requestAnimationFrame(() => requestAnimationFrame(f));
   const E = 'cubic-bezier(.5,.05,.2,1)';
-  const leafEl = () => document.querySelector('main .lx-leaf');
   const inkEl = (root, delay) => {
     if (!root || !root.animate || RM()) return;
     const n = root.hasAttribute('data-ink') ? [root] : [];
@@ -39,47 +36,10 @@ let private fx: obj =
        { opacity: 1, filter: 'blur(0)', transform: 'none' }],
       { duration: 1000, delay: delay + Math.min(i, 14) * 70, easing: 'cubic-bezier(.2,.65,.25,1)', fill: 'backwards' }));
   };
-  let pending = null;
-  const drop = () => { if (pending) { clearTimeout(pending.timer); pending.wrap.remove(); pending = null; } };
-  const headerBottom = () => { const h = document.querySelector('header'); return h ? Math.max(0, h.getBoundingClientRect().bottom) : 0; };
   let audio = null;
   return {
     ink(sel, delay) { paint(() => inkEl(document.querySelector(sel), delay)); },
-    snapshot() {
-      drop();
-      const leaf = leafEl();
-      if (!leaf || RM()) return;
-      const r = leaf.getBoundingClientRect();
-      const top = Math.max(r.top, headerBottom()), bottom = Math.min(r.bottom, window.innerHeight);
-      if (bottom - top < 40) return;
-      const wrap = document.createElement('div');
-      wrap.className = 'lx-turning';
-      wrap.setAttribute('aria-hidden', 'true');
-      wrap.style.cssText = 'left:' + r.left + 'px;top:' + top + 'px;width:' + r.width + 'px;height:' + (bottom - top) + 'px';
-      const copy = leaf.cloneNode(true);
-      copy.style.cssText = 'position:absolute;left:0;top:' + (r.top - top) + 'px;width:' + r.width + 'px;margin:0';
-      const shade = document.createElement('div');
-      shade.className = 'lx-shade';
-      wrap.append(copy, shade);
-      document.body.appendChild(wrap);
-      pending = { wrap, timer: setTimeout(drop, 1500) };
-    },
-    turn() {
-      paint(() => {
-        window.scrollTo(0, 0);
-        const leaf = leafEl(), t = pending;
-        if (t) {
-          clearTimeout(t.timer); pending = null;
-          const a = t.wrap.animate(
-            [{ transform: 'perspective(1700px) rotateY(0deg)' }, { transform: 'perspective(1700px) rotateY(-102deg)' }],
-            { duration: 780, easing: E, fill: 'forwards' });
-          a.onfinish = a.oncancel = () => t.wrap.remove();
-          t.wrap.lastChild.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 780, easing: E, fill: 'forwards' });
-          if (leaf && leaf.animate) leaf.animate([{ filter: 'brightness(.88)' }, { filter: 'brightness(1)' }], { duration: 780, easing: E });
-        }
-        inkEl(leaf, t ? 300 : 180);
-      });
-    },
+    turn() { paint(() => window.scrollTo(0, 0)); },
     flipCard() {
       paint(() => {
         const c = document.querySelector('[data-card]');
@@ -237,10 +197,7 @@ let private fx: obj =
 /// Blurs the element matching `selector` and its `[data-ink]` descendants into focus.
 let inkIn (selector: string) (delay: int) : unit = fx?ink (selector, delay)
 
-/// Call in the click handler, before dispatching a message that turns the leaf.
-let snapshot () : unit = fx?snapshot ()
-
-/// Call from the command of the update that turned the leaf.
+/// Call from the command of the update that changed the leaf: back to the top.
 let turn () : unit = fx?turn ()
 
 let flipCard () : unit = fx?flipCard ()

@@ -959,12 +959,11 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   `LearnModel`, `LearnMsg`; `Model.Learn`.
 - **Persistence:** `anag:learn` = `{onboarded, pace, step, alpha}`. Exercise
   state (cards, pairs, tiles, paradigm cells…) is session-only by design.
-- **Page turn:** the view calls `LearnFx.snapshot()` in the click handler, only
-  for messages that turn a leaf (`turning` / `pageLink` in the view); the update
-  returns `LearnFx.turn`. A snapshot that nobody turns removes itself after
-  1.5 s, so never snapshot for a message that doesn't turn. `[data-ink]` marks
-  what blurs in when a leaf opens; `[data-reveal=name]` blocks do the same when
-  an answer appears. Both are skipped under prefers-reduced-motion.
+- **No page turn** (removed 25 Sept 2026 at the owner's request): a new leaf
+  just appears; the update returns `LearnFx.turn`, which only scrolls to the
+  top. `[data-reveal=name]` blocks blur in when an answer appears and
+  `[data-ink]` parts when the next exercise card appears (`LearnState.ink`),
+  skipped under prefers-reduced-motion. Don't bring the turn back.
 - **LearnFx** keeps its JavaScript in one object bound once with `emitJsExpr`
   (an `[<Emit>]` would be pasted into every call site: it made the file 183 kB).
   Pitch tones share `window.__anagAudio` with the meter lens, so one sound
