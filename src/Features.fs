@@ -191,7 +191,9 @@ let updateAccount (msg: AccountMsg) (model: Model) : Model * Cmd<Msg> =
             | s -> s
         setAccount model (fun a -> { a with Busy = false; Error = Some e; Stage = stage }), Cmd.none
     | ProfileLoaded(name, admin) ->
-        setAccount model (fun a -> { a with DisplayName = name; IsAdmin = admin; NameInput = (if a.NameInput = "" then name else a.NameInput) }), Cmd.none
+        setAccount model (fun a -> { a with DisplayName = name; IsAdmin = admin; NameInput = (if a.NameInput = "" then name else a.NameInput) }),
+        // a moderator who arrived on the forum's front page: the reports queue
+        (if admin && model.Route = ForumRoute ForumHome then Cmd.ofMsg (Forum_ LoadReports) else Cmd.none)
     | SaveName ->
         let name = acc.NameInput.Trim()
         if name.Length < 2 || name.Length > 40 then
@@ -262,6 +264,28 @@ let updateAccount (msg: AccountMsg) (model: Model) : Model * Cmd<Msg> =
     | SyncPulled(Error e) -> setAccount model (fun a -> { a with Sync = SyncError e }), Cmd.none
     | SyncPushed(Ok t) -> setAccount model (fun a -> { a with Sync = Synced t }), Cmd.none
     | SyncPushed(Error e) -> setAccount model (fun a -> { a with Sync = SyncError e }), Cmd.none
+    | AskDeleteAccount ask -> setAccount model (fun a -> { a with DeleteAsk = ask; DeleteText = ""; Error = None }), Cmd.none
+    | SetDeleteConfirm v -> setAccount model (fun a -> { a with DeleteText = v }), Cmd.none
+    | DeleteAccount ->
+        if acc.Session.IsNone || acc.Busy then model, Cmd.none
+        elif acc.DeleteText.Trim().ToLower() <> "delete" then
+            setAccount model (fun a -> { a with Error = Some "Type the word delete to confirm." }), Cmd.none
+        else
+            setAccount model (fun a -> { a with Busy = true; Error = None }),
+            Cmd.OfPromise.perform Server.deleteAccount () (fun r -> Account_(AccountDeleted r))
+    | AccountDeleted(Ok()) ->
+        // The library in this browser is the reader's own copy: it stays,
+        // no longer tied to any account.
+        setAccount model (fun a ->
+            { a with Session = None; DisplayName = ""; IsAdmin = false; NameInput = ""; Sync = SyncOff
+                     Stage = EnterEmail; Error = None; Busy = false; DeleteAsk = false; DeleteText = "" }),
+        Cmd.batch [
+            Cmd.ofEffect (fun _ ->
+                Storage.saveSession None
+                Storage.saveLibOwner "")
+            Cmd.ofMsg (ShowToastFor("Your account and everything stored with it have been deleted. Your library is still in this browser.", 9000))
+        ]
+    | AccountDeleted(Error e) -> setAccount model (fun a -> { a with Busy = false; Error = Some e }), Cmd.none
 
 // ---------------------------------------------------------------------------
 // forum
@@ -389,3 +413,46 @@ let updateForum (msg: ForumMsg) (model: Model) : Model * Cmd<Msg> =
             | _ -> Cmd.none
         model, Cmd.batch [ reload; Cmd.ofMsg (ShowToast text) ]
     | ForumDone(Error e) -> model, Cmd.ofMsg (ShowToastFor(e, 6000))
+    | OpenReport(threadId, postId, excerpt) ->
+        if not signedIn then model, Cmd.ofMsg (ShowToast "Sign in to report a post.")
+        else
+            setForum model (fun f ->
+                { f with Report = Some { ThreadId = threadId; PostId = postId; Excerpt = excerpt; Reason = ""; Note = "" } }),
+            Cmd.none
+    | SetReport d -> setForum model (fun f -> { f with Report = Some d }), Cmd.none
+    | CancelReport -> setForum model (fun f -> { f with Report = None }), Cmd.none
+    | SubmitReport ->
+        match f.Report with
+        | Some d when d.Reason = "" -> model, Cmd.ofMsg (ShowToast "Choose a reason.")
+        | Some d when not f.Posting ->
+            let title = match f.Thread with Loaded(t, _) -> t.Title | _ -> ""
+            setForum model (fun f -> { f with Posting = true }),
+            Cmd.OfPromise.perform (fun () -> Server.reportContent d title) () (fun r -> Forum_(ReportSent r))
+        | _ -> model, Cmd.none
+    | ReportSent(Ok()) ->
+        setForum model (fun f -> { f with Posting = false; Report = None }),
+        Cmd.ofMsg (ShowToastFor("Thank you. A moderator will look at it.", 5000))
+    | ReportSent(Error e) -> setForum model (fun f -> { f with Posting = false }), Cmd.ofMsg (ShowToastFor(e, 6000))
+    | Block(userId, name) ->
+        let blocked = if f.Blocked |> List.exists (fun (id, _) -> id = userId) then f.Blocked else f.Blocked @ [ userId, name ]
+        setForum model (fun f -> { f with Blocked = blocked; Report = None }),
+        Cmd.batch [
+            Cmd.ofEffect (fun _ -> Storage.saveBlocked blocked)
+            Cmd.ofMsg (ShowToastFor("Posts by " + name + " are now folded away. You can undo this on your account page.", 6000))
+        ]
+    | Unblock userId ->
+        let blocked = f.Blocked |> List.filter (fun (id, _) -> id <> userId)
+        setForum model (fun f -> { f with Blocked = blocked }), Cmd.ofEffect (fun _ -> Storage.saveBlocked blocked)
+    | ShowHidden postId -> setForum model (fun f -> { f with Unhidden = f.Unhidden.Add postId }), Cmd.none
+    | LoadReports ->
+        if not (model.Account.IsAdmin && signedIn) then model, Cmd.none
+        else
+            setForum model (fun f -> { f with Reports = (match f.Reports with Loaded _ as r -> r | _ -> InFlight) }),
+            Cmd.OfPromise.perform Server.listReports () (fun r -> Forum_(ReportsLoaded r))
+    | ReportsLoaded r -> setForum model (fun f -> { f with Reports = (match r with Ok xs -> Loaded xs | Error e -> Failed e) }), Cmd.none
+    | ResolveReport id ->
+        setForum model (fun f ->
+            { f with Reports = (match f.Reports with Loaded xs -> Loaded(xs |> List.filter (fun x -> x.Id <> id)) | r -> r) }),
+        Cmd.OfPromise.perform Server.resolveReport id (function
+            | Ok() -> ShowToast "Marked as dealt with"
+            | Error e -> ShowToastFor(e, 6000))

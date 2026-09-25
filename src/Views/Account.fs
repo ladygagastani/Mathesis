@@ -156,7 +156,7 @@ let private signedIn (model: Model) (s: Session) (dispatch: Msg -> unit) : React
                       ]
                   ]
               ]
-              errorLine acc
+              if not acc.DeleteAsk then errorLine acc
               Html.p [ prop.className "quiet"; prop.text "Shown beside everything you post. Changing it changes it on your old posts too." ]
           ]
       ]
@@ -196,7 +196,95 @@ let private signedIn (model: Model) (s: Session) (dispatch: Msg -> unit) : React
                   ]
               ]
           ]
+      ]
+      Html.section [
+          prop.className "acct-block acct-delete"
+          prop.children [
+              Html.h2 [ prop.className "sh"; prop.text "Delete your account" ]
+              Html.p [
+                  prop.className "quiet"
+                  prop.text
+                      "Removes your email address, your name, the synced copy of your library, and everything you posted in the forum (a thread goes with the replies in it), at once and for good. The library in this browser stays."
+              ]
+              if not acc.DeleteAsk then
+                  Html.button [
+                      prop.className "btn danger"
+                      prop.text "Delete my account…"
+                      prop.onClick (fun _ -> dispatch (Account_(AskDeleteAccount true)))
+                  ]
+              else
+                  Html.div [
+                      prop.className "acct-row"
+                      prop.children [
+                          Html.label [
+                              prop.className "acct-confirm"
+                              prop.children [
+                                  Html.span [ prop.text "Type delete to confirm" ]
+                                  Html.input [
+                                      prop.value acc.DeleteText
+                                      prop.autoFocus true
+                                      prop.autoComplete "off"
+                                      prop.onChange (fun (v: string) -> dispatch (Account_(SetDeleteConfirm v)))
+                                      prop.onKeyDown (fun e ->
+                                          if e.key = "Enter" then dispatch (Account_ DeleteAccount)
+                                          elif e.key = "Escape" then dispatch (Account_(AskDeleteAccount false)))
+                                  ]
+                              ]
+                          ]
+                          Html.button [
+                              prop.className "btn danger"
+                              prop.disabled (acc.Busy || acc.DeleteText.Trim().ToLower() <> "delete")
+                              prop.text (if acc.Busy then "Deleting…" else "Delete for good")
+                              prop.onClick (fun _ -> dispatch (Account_ DeleteAccount))
+                          ]
+                          Html.button [ prop.className "btn"; prop.text "Cancel"; prop.onClick (fun _ -> dispatch (Account_(AskDeleteAccount false))) ]
+                      ]
+                  ]
+                  errorLine acc
+          ]
       ] ]
+
+/// The forum authors this reader has hidden, with a way to bring each back.
+let private hiddenPeople (model: Model) (dispatch: Msg -> unit) : ReactElement list =
+    match model.Forum.Blocked with
+    | [] -> []
+    | people ->
+        [ Html.section [
+              prop.className "acct-block"
+              prop.children [
+                  Html.h2 [ prop.className "sh"; prop.text "People you've hidden in the forum" ]
+                  Html.p [ prop.className "quiet"; prop.text "Their posts are folded away for you, in this browser only. They aren't told." ]
+                  Html.ul [
+                      prop.className "acct-hidden"
+                      prop.children [
+                          for id, name in people ->
+                              Html.li [
+                                  prop.key id
+                                  prop.children [
+                                      Html.span [ prop.text name ]
+                                      Html.button [ prop.className "btn small"; prop.text "Show again"; prop.onClick (fun _ -> dispatch (Forum_(Unblock id))) ]
+                                  ]
+                              ]
+                      ]
+                  ]
+              ]
+          ] ]
+
+let private privacyLink (dispatch: Msg -> unit) : ReactElement =
+    Html.p [
+        prop.className "quiet acct-privacy"
+        prop.children [
+            Html.text "What is stored, where, and who can see it: "
+            Html.a [
+                prop.href (Router.href "#privacy")
+                prop.text "Privacy"
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#privacy", false)))
+            ]
+            Html.text "."
+        ]
+    ]
 
 let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let acc = model.Account
@@ -219,5 +307,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                    match acc.Session with
                    | Some s -> signedIn model s dispatch
                    | None -> signInForm acc dispatch @ [ why ])
+            @ hiddenPeople model dispatch
+            @ [ privacyLink dispatch ]
         )
     ]

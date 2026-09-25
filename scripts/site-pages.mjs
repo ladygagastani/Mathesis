@@ -88,6 +88,8 @@ export function generateSitePages (dist, root) {
   add('study', 'Study' + SUFFIX, 'Learn to read Ancient Greek: a beginner\'s guide in eight steps, from the letters and their sounds to word studies, with lessons and exercises to practise with.')
   add('about', 'About' + SUFFIX, 'The projects, scholars and licences this Ancient Greek reader is built on: the Perseus Digital Library, First1KGreek, and the editions behind the texts.')
   add('forum', 'Forum' + SUFFIX, 'Discuss passages, ask questions about Ancient Greek, suggest improvements and report bugs.')
+  add('forum/rules', 'Community rules — Forum' + SUFFIX, 'The rules of the forum: be kind to beginners, argue with the reading and not the reader, cite your text. How to report a post or hide someone.')
+  add('privacy', 'Privacy' + SUFFIX, 'What this Ancient Greek reader stores, where, and who can see it: no advertising, no analytics, no tracking cookies. How to delete your account.')
 
   // pages that belong to one reader (not for search engines), and the forms
   const personal = 'Your own page on this device: sign in to keep it in step across devices.'

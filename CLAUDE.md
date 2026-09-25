@@ -1101,3 +1101,42 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   hour. `Server.sendCode` turns its 429 into a plain message; the fix is an
   email sender (supabase/README.md, "2b"). The mock server answers
   `ratelimit@example.com` with that 429.
+
+
+## 22. Forum safety, account deletion, privacy, licence, not found (added 2026-09-25)
+
+- **Report.** Every thread and reply shows Report (signed in, not your own)
+  and "Hide this person" (anyone, not your own) in `.f-post-acts`, from
+  `Views.Forum.postActions`. Report opens an inline form (`ReportDraft` on
+  `ForumState.Report`; reasons spam / abuse / offtopic / other, ids match the
+  schema's check) → `Server.reportContent` → `forum_reports`. A second report
+  of the same post is a 409, treated as sent. Moderators get a queue at the
+  top of the forum's front page (`LoadReports` on entering `ForumHome` and on
+  `ProfileLoaded` for an admin; "Dealt with" = `status = 'done'`).
+- **Hide** is client-only by design: `ForumState.Blocked` = (user id, name),
+  `anag:blocked`. Hidden people's posts fold to "Show it" (`Unhidden`, this
+  visit only); their threads are left out of lists with a count. The list,
+  with "Show again", is on the account page.
+- **Rules:** `ForumRoute ForumRules`, `#forum/rules` (parsed before
+  `forum/<board>`), linked from the forum welcome, the new-thread form and
+  the privacy page.
+- **Delete account:** account page, "Delete my account…" → type *delete* →
+  `Server.deleteAccount` (RPC `delete_my_account`, security definer, deletes
+  the `auth.users` row; everything else cascades). The browser's library is
+  kept and unlinked (`libOwner` cleared).
+- **Existing Supabase projects must re-run `supabase/schema.sql`** for
+  `forum_reports` and `delete_my_account`. The mock server and the review
+  page's pretend server implement both.
+- **Privacy** (`PrivacyRoute`, `#privacy`, `Views.About.privacy`): what is kept
+  in the browser, what an account stores, deletion, third parties. Keep it
+  true when adding storage keys, tables or outside services, and change its
+  "Last updated" date.
+- **Licence:** the site's own writing is CC BY-SA 4.0, stated on About
+  (`#licence` heading). About's typeface credits now match §13.
+- **Not found** (`NotFoundRoute hash`, `Views.About.notFound`): an unknown
+  top-level word or wiki page parses to it; an unknown work, author, era,
+  Everyday life slug, guide slug or forum board becomes it in
+  `State.loadForRoute` once the catalogue is loaded. The address stays as
+  typed. `Router.navKey` gives "" (no tab lit).
+- Page files: `privacy`, `forum/rules`.
+

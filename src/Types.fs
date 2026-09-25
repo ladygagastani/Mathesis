@@ -211,6 +211,8 @@ type ForumRoute =
     | ForumBoard  of category: string
     | ForumThread of id: string
     | ForumNew    of category: string
+    /// The community rules (`#forum/rules`)
+    | ForumRules
 
 /// The Learn section's pages (`#learn/…`). Leaves *within* a lesson are not
 /// pages: they live on `LearnModel`, so the browser's back button leaves the
@@ -243,6 +245,10 @@ type Route =
     | ReaderRoute of workId: string * grcSuffix: string * engSuffix: string
                      * chunk: string option * seg: string option
     | LearnRoute  of LearnPage
+    /// What is stored, where, and who can see it (`#privacy`)
+    | PrivacyRoute
+    /// An address the site has no page for (the hash, for the message)
+    | NotFoundRoute of hash: string
 
 // ---------------------------------------------------------------------------
 // 3.4 Reader state & async wrappers
@@ -388,7 +394,10 @@ type AccountState =
       Busy        : bool
       Error       : string option
       Sync        : SyncStatus
-      SyncToken   : int }           // debounces pushes: only the newest timer syncs
+      SyncToken   : int             // debounces pushes: only the newest timer syncs
+      /// The "delete my account" step is open, and what has been typed in it
+      DeleteAsk   : bool
+      DeleteText  : string }
 
 type Remote<'T> =
     | NotAsked
@@ -430,13 +439,41 @@ type ForumDraft =
       BugExpected : string
       FromHash    : string }        // the page the reader came from, sent with a bug report
 
+/// A report as moderators see it. `ThreadTitle` and `Excerpt` are what the
+/// reader saw when reporting; the link leads to the thread as it is now.
+type ForumReport =
+    { Id          : string
+      ThreadId    : string
+      PostId      : string          // "" when the thread itself was reported
+      Reason      : string          // "spam" | "abuse" | "offtopic" | "other"
+      Note        : string
+      ThreadTitle : string
+      Excerpt     : string
+      Created     : float }
+
+/// The report form, open under one thread or reply.
+type ReportDraft =
+    { ThreadId : string
+      PostId   : string             // "" for the thread itself
+      Excerpt  : string
+      Reason   : string
+      Note     : string }
+
 type ForumState =
     { Board   : Remote<ForumThread list>
       BoardOf : string              // the category the list is for ("" = latest across all)
       Thread  : Remote<ForumThread * ForumPost list>
       Draft   : ForumDraft
       Reply   : string
-      Posting : bool }
+      Posting : bool
+      /// People this reader has chosen not to see (id, name). Kept in this
+      /// browser only (`anag:blocked`); their posts fold away, nothing more.
+      Blocked : (string * string) list
+      /// Blocked posts the reader has chosen to show anyway, this visit
+      Unhidden : Set<string>
+      Report  : ReportDraft option
+      /// Moderators: open reports
+      Reports : Remote<ForumReport list> }
 
 /// The header search. `Scope` narrows the results: "all", "texts",
 /// "authors", "mine" (My library) or "guide" (the guide and the wiki).
@@ -701,6 +738,11 @@ type AccountMsg =
     | SyncPulled of Result<Library, string>
     | SyncPushed of Result<float, string>
     | SessionRefreshed of Session option
+    /// Deleting the account: first press asks, the second (with the word typed) does it
+    | AskDeleteAccount of bool
+    | SetDeleteConfirm of string
+    | DeleteAccount
+    | AccountDeleted of Result<unit, string>
 
 type ForumMsg =
     | LoadBoard of category: string
@@ -718,6 +760,17 @@ type ForumMsg =
     | DeletePost of threadId: string * postId: string
     | DeleteThread of threadId: string
     | ForumDone of Result<string, string>
+    | OpenReport of threadId: string * postId: string * excerpt: string
+    | SetReport of ReportDraft
+    | CancelReport
+    | SubmitReport
+    | ReportSent of Result<unit, string>
+    | Block of userId: string * name: string
+    | Unblock of userId: string
+    | ShowHidden of postId: string
+    | LoadReports
+    | ReportsLoaded of Result<ForumReport list, string>
+    | ResolveReport of reportId: string
 
 type SearchMsg =
     | SetSearchQuery of string

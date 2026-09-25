@@ -100,8 +100,19 @@ is limited by the rules in `schema.sql`. Never use the `service_role` key.
 
 Sign in on the site once, then in Supabase open **Table Editor → profiles**,
 find your row and set `is_admin` to `true`. Moderators can mark bug reports
-Open, Confirmed, Fixed or Won't fix, and delete anyone's posts. Nobody can
-make themselves a moderator from the site.
+Open, Confirmed, Fixed or Won't fix, delete anyone's posts, and see the
+reports readers send: they appear at the top of the forum's front page for
+moderators only, each with a "Dealt with" button. Nobody can make themselves a
+moderator from the site.
+
+## Updating an existing project
+
+When `schema.sql` changes (the site's release notes say so), open **SQL
+Editor**, paste the whole file again and **Run**. It is written to be run
+more than once: it adds what is new and leaves your data alone. The September
+2026 update adds the `forum_reports` table and the `delete_my_account`
+function; until it is run, the Report button and Delete account answer with
+an error.
 
 ## What is stored
 
@@ -111,6 +122,10 @@ make themselves a moderator from the site.
 | `profiles` | the name shown on posts, moderator flag | everyone (names are public on posts) |
 | `libraries` | each reader's bookmarks, notes, words, places, favourites | only that reader |
 | `forum_threads`, `forum_posts` | the forum | everyone; posting needs an account |
+| `forum_reports` | reports of posts: reason, note, an excerpt | only moderators; readers can only file them |
 
-A reader can post at most 8 times in 10 minutes. Deleting a user in
-**Authentication → Users** deletes their library and posts with them.
+A reader can post at most 8 times in 10 minutes and report at most 20 times an
+hour. A reader can delete their own account from the account page (the
+`delete_my_account` function); that, like deleting a user in
+**Authentication → Users**, deletes their profile, library, threads (with the
+replies in them), replies and reports with them.

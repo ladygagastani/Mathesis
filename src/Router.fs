@@ -33,10 +33,12 @@ let parseHash (hash: string) : Route =
         | "lib" :: "notes" :: _ -> LibraryRoute LibNotes
         | "lib" :: _ -> LibraryRoute LibMarks
         | "about" :: _ -> AboutRoute
+        | "privacy" :: _ -> PrivacyRoute
         | "account" :: _ -> AccountRoute
         | "forum" :: "t" :: id :: _ when id <> "" -> ForumRoute(ForumThread id)
         | "forum" :: "new" :: cat :: _ when cat <> "" -> ForumRoute(ForumNew cat)
         | "forum" :: "new" :: _ -> ForumRoute(ForumNew "square")
+        | "forum" :: "rules" :: _ -> ForumRoute ForumRules
         | "forum" :: cat :: _ when cat <> "" -> ForumRoute(ForumBoard cat)
         | "forum" :: _ -> ForumRoute ForumHome
         | "library" :: _
@@ -77,7 +79,9 @@ let parseHash (hash: string) : Route =
                 | "life" :: _ -> WikiLife None
                 | "undated" :: _ -> WikiAuthors(Some(ByEra "undated")) // old links
                 | _ -> WikiHome
-            WikiRoute wikiRoute
+            match rest with
+            | [] | ("authors" | "eras" | "manuscripts" | "variants" | "editions" | "life" | "undated") :: _ -> WikiRoute wikiRoute
+            | _ -> NotFoundRoute("#" + h)
         | id :: rest ->
             let grc = rest |> List.tryItem 0 |> Option.defaultValue ""
             let eng = rest |> List.tryItem 1 |> Option.defaultValue ""
@@ -121,7 +125,11 @@ let toHash (route: Route) : string =
     | ForumRoute(ForumBoard c) -> join [ "forum"; c ]
     | ForumRoute(ForumThread id) -> join [ "forum"; "t"; id ]
     | ForumRoute(ForumNew c) -> join [ "forum"; "new"; c ]
+    | ForumRoute ForumRules -> join [ "forum"; "rules" ]
     | AboutRoute -> join [ "about" ]
+    | PrivacyRoute -> join [ "privacy" ]
+    // the address the reader asked for stays in the address bar
+    | NotFoundRoute h -> h
     | AuthorRoute(id, section) -> join ([ "author"; id ] @ (section |> Option.toList))
     | WikiRoute WikiHome -> join [ "wiki" ]
     | WikiRoute(WikiAuthors None) -> join [ "wiki"; "authors" ]
@@ -160,7 +168,9 @@ let navKey (route: Route) : string =
     match route with
     | WikiRoute _
     | AuthorRoute _
-    | AboutRoute -> "wiki"
+    | AboutRoute
+    | PrivacyRoute -> "wiki"
+    | NotFoundRoute _ -> ""
     | LibraryRoute _
     | AccountRoute -> "lib"
     | ForumRoute _ -> "forum"
@@ -214,7 +224,7 @@ let private restoredAddress (): string = jsNative
 let private forgetRestored (): unit = jsNative
 
 let private routeWords =
-    set [ "lib"; "about"; "account"; "forum"; "library"; "browse"; "study"; "learn"; "author"; "start"; "wiki" ]
+    set [ "lib"; "about"; "privacy"; "account"; "forum"; "library"; "browse"; "study"; "learn"; "author"; "start"; "wiki" ]
 
 /// tlg0012.tlg001, tlg0007.tlg082b, tlg0093.ogl001, stoa0033a.tlg001 …
 let private workIdRe = System.Text.RegularExpressions.Regex(@"^[a-z]+\d+[a-z0-9]*\.[a-z]+\d+[a-z0-9]*$")

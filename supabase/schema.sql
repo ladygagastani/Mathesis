@@ -10,7 +10,9 @@
 --   · a signed-in reader can post, and delete their own posts and threads;
 --   · only moderators (profiles.is_admin) can change a bug report's status or
 --     remove other people's posts;
---   · a library can only ever be read or written by its owner.
+--   · a signed-in reader can report a post; only moderators can see reports;
+--   · a library can only ever be read or written by its owner;
+--   · a reader can delete their own account and everything stored with it.
 
 -- ---------------------------------------------------------------------------
 -- profiles: the name shown on forum posts
@@ -241,3 +243,78 @@ end $$;
 drop trigger if exists profiles_rename on public.profiles;
 create trigger profiles_rename after update on public.profiles
   for each row execute function public.profiles_rename();
+
+-- ---------------------------------------------------------------------------
+-- reports: a reader flags a thread or a reply for the moderators. Only
+-- moderators can read, resolve or remove reports; a reader can file at most
+-- 20 an hour, and one per post.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.forum_reports (
+  id           uuid primary key default gen_random_uuid(),
+  thread_id    uuid not null references public.forum_threads (id) on delete cascade,
+  post_id      uuid references public.forum_posts (id) on delete cascade,
+  reason       text not null check (reason in ('spam', 'abuse', 'offtopic', 'other')),
+  note         text not null default '' check (char_length(note) <= 1000),
+  thread_title text not null default '' check (char_length(thread_title) <= 200),
+  excerpt      text not null default '' check (char_length(excerpt) <= 400),
+  reporter_id  uuid not null references auth.users (id) on delete cascade,
+  status       text not null default 'open' check (status in ('open', 'done')),
+  created_at   timestamptz not null default now()
+);
+
+create unique index if not exists forum_reports_once
+  on public.forum_reports (reporter_id, thread_id, coalesce(post_id, '00000000-0000-0000-0000-000000000000'::uuid));
+create index if not exists forum_reports_open on public.forum_reports (status, created_at desc);
+
+alter table public.forum_reports enable row level security;
+
+drop policy if exists "file a report" on public.forum_reports;
+create policy "file a report" on public.forum_reports
+  for insert with check (auth.uid() = reporter_id and status = 'open');
+
+drop policy if exists "moderators read reports" on public.forum_reports;
+create policy "moderators read reports" on public.forum_reports
+  for select using (public.is_moderator());
+
+drop policy if exists "moderators resolve reports" on public.forum_reports;
+create policy "moderators resolve reports" on public.forum_reports
+  for update using (public.is_moderator());
+
+drop policy if exists "moderators remove reports" on public.forum_reports;
+create policy "moderators remove reports" on public.forum_reports
+  for delete using (public.is_moderator());
+
+create or replace function public.forum_reports_before_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if (select count(*) from public.forum_reports
+       where reporter_id = auth.uid() and created_at > now() - interval '1 hour') >= 20 then
+    raise exception 'You have sent a lot of reports in the last hour. Please wait a while.';
+  end if;
+  new.created_at := now();
+  new.status := 'open';
+  return new;
+end $$;
+
+drop trigger if exists forum_reports_before_insert on public.forum_reports;
+create trigger forum_reports_before_insert before insert on public.forum_reports
+  for each row execute function public.forum_reports_before_insert();
+
+-- ---------------------------------------------------------------------------
+-- deleting your own account: removes the sign-in and, through "on delete
+-- cascade", the profile, the synced library, every thread, reply and report
+-- the reader made. Nothing is kept.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in first.';
+  end if;
+  delete from auth.users where id = auth.uid();
+end $$;
+
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;

@@ -377,3 +377,68 @@ let deleteThread (threadId: string) : JS.Promise<Result<unit, string>> =
     rest ("forum_threads?id=eq." + enc threadId) "DELETE" [ "Prefer", "return=minimal" ] None
     |> Promise.map (fun r -> if r.Ok then Ok() else Error(errorText r))
     |> Promise.catch (fun e -> Error(networkError e))
+
+// ---------------------------------------------------------------------------
+// reports: readers flag a thread or reply; only moderators can read them
+// ---------------------------------------------------------------------------
+
+let private clip (n: int) (s: string) = if s.Length > n then s.Substring(0, n - 1) + "…" else s
+
+/// Files a report. Reporting the same thing twice counts as done.
+let reportContent (d: ReportDraft) (threadTitle: string) : JS.Promise<Result<unit, string>> =
+    match needSession () with
+    | Error e -> Promise.lift (Error e)
+    | Ok s ->
+        rest "forum_reports" "POST" [ "Prefer", "return=minimal" ]
+            (Some(
+                createObj [
+                    "thread_id" ==> d.ThreadId
+                    "post_id" ==> (if d.PostId = "" then null else box d.PostId)
+                    "reason" ==> d.Reason
+                    "note" ==> clip 1000 (d.Note.Trim())
+                    "thread_title" ==> clip 200 threadTitle
+                    "excerpt" ==> clip 400 d.Excerpt
+                    "reporter_id" ==> s.UserId
+                ]
+            ))
+        |> Promise.map (fun r -> if r.Ok || r.Status = 409 then Ok() else Error(errorText r))
+        |> Promise.catch (fun e -> Error(networkError e))
+
+let private reportOf (o: obj) : ForumReport =
+    { Id = str o "id"
+      ThreadId = str o "thread_id"
+      PostId = str o "post_id"
+      Reason = str o "reason"
+      Note = str o "note"
+      ThreadTitle = str o "thread_title"
+      Excerpt = str o "excerpt"
+      Created = parseTime (str o "created_at") }
+
+/// Open reports, newest first (moderators only; others get an empty list).
+let listReports () : JS.Promise<Result<ForumReport list, string>> =
+    rest "forum_reports?select=*&status=eq.open&order=created_at.desc&limit=100" "GET" [] None
+    |> Promise.map (fun r -> if r.Ok then Ok(rows r |> Array.map reportOf |> List.ofArray) else Error(errorText r))
+    |> Promise.catch (fun e -> Error(networkError e))
+
+let resolveReport (reportId: string) : JS.Promise<Result<unit, string>> =
+    rest ("forum_reports?id=eq." + enc reportId) "PATCH" [ "Prefer", "return=minimal" ] (Some(createObj [ "status" ==> "done" ]))
+    |> Promise.map (fun r -> if r.Ok then Ok() else Error(errorText r))
+    |> Promise.catch (fun e -> Error(networkError e))
+
+// ---------------------------------------------------------------------------
+// deleting the account
+// ---------------------------------------------------------------------------
+
+/// Deletes the signed-in account and everything stored with it on the server
+/// (profile, synced library, threads, replies, reports). Cannot be undone.
+let deleteAccount () : JS.Promise<Result<unit, string>> =
+    match needSession () with
+    | Error e -> Promise.lift (Error e)
+    | Ok _ ->
+        rest "rpc/delete_my_account" "POST" [] (Some(createObj []))
+        |> Promise.map (fun r ->
+            if r.Ok then
+                current <- None
+                Ok()
+            else Error(errorText r))
+        |> Promise.catch (fun e -> Error(networkError e))
