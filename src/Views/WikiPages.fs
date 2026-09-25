@@ -213,6 +213,15 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                         "Eras of Greek"
                                         WikiData.blurbEras
                                         (eras |> List.map (fun (e, _) -> "#wiki/eras/" + e.Id, stripParenSuffix e.Name))
+                                    wcat
+                                        dispatch
+                                        "Βίος"
+                                        "#wiki/life"
+                                        "Everyday life"
+                                        WikiData.blurbLife
+                                        (LifeData.pages
+                                         |> List.filter (fun p -> List.contains p.Slug WikiData.lifeShortcuts)
+                                         |> List.map (fun p -> LifeData.hashOf p.Slug, p.Title))
                                     wcat dispatch "Παράδοσις" "#wiki/manuscripts" "Manuscripts & transmission" (WikiData.blurbManuscripts + sprintf " %d authors have an article." nCore) []
                                     wcat dispatch "Γραφαί" "#wiki/variants" "Textual variants" WikiData.blurbVariants []
                                     wcat dispatch "Ἐκδόσεις" "#wiki/editions" "Editions & translations" WikiData.blurbEditions []

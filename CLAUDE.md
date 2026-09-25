@@ -1025,3 +1025,31 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   line parses as a nested sequence (the second `if` only runs when the first
   is true): put each `if` on its own line. The header's active tab never
   showed on desktop because of this.
+
+
+---
+
+## 18. Wiki: Everyday life (added 2026-09-25)
+
+- **Articles** are Markdown in `content/life/NN-slug.md`, like the Start here guide:
+  the first paragraph is the summary (index + search), `---` after it, `##`
+  sections, quotations as `>` blocks (Greek line, "English", `([Author, *Work* ref](read:<workId>:<ref>))`),
+  and a closing `## For review (not for publication)` list, cut at build time by
+  the same `guide-markdown` loader. Links: `read:` (reader), `author:tlgNNNN`
+  (author page), `NN-slug.md` (another article), and `read:<workId>@<edition>:<ref>`
+  for a work split over several files (the Greek Anthology: `@perseus-grc7` for book 7). Don't write "step N" in them:
+  Guide's renderer auto-links it to the guide.
+- **Code:** `LifeData.fs` (after GuideData; one `importDefault` per file, with its
+  group and Greek label; `Works`/`Authors` are pulled from the links),
+  `Views/Life.fs` (after Views/Guide; renders through `Guide.markdown`),
+  route `WikiRoute(WikiLife of string option)` = `#wiki/life`, `#wiki/life/<slug>`.
+  The wiki home lists it (`WikiData.blurbLife`, `lifeShortcuts`); search matches
+  titles, summaries and (lower) whole article text (`Search.lifeBodies`).
+  Vite puts the Markdown in its own `life` chunk.
+- **Accuracy:** every quotation was checked against the TEI text and every
+  `read:` link was opened in the reader to confirm it lands on the passage
+  holding the quoted Greek. Refs are the reader's own (Athenaeus uses the
+  Perseus file's book.chapter numbering, not Casaubon pages; Diogenes Laertius
+  is book.chapter.section). Re-check links after any Aligner/Segmenter change.
+  Legend, dispute and later invention are said in the text, not only in the
+  review notes.

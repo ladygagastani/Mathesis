@@ -284,12 +284,19 @@ let private guidePages (model: Model) : (string * string * string * string) list
       "Manuscripts & transmission", "Wiki", "How the texts survived, papyri codices", "#wiki/manuscripts"
       "Textual variants", "Wiki", "Interpolations, disputed works, textual problems", "#wiki/variants"
       "Editions & translations", "Wiki", "The printed editions behind the texts", "#wiki/editions"
+      "Everyday life", "Wiki", "How the Greeks lived: food, family, gods, music, medicine, games, war", "#wiki/life"
       "About & acknowledgments", "About", "Sources, licences, credits", "#about"
       "Forum", "Town hall", "Discuss passages, debate, ask, report bugs", "#forum"
       "Report a bug", "Forum", "Something broken or confusing", "#forum/bugs"
       "Your account", "Account", "Sign in, sync your library", "#account" ]
     @ steps
     @ eras
+    @ (LifeData.pages |> List.map (fun p -> p.Title, "Wiki · Everyday life", p.Summary, LifeData.hashOf p.Slug))
+
+/// The Everyday life articles' whole text, folded once: a search for
+/// "black broth" or "Diogenes" finds the article that tells the story.
+let private lifeBodies: Lazy<Map<string, string>> =
+    lazy (LifeData.pages |> List.map (fun p -> LifeData.hashOf p.Slug, fold p.Markdown) |> Map.ofList)
 
 let private guideHits (model: Model) (tokens: string list) : Hit list =
     guidePages model
@@ -297,7 +304,13 @@ let private guideHits (model: Model) (tokens: string list) : Hit list =
         let t = fold title
         if hasAll tokens t then Some(0, title, where, summary, hash)
         elif hasAll tokens (t + " " + fold summary + " " + fold where) then Some(1, title, where, summary, hash)
-        else None)
+        else
+            match lifeBodies.Value.TryFind hash with
+            // an article that only mentions the words ranks by how often it does
+            | Some body when hasAll tokens body ->
+                let mentions = tokens |> List.sumBy (fun tok -> body.Split([| tok |], System.StringSplitOptions.None).Length - 1)
+                Some(1000 - min 997 mentions, title, where, summary, hash)
+            | _ -> None)
     |> List.sortBy (fun (s, _, _, _, _) -> s)
     |> List.map (fun (_, title, where, summary, hash) ->
         { Key = "g:" + hash

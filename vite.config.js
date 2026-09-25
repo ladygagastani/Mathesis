@@ -49,6 +49,7 @@ export default defineConfig(({ command }) => ({
         //   vendor — React and ReactDOM        (changes almost never)
         //   fable  — the F# runtime, Elmish, Feliz, Thoth (changes with a toolchain upgrade)
         //   guide  — the "Start here" Markdown (changes when the guide is edited)
+        //   life   — the wiki's Everyday life articles (content/life/)
         //   learn  — the #learn lessons        (changes when a lesson is edited)
         //   index  — the app itself            (changes with every release)
         manualChunks(id) {
@@ -56,6 +57,7 @@ export default defineConfig(({ command }) => ({
           if (p.includes('/node_modules/')) return 'vendor'
           if (p.includes('/fable_modules/')) return 'fable'
           if (p.includes('/content/start-here/')) return 'guide'
+          if (p.includes('/content/life/')) return 'life'
           if (/\/src\/(Learn\w*|Views\/Learn)\.fs\.js$/.test(p)) return 'learn'
         }
       }

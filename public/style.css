@@ -3093,3 +3093,37 @@ a.eb-col:hover i,a.eb-col:focus-visible i{background:var(--ink)}
 @media (max-width:1000px){ .lib-cols{grid-template-columns:minmax(0,1fr)} }
 /* phones: the practice leaf loses its card, so its text sits on the page's own margin */
 @media (max-width:760px){ .study-lessons .lx-leaf{padding-left:0;padding-right:0} }
+/* --- Wiki: Everyday life ----------------------------------------------------
+   The index is the wiki's own ruled contents, one list per group, beside a
+   rail; an article is the guide's body beside a rail with the texts it quotes
+   and the other articles. */
+.life-cols{display:grid;grid-template-columns:minmax(0,1fr) var(--rail);gap:1.4rem var(--gutter);align-items:start;margin-top:var(--sect)}
+.life-article .life-cols{margin-top:.4rem}
+.life .life-group{margin:var(--sect) 0 .2rem}
+.life .life-group:first-child{margin-top:0}
+.life .wiki-cats{display:block;margin:0;max-width:none}
+.life-side > .sh{margin:0 0 .2rem}
+.life-how{font-family:var(--sans);font-size:.9rem;line-height:1.55;color:var(--ink-2);margin:0}
+.life-kicker{font-family:var(--sans);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:.3rem 0 0}
+.life-kicker .grc{font-family:var(--serif);font-size:1rem;letter-spacing:0;text-transform:none;color:var(--ochre)}
+.life-main > .g-body > .ph{margin-top:.2rem}
+.life-main .tr-note{margin:1.6rem 0 0;padding-top:.8rem;border-top:1px solid var(--rule-soft)}
+.life-main .pager{max-width:46rem;margin-top:1.4rem}
+.life-rail{position:sticky;top:5rem;max-height:calc(100vh - 6rem);overflow:auto;font-family:var(--sans);font-size:.88rem}
+.life-rail > .sh{margin:1.6rem 0 .5rem}
+.life-rail > .sh:first-child{margin-top:.2rem}
+.life-works{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.35rem}
+.life-works li{display:flex;flex-direction:column;line-height:1.3}
+.life-works a{color:var(--accent);text-decoration:none}
+.life-works a:hover{text-decoration:underline}
+.life-works .lw-a{font-size:.78rem;color:var(--mute)}
+.life-toc{display:flex;flex-direction:column;gap:.9rem}
+.lt-group{display:flex;flex-direction:column;gap:.15rem}
+.lt-group b{font-weight:600;font-size:.75rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);margin-bottom:.1rem}
+.lt-group a{color:var(--ink-2);text-decoration:none;padding:.1rem 0}
+.lt-group a:hover{color:var(--accent)}
+.lt-group .on{color:var(--ink);font-weight:600;padding:.1rem 0 .1rem .5rem;margin-left:-.6rem;border-left:2px solid var(--solid)}
+@media (max-width:1000px){
+  .life-cols{grid-template-columns:minmax(0,1fr)}
+  .life-rail{position:static;max-height:none;overflow:visible;border-top:1px solid var(--rule);padding-top:.4rem}
+}

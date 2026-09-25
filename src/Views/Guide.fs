@@ -58,9 +58,17 @@ let private resolveHref (href: string) : string * bool =
     if href.StartsWith "read:" then
         let rest = href.Substring 5
         let i = rest.IndexOf ':'
-        if i > 0 then Router.toHash (ReaderRoute(rest.Substring(0, i), "", "", None, Some(rest.Substring(i + 1)))), false
-        else Router.toHash (ReaderRoute(rest, "", "", None, None)), false
-    elif href.EndsWith ".md" then (GuideData.hashOfFile href |> Option.defaultValue "#start"), false
+        let work, ref = if i > 0 then rest.Substring(0, i), Some(rest.Substring(i + 1)) else rest, None
+        // `read:<workId>@<edition>:<ref>` names the Greek edition, for works
+        // split over several files (the Greek Anthology's volumes)
+        let work, edition =
+            match work.IndexOf '@' with
+            | j when j > 0 -> work.Substring(0, j), work.Substring(j + 1)
+            | _ -> work, ""
+        Router.toHash (ReaderRoute(work, edition, "", None, ref)), false
+    elif href.StartsWith "author:" then "#author/" + href.Substring 7, false
+    elif href.EndsWith ".md" then
+        (LifeData.hashOfFile href |> Option.orElse (GuideData.hashOfFile href) |> Option.defaultValue "#start"), false
     elif href.StartsWith "#" then href, false
     else href, true
 
@@ -168,6 +176,10 @@ and private listItems (dispatch: Msg -> unit) (key: string) (items: Block list l
         | [ Para xs ] -> Html.li [ prop.key k; prop.children (inlines dispatch k xs) ]
         | Para xs :: rest -> Html.li [ prop.key k; prop.children (inlines dispatch k xs @ blocks dispatch k rest) ]
         | _ -> Html.li [ prop.key k; prop.children (blocks dispatch k item) ])
+
+/// Renders parsed Markdown the way the guide does (Greek runs, quotations,
+/// `read:`/`author:` links); the wiki's Everyday life articles use it too.
+let markdown (dispatch: Msg -> unit) (key: string) (bs: Block list) : ReactElement list = blocks dispatch key bs
 
 /// Home › Start here › page. The guide hangs off the home page, not the wiki.
 let private crumbs (dispatch: Msg -> unit) (parts: (string * string option) list) : ReactElement =

@@ -199,6 +199,11 @@ let private pageTitle (model: Model) (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> "Manuscripts & transmission" + suffix
     | WikiRoute(WikiArticles Variants) -> "Textual variants" + suffix
     | WikiRoute WikiEditions -> "Editions & translations" + suffix
+    | WikiRoute(WikiLife slug) ->
+        (match LifeData.tryFind slug with
+         | Some p -> p.Title + " — Everyday life"
+         | None -> "Everyday life")
+        + suffix
     | GuideRoute slug ->
         (match GuideData.tryFind slug with
          | Some p when p.Slug <> "" -> p.Title + " — Study"
@@ -1533,6 +1538,7 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | WikiRoute(WikiEras(Some id)) -> Views.WikiPages.era model dispatch id
     | WikiRoute(WikiArticles kind) -> Views.WikiPages.articleIndex model dispatch kind
     | WikiRoute WikiEditions -> Views.WikiPages.editions model dispatch
+    | WikiRoute(WikiLife slug) -> Views.Life.render model dispatch slug
     | GuideRoute slug -> Views.Guide.render model dispatch slug
     | LearnRoute LearnContents -> Views.Study.render model dispatch
     | LearnRoute page -> Views.Learn.render model dispatch page

@@ -200,6 +200,8 @@ type WikiRoute =
     | WikiEras    of string option
     | WikiArticles of ArticleKind
     | WikiEditions
+    /// Everyday life: the index (None) or one article, by slug
+    | WikiLife of string option
 
 /// Tabs of My library (`#lib/<tab>`).
 type LibTab = LibMarks | LibWords | LibPlaces | LibFavs | LibNotes

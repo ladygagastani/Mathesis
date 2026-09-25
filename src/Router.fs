@@ -73,6 +73,8 @@ let parseHash (hash: string) : Route =
                 | "manuscripts" :: _ -> WikiArticles Manuscripts
                 | "variants" :: _ -> WikiArticles Variants
                 | "editions" :: _ -> WikiEditions
+                | "life" :: slug :: _ when slug <> "" -> WikiLife(Some slug)
+                | "life" :: _ -> WikiLife None
                 | "undated" :: _ -> WikiAuthors(Some(ByEra "undated")) // old links
                 | _ -> WikiHome
             WikiRoute wikiRoute
@@ -130,6 +132,8 @@ let toHash (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> join [ "wiki"; "manuscripts" ]
     | WikiRoute(WikiArticles Variants) -> join [ "wiki"; "variants" ]
     | WikiRoute WikiEditions -> join [ "wiki"; "editions" ]
+    | WikiRoute(WikiLife None) -> join [ "wiki"; "life" ]
+    | WikiRoute(WikiLife(Some slug)) -> join [ "wiki"; "life"; slug ]
     | GuideRoute None -> join [ "start" ]
     | GuideRoute(Some slug) -> join [ "start"; slug ]
     | ReaderRoute(id, grc, eng, chunk, seg) ->
