@@ -24,3 +24,7 @@ src/fable_modules/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local settings for Vite (the Supabase address and key when testing accounts)
+.env.local
+.env.*.local

@@ -20,10 +20,10 @@ let private iconSvg (shapes: Content.IconShape list) : ReactElement = Shared.ico
 let navToggleButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let hidden = Router.navHiddenOn model.Route model.NavHidden model.NavHiddenReader
     Html.button [
-        prop.classes [ "ib"; if hidden then "nav-show" ]
+        prop.classes [ "ib"; if hidden then "nav-show"; if model.Route = Browse then "nav-none" ]
         prop.id "navToggle"
-        prop.ariaLabel (if hidden then "Show library" else "Hide library")
-        prop.title ((if hidden then "Show library" else "Hide library") + " (\\)")
+        prop.ariaLabel (if hidden then "Show contents" else "Hide contents")
+        prop.title ((if hidden then "Show contents" else "Hide contents") + " (\\)")
         prop.custom ("aria-expanded", not hidden)
         prop.onClick (fun e ->
             e.stopPropagation ()
@@ -31,7 +31,7 @@ let navToggleButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
             else dispatch ToggleNavHidden)
         prop.children [
             Shared.icon "contents"
-            if hidden then Html.span [ prop.className "nav-show-label"; prop.text "Library" ]
+            if hidden then Html.span [ prop.className "nav-show-label"; prop.text "Contents" ]
         ]
     ]
 
@@ -60,7 +60,8 @@ let brand (dispatch: Msg -> unit) : ReactElement =
 /// On phones this row becomes the bottom tab bar, and gains two tabs that the
 /// header carries on wider screens (the library drawer and My library), so the
 /// two things reached for most sit under the thumb rather than at the top of
-/// the screen. Order on phones: Texts · Contents · Wiki · My library (far right). `.tab-phone` hides them above the phone breakpoint.
+/// the screen. Order on phones: Library · Contents · Wiki · Forum · My library
+/// (far right). `.tab-phone` hides them above the phone breakpoint.
 let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let route = model.Route
     let active = Router.navKey route
@@ -69,15 +70,16 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
         prop.id "topnav"
         prop.children [
             Html.a [
-                prop.href "#"
-                prop.custom ("data-nav", "texts")
-                prop.classes [ if active = "texts" then "active" ]
+                prop.href "#library"
+                prop.custom ("data-nav", "library")
+                prop.classes [ if active = "library" then "active" ]
+                prop.title "Every text in the collection"
                 prop.onClick (fun e ->
                     e.preventDefault ()
-                    dispatch (Navigate("#", false)))
+                    dispatch (Navigate("#library", false)))
                 prop.children [
                     Shared.icon "texts"
-                    Html.text "Texts"
+                    Html.text "Library"
                 ]
             ]
             Html.button [
@@ -99,6 +101,19 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 prop.children [
                     Shared.icon "wiki"
                     Html.text "Wiki"
+                ]
+            ]
+            Html.a [
+                prop.href "#forum"
+                prop.custom ("data-nav", "forum")
+                prop.classes [ if active = "forum" then "active" ]
+                prop.title "The town hall: discuss passages, debate, ask, report bugs"
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#forum", false)))
+                prop.children [
+                    Shared.icon "forum"
+                    Html.text "Forum"
                 ]
             ]
             Html.a [
@@ -161,10 +176,41 @@ let jumpBox (model: Model) (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
-let tools (route: Route) (dispatch: Msg -> unit) : ReactElement =
+/// Sign in, or who is signed in and whether their library is synced.
+let accountButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let acc = model.Account
+    let label, title, cls =
+        match acc.Session with
+        | None -> "Sign in", "Sign in to sync your library and post in the forum", ""
+        | Some s ->
+            let who = if acc.DisplayName <> "" then acc.DisplayName else s.Email
+            match acc.Sync with
+            | SyncError e -> who, "Signed in as " + who + ". Sync failed: " + e, " warn"
+            | Syncing -> who, "Signed in as " + who + ". Syncing…", " on"
+            | _ -> who, "Signed in as " + who + ". Your library is synced.", " on"
+    Html.a [
+        prop.className ("acct-btn" + cls + (if model.Route = AccountRoute then " active" else ""))
+        prop.href "#account"
+        prop.title title
+        prop.onClick (fun e ->
+            e.preventDefault ()
+            dispatch (Navigate("#account", false)))
+        prop.children [
+            Shared.icon "account"
+            Html.span [ prop.className "acct-label"; prop.text label ]
+            match acc.Sync with
+            | Syncing when acc.Session.IsSome -> Html.span [ prop.className "acct-dot busy"; prop.ariaHidden true ]
+            | SyncError _ when acc.Session.IsSome -> Html.span [ prop.className "acct-dot err"; prop.ariaHidden true ]
+            | _ -> Html.none
+        ]
+    ]
+
+let tools (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let route = model.Route
     Html.div [
         prop.className "tools"
         prop.children [
+            accountButton model dispatch
             Html.a [
                 prop.className ("libbtn" + (if Router.navKey route = "lib" then " active" else ""))
                 prop.id "libBtn"
@@ -355,6 +401,6 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
             jumpBox model dispatch
             sourceChip model dispatch
             notesButton model dispatch
-            tools model.Route dispatch
+            tools model dispatch
         ]
     ]

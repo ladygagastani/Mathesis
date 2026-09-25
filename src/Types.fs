@@ -145,6 +145,32 @@ type TextOrigin =
     | OriginGitHub
     | OriginUrl of baseUrl: string
 
+/// A word saved from the reader for review (My library › Words). Declared
+/// before `Mark` so that Mark keeps the field names `Id`/`Work`/`Ref` for
+/// type inference; construct these with a type annotation.
+type WordCard =
+    { Id      : string
+      Word    : string              // the form as met in the text (NFC)
+      Lemma   : string              // dictionary form, filled in by the reader ("" until then)
+      Gloss   : string              // meaning, filled in by the reader
+      Work    : string
+      Ref     : string
+      Context : string              // the Greek around it, for the front of the card
+      Ts      : float               // when it was saved
+      Box     : int                 // Leitner box: 0 new, 1..5 learned more and more
+      Due     : float }             // next review (ms since epoch)
+
+/// A place saved from the Map lens (My library › Places).
+type SavedPlace =
+    { Qid      : string
+      Label    : string
+      Pleiades : string
+      Lat      : float
+      Lon      : float
+      Seen     : (string * string) list    // (workId, passage ref) where you met it
+      Note     : string
+      Ts       : float }
+
 type MarkLink = { Work: string; Ref: string; Label: string option }
 
 type Mark =
@@ -155,7 +181,13 @@ type Mark =
 type Library =
     { Favs        : string list
       Marks       : Mark list
-      AuthorNotes : Map<string, string> }
+      AuthorNotes : Map<string, string>
+      Words       : WordCard list
+      Places      : SavedPlace list
+      /// When each item last changed, deletions included, keyed "fav:<work>",
+      /// "mark:<work>|<ref>", "anote:<author>", "word:<id>", "place:<qid>".
+      /// Syncing merges two libraries key by key: the later change wins.
+      Stamps      : Map<string, float> }
 
 type RecentEntry = { Id: string; Chunk: string option; Ts: float }
 
@@ -169,10 +201,22 @@ type WikiRoute =
     | WikiArticles of ArticleKind
     | WikiEditions
 
+/// Tabs of My library (`#lib/<tab>`).
+type LibTab = LibMarks | LibWords | LibPlaces | LibFavs | LibNotes
+
+type ForumRoute =
+    | ForumHome
+    | ForumBoard  of category: string
+    | ForumThread of id: string
+    | ForumNew    of category: string
+
 type Route =
     | Landing
+    /// The catalogue ("Library" in the top bar), `#library`
     | Browse
-    | LibraryRoute
+    | LibraryRoute of LibTab
+    | ForumRoute   of ForumRoute
+    | AccountRoute
     | AboutRoute
     | AuthorRoute of id: string * section: string option
     | WikiRoute   of WikiRoute
@@ -272,6 +316,111 @@ type ReaderModel =
       Manifest  : ManifestState }
 
 // ---------------------------------------------------------------------------
+// The catalogue page, word review, accounts and the forum
+// ---------------------------------------------------------------------------
+
+type ShelfSort = ByAuthor | ByTitle | ByDate
+
+/// The Library (catalogue) page's own controls. The search box is
+/// `BrowseQuery`, the genre chip `Genre`, and the translation filter `Filter`,
+/// all shared with the sidebar.
+type ShelfState =
+    { Sort   : ShelfSort
+      Letter : string option        // "A".."Z", or None for every letter
+      Era    : string option }      // a Meta era id, or "undated"
+
+/// A review of the saved words that are due, one card at a time.
+type ReviewState =
+    { Queue    : string list        // word ids still to see, the current one first
+      Revealed : bool
+      Seen     : int
+      Right    : int              // known at the first try
+      Missed   : string list }    // missed this session: a later "got it" starts again at box 1
+
+/// A signed-in session with the sync/forum server (see Account.fs).
+type Session =
+    { AccessToken  : string
+      RefreshToken : string
+      ExpiresAt    : float          // ms since epoch
+      UserId       : string
+      Email        : string }
+
+type SignInStage =
+    | EnterEmail
+    | CodeSent of email: string
+    | Verifying
+
+type SyncStatus =
+    | SyncOff
+    | Syncing
+    | Synced of at: float
+    | SyncError of string
+
+type AccountState =
+    /// False when the site was built without a server address: accounts and
+    /// the forum then explain themselves instead of failing.
+    { Configured  : bool
+      Session     : Session option
+      DisplayName : string          // as saved on the server
+      IsAdmin     : bool
+      Stage       : SignInStage
+      EmailInput  : string
+      CodeInput   : string
+      NameInput   : string
+      Busy        : bool
+      Error       : string option
+      Sync        : SyncStatus
+      SyncToken   : int }           // debounces pushes: only the newest timer syncs
+
+type Remote<'T> =
+    | NotAsked
+    | InFlight
+    | Loaded of 'T
+    | Failed of string
+
+type ForumThread =
+    { Id         : string
+      Category   : string
+      Title      : string
+      Body       : string
+      AuthorId   : string
+      AuthorName : string
+      Work       : string           // "" unless it is about a passage
+      Ref        : string
+      Status     : string           // bug reports: "open" | "confirmed" | "fixed" | "wontfix"; "" otherwise
+      Created    : float
+      LastPost   : float
+      Replies    : int }
+
+type ForumPost =
+    { Id         : string
+      ThreadId   : string
+      Body       : string
+      AuthorId   : string
+      AuthorName : string
+      Created    : float }
+
+/// The new-thread form. Bug reports use the three `Bug*` fields in place of a body.
+type ForumDraft =
+    { Category    : string
+      Title       : string
+      Body        : string
+      Work        : string
+      Ref         : string
+      BugWhat     : string
+      BugSteps    : string
+      BugExpected : string
+      FromHash    : string }        // the page the reader came from, sent with a bug report
+
+type ForumState =
+    { Board   : Remote<ForumThread list>
+      BoardOf : string              // the category the list is for ("" = latest across all)
+      Thread  : Remote<ForumThread * ForumPost list>
+      Draft   : ForumDraft
+      Reply   : string
+      Posting : bool }
+
+// ---------------------------------------------------------------------------
 // 3.5 Boot + shell + Model
 // ---------------------------------------------------------------------------
 
@@ -280,7 +429,8 @@ type BootState =
     | BootFailed of string
     | Booted
 
-type PopoverKind = WordPopover of word: string * anchorRect: {| left: float; top: float; bottom: float |}
+/// `seg` is the passage the word was clicked in, so it can be saved with its context.
+type PopoverKind = WordPopover of word: string * anchorRect: {| left: float; top: float; bottom: float |} * seg: string option
 
 /// Something the reader can drag around. `X`/`Y` are viewport coordinates of
 /// its top-left corner; `None` means it hasn't been moved and still sits where
@@ -340,6 +490,15 @@ type Model =
       HomeQuery    : string
       BrowseQuery  : string
       WikiQuery    : string
+      Shelf        : ShelfState
+      /// My library › Bookmarks: sort order ("recent" | "work" | "oldest"),
+      /// a #tag filter, and a search box over labels, snippets and notes
+      MarkSort     : string
+      MarkTag      : string option
+      MarkQuery    : string
+      Review       : ReviewState option
+      Account      : AccountState
+      Forum        : ForumState
 
       // misc
       Recent    : RecentEntry list        // max 6
@@ -390,10 +549,70 @@ type LibraryMsg =
     | RemoveMark of workId: string * segRef: string
     | SetAuthorNote of authorId: string * text: string
     | SaveAuthorNote of authorId: string
+    | SetMarkSort of string
+    | SetMarkTag of string option
+    | SetMarkQuery of string
+    // -- words --
+    | SaveWord of word: string * seg: string option
+    | EditWord of id: string * lemma: string * gloss: string
+    | RemoveWord of id: string
+    | StartReview
+    | RevealCard
+    | GradeCard of knew: bool
+    | EndReview
+    // -- places --
+    | SavePlace of PlaceHit
+    | RemovePlace of qid: string
+    | SetPlaceNote of qid: string * note: string
     | ExportRequested
     | ImportText of string
     | ImportConfirmed
     | ClearLibraryConfirmed
+
+type ShelfMsg =
+    | SetShelfSort of ShelfSort
+    | SetShelfLetter of string option
+    | SetShelfEra of string option
+
+type AccountMsg =
+    | SetEmailInput of string
+    | SetCodeInput of string
+    | SetNameInput of string
+    | SendCode
+    | CodeSentOk of email: string
+    | VerifyCode
+    | SignedIn of Session
+    /// A sign-in link from the email lands on the site with the session in the URL
+    | SessionFromUrl of Session
+    | AuthFailed of string
+    | ProfileLoaded of name: string * isAdmin: bool
+    | SaveName
+    | NameSaved of string
+    /// `forget`: also remove the library from this browser (a shared computer)
+    | SignOut of forget: bool
+    | UseDifferentEmail
+    | SyncSoon
+    | SyncNow of token: int
+    | SyncPulled of Result<Library, string>
+    | SyncPushed of Result<float, string>
+    | SessionRefreshed of Session option
+
+type ForumMsg =
+    | LoadBoard of category: string
+    | BoardLoaded of category: string * Result<ForumThread list, string>
+    | LoadThread of id: string
+    | ThreadLoaded of id: string * Result<ForumThread * ForumPost list, string>
+    | StartThread of category: string * work: string * ref_: string
+    | SetDraft of ForumDraft
+    | SubmitThread
+    | ThreadPosted of Result<string, string>
+    | SetReply of string
+    | SubmitReply
+    | ReplyPosted of Result<unit, string>
+    | SetBugStatus of threadId: string * status: string
+    | DeletePost of threadId: string * postId: string
+    | DeleteThread of threadId: string
+    | ForumDone of Result<string, string>
 
 type ReaderMsg =
     | OpenWork of workId: string * grcUrn: string option * engUrn: string option
@@ -411,7 +630,7 @@ type ReaderMsg =
     | GotoRefSubmitted
     | SetJumpInput of string
     | CopyUrn of string
-    | WordClicked of word: string * rect: obj
+    | WordClicked of word: string * rect: obj * seg: string option
     | ScrolledTo of segRef: string option
     | ScrollIdle of seq_: int
     | RepaintMarks
@@ -444,6 +663,9 @@ type Msg =
     | Source_ of SourceMsg
     | Library_ of LibraryMsg
     | Reader_ of ReaderMsg
+    | Shelf_ of ShelfMsg
+    | Account_ of AccountMsg
+    | Forum_ of ForumMsg
     | SetFilter of WorksFilter
     | SetNavQuery of string
     | SetGenre of string option

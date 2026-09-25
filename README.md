@@ -3,9 +3,12 @@
 *Τὸ γὰρ μανθάνειν ἡδίστη ἀνάγκη*: "For learning is the sweetest necessity."
 
 A web app for reading Ancient Greek texts with an aligned English translation,
-clickable words with dictionary lookup, a reference wiki, and a personal library
-of bookmarks and notes. It runs entirely in the browser: there is no server and no
-account, and bookmarks, notes and settings are stored in the reader's own browser.
+clickable words with dictionary lookup, a reference wiki, a beginner's guide, and a
+personal library of bookmarks, notes, vocabulary flashcards and saved places. The
+reading all happens in the browser. Optional accounts sync the library between
+devices and open a forum; they need a small Supabase project, which is set up
+as described in [`supabase/README.md`](supabase/README.md). Without it the site
+works as before, with everything saved in the reader's own browser.
 
 Live site: https://ladygagastani.github.io/Mathesis (also https://mathesis-zeta.vercel.app)
 
@@ -32,6 +35,7 @@ Full attribution is on the app's About & Acknowledgments page.
 | `.config/dotnet-tools.json` | Pins the Fable version (5.17.2). |
 | `.github/workflows/pages.yml` | How GitHub builds and publishes the site to GitHub Pages. |
 | `vercel.json`, `scripts/vercel-build.sh` | How Vercel builds and publishes the site. |
+| `supabase/` | The database tables and access rules for accounts, sync and the forum, and how to set them up. |
 | `CLAUDE.md` | The design and architecture guide for AI coding agents working on the app. |
 
 The built site (`dist/`) is not stored here: it is recreated by every build.

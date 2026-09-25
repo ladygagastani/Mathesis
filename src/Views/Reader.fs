@@ -8,6 +8,16 @@ open Types
 
 let private PAGE_SIZE = 250
 
+/// The passage a clicked word sits in (its `.seg`'s data-ref), so a saved
+/// word can keep its context.
+[<Emit("(($0.closest && $0.closest('.seg')) ? $0.closest('.seg').getAttribute('data-ref') : null)")>]
+let private segRefAttr (el: obj) : string = jsNative
+
+let private segRefOf (el: obj) : string option =
+    match segRefAttr el with
+    | null -> None
+    | r -> Some r
+
 let private langNames =
     Map.ofList [
         "grc", "Greek"; "eng", "English"; "lat", "Latin"; "ger", "German"; "fre", "French"
@@ -109,7 +119,7 @@ let private tokensWith (dispatch: Msg -> unit) (greek: bool) (initial: bool) (te
                     prop.onClick (fun e ->
                         e.stopPropagation ()
                         let target = e.currentTarget :?> Element
-                        dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ())))))
+                        dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ()), segRefOf target))))
                 ]
             )
         else
@@ -167,7 +177,7 @@ let private scannedTokens (dispatch: Msg -> unit) (ctx: MeterCtx) (line: int) (t
                         prop.onClick (fun e ->
                             e.stopPropagation ()
                             let target = e.currentTarget :?> Element
-                            dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ())))))
+                            dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ()), segRefOf target))))
                         prop.children [
                             for (pi, (t, ko)) in List.indexed pieces ->
                                 match ko with
@@ -273,7 +283,7 @@ let private wordKeys (dispatch: Msg -> unit) (e: KeyboardEvent) =
             e.preventDefault ()
             e.stopPropagation ()
             let word = target.getAttribute "data-w"
-            dispatch (Reader_(WordClicked(word, box (target.getBoundingClientRect ()))))
+            dispatch (Reader_(WordClicked(word, box (target.getBoundingClientRect ()), segRefOf target)))
         | _ -> ()
 
 // ---------------------------------------------------------------------------
@@ -795,6 +805,12 @@ let private markEditor (model: Model) (dispatch: Msg -> unit) (workId: string) (
                     Html.button [ prop.className "btn primary mk-save"; prop.text "Done"; prop.onClick (fun _ -> dispatch (Library_ CloseMarkEditor)) ]
                     Html.text " "
                     Html.button [ prop.className "btn danger mk-del"; prop.text "Remove bookmark"; prop.onClick (fun _ -> dispatch (Library_(RemoveMark(workId, segRef)))) ]
+                    Html.button [
+                        prop.className "btn mk-discuss"
+                        prop.title "Start a thread about this passage in the forum"
+                        prop.onClick (fun _ -> dispatch (Forum_(StartThread("passages", workId, segRef))))
+                        prop.children [ Shared.icon "forum"; Html.text " Discuss" ]
+                    ]
                 ]
             ]
         ]

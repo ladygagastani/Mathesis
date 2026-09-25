@@ -24,6 +24,8 @@
     <Compile Include="Content.fs" />
     <Compile Include="Markdown.fs" />
     <Compile Include="GuideData.fs" />
+    <Compile Include="Server.fs" />
+    <Compile Include="Features.fs" />
     <Compile Include="Lenses/Greek.fs" />
     <Compile Include="Lenses/Prosody.fs" />
     <Compile Include="Lenses/Corpus.fs" />
@@ -44,6 +46,8 @@
     <Compile Include="Views/About.fs" />
     <Compile Include="Views/Browse.fs" />
     <Compile Include="Views/NotesPanel.fs" />
+    <Compile Include="Views/Forum.fs" />
+    <Compile Include="Views/Account.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Subscriptions.fs" />
     <Compile Include="App.fs" />

@@ -182,8 +182,17 @@ let private pageTitle (model: Model) (route: Route) : string =
     let suffix = " — Μάθησις"
     match route with
     | Landing -> "Μάθησις — Ancient Greek Reader"
-    | Browse -> "Browse" + suffix
-    | LibraryRoute -> "My library" + suffix
+    | Browse -> "Library" + suffix
+    | LibraryRoute _ -> "My library" + suffix
+    | AccountRoute -> "Your account" + suffix
+    | ForumRoute ForumHome -> "Forum" + suffix
+    | ForumRoute(ForumBoard c) -> (Content.forumBoard c |> Option.map (fun b -> b.Name) |> Option.defaultValue "Forum") + " — Forum" + suffix
+    | ForumRoute(ForumThread _) ->
+        (match model.Forum.Thread with
+         | Loaded(t, _) -> t.Title + " — "
+         | _ -> "")
+        + "Forum" + suffix
+    | ForumRoute(ForumNew _) -> "New thread — Forum" + suffix
     | AboutRoute -> "About" + suffix
     | AuthorRoute(id, _) ->
         (model.Catalog.Authors |> List.tryFind (fun a -> a.Id = id) |> Option.map (fun a -> a.Name) |> Option.defaultValue "Authors") + suffix
@@ -206,6 +215,30 @@ let private leaveReaderEffect (title: string) : Cmd<Msg> =
         removeBodyClass "reading"
         scrollToTop ())
 
+/// Draws My library's map of saved places, once the page has rendered it.
+let private savedPlacesMapCmd (model: Model) : Cmd<Msg> =
+    match model.Route with
+    | LibraryRoute LibPlaces when not model.Library.Places.IsEmpty ->
+        let title w = Catalog.workTitle model.Catalog w |> Option.defaultValue w
+        let places =
+            model.Library.Places
+            |> List.map (fun p ->
+                let pick =
+                    match p.Seen with
+                    | (w, r) :: _ -> Router.toHash (ReaderRoute(w, "", "", None, Some r))
+                    | [] -> ""
+                { Lenses.Widgets.mapPlace p.Lat p.Lon p.Label p.Label (p.Seen |> List.map (fun (w, r) -> title w + " " + r) |> Array.ofList) p.Pleiades false with
+                    pick = pick })
+            |> Array.ofList
+        Cmd.ofEffect (fun dispatch ->
+            setTimeoutMs
+                (fun () ->
+                    Lenses.Widgets.renderPlaces "libMap" places (fun h -> dispatch (Navigate(h, false)))
+                    |> Promise.catch (fun e -> dispatch (ShowToast e.Message))
+                    |> Promise.start)
+                30)
+    | _ -> Cmd.none
+
 /// Resolves whatever a route needs once it becomes current: for a reader route,
 /// kicks off `OpenWork` (unknown work ids fall back to Landing, mirroring the
 /// original `route()`'s `if(!w) return landing()`); for any other route, clears
@@ -218,6 +251,38 @@ let private loadForRoute (model: Model) (route: Route) : Model * Cmd<Msg> =
         | None ->
             let model2 = { model with Route = Landing; Reader = None; CurrentHash = "#" }
             model2, leaveReaderEffect (pageTitle model2 Landing)
+    | ForumRoute fr ->
+        let m2 = { model with Reader = None }
+        let load =
+            match fr with
+            | ForumHome -> Cmd.ofMsg (Forum_(LoadBoard ""))
+            | ForumBoard c -> Cmd.ofMsg (Forum_(LoadBoard c))
+            | ForumThread id -> Cmd.ofMsg (Forum_(LoadThread id))
+            | ForumNew c when model.Forum.Draft.Category <> c ->
+                // a link straight to the form: start a blank draft for that board
+                Cmd.ofMsg (Forum_(StartThread(c, "", "")))
+            | ForumNew _ -> Cmd.none
+        m2, Cmd.batch [ leaveReaderEffect (pageTitle m2 route); load ]
+    | AccountRoute ->
+        let m2 = { model with Reader = None }
+        let fromLink =
+            match Server.tokensInHash model.CurrentHash with
+            | Some(access, refresh, exp) when model.Account.Configured ->
+                Cmd.OfPromise.perform (fun () -> Server.sessionFromTokens access refresh exp) () (function
+                    | Ok s -> Account_(SessionFromUrl s)
+                    | Error e -> Account_(AuthFailed e))
+            | _ when model.CurrentHash.Contains "error_description=" ->
+                let desc =
+                    model.CurrentHash.Split('&')
+                    |> Array.tryFind (fun kv -> kv.StartsWith "error_description=")
+                    |> Option.map (fun kv -> JS.decodeURIComponent (kv.Substring(18).Replace("+", " ")))
+                    |> Option.defaultValue "The sign-in link didn't work."
+                Cmd.batch [ Cmd.ofMsg (Account_(AuthFailed(desc + " Ask for a new code below."))); Cmd.ofEffect (fun _ -> Router.replaceState "#account") ]
+            | _ -> Cmd.none
+        m2, Cmd.batch [ leaveReaderEffect (pageTitle m2 route); fromLink ]
+    | LibraryRoute LibPlaces ->
+        let m2 = { model with Reader = None }
+        m2, Cmd.batch [ leaveReaderEffect (pageTitle m2 route); savedPlacesMapCmd m2 ]
     | _ -> { model with Reader = None }, leaveReaderEffect (pageTitle model route)
 
 // ---------------------------------------------------------------------------
@@ -262,6 +327,31 @@ let init () : Model * Cmd<Msg> =
           HomeQuery = ""
           BrowseQuery = ""
           WikiQuery = ""
+          Shelf = { Sort = ByAuthor; Letter = None; Era = None }
+          MarkSort = "recent"
+          MarkTag = None
+          MarkQuery = ""
+          Review = None
+          Account =
+            { Configured = Server.configured
+              Session = (if Server.configured then Storage.loadSession () else None)
+              DisplayName = ""
+              IsAdmin = false
+              Stage = EnterEmail
+              EmailInput = ""
+              CodeInput = ""
+              NameInput = ""
+              Busy = false
+              Error = None
+              Sync = SyncOff
+              SyncToken = 0 }
+          Forum =
+            { Board = NotAsked
+              BoardOf = "\u0000"
+              Thread = NotAsked
+              Draft = Features.emptyDraft
+              Reply = ""
+              Posting = false }
           Recent = Storage.loadRecent ()
           Collapsed = Storage.loadCollapsed ()
           TextCache = Map.empty
@@ -270,10 +360,22 @@ let init () : Model * Cmd<Msg> =
           CurrentHash = hash
           DrawerDrag = None
           NextToken = 0 }
+    Server.setSession model.Account.Session
     model,
     Cmd.batch [
         Cmd.OfPromise.either Catalog.decodeEmbedded () (Ok >> Boot) (fun e -> Boot(Error e.Message))
         Cmd.OfPromise.perform Sources.reconnectRemembered () (fun names -> Source_(RememberedFound names))
+        // a renewed or ended session (renewal happens inside Server) comes back as a message
+        Cmd.ofEffect (fun dispatch -> Server.onSessionChange <- (fun s -> dispatch (Account_(SessionRefreshed s))))
+        match model.Account.Session with
+        | Some _ ->
+            Cmd.batch [
+                Cmd.OfPromise.perform Server.loadProfile () (function
+                    | Ok(name, admin) -> Account_(ProfileLoaded(name, admin))
+                    | Error _ -> NoOp)
+                Cmd.ofMsg (Account_ SyncSoon)
+            ]
+        | None -> Cmd.none
     ]
 
 // ---------------------------------------------------------------------------
@@ -351,8 +453,8 @@ let private scrollMarksEffect (model: Model) : Cmd<Msg> =
 let private saveLib (model: Model) (lib: Library) : Model * Cmd<Msg> =
     // Repaint the scrollbar here rather than at each of the dozen places marks
     // are added, edited or removed — they all funnel through this one save.
-    let model = { model with Library = lib }
-    model, Cmd.batch [ Cmd.ofEffect (fun _ -> Storage.saveLibrary lib); scrollMarksEffect model ]
+    let model, save = Features.saveLibrary model lib
+    model, Cmd.batch [ save; scrollMarksEffect model ]
 
 let private thousands (n: int) : string = n.ToString("N0")
 
@@ -719,8 +821,8 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         let isNew = (LibraryData.markFor model.Library workId segRef).IsNone
         let lib, _ = LibraryData.addMark model.Library workId segRef label snippet (nowMs ())
         let rm = model.Reader |> Option.map (fun r -> { r with OpenEditor = Some(workId, segRef) })
-        { model with Library = lib; Reader = rm },
-        Cmd.batch [ Cmd.ofEffect (fun _ -> Storage.saveLibrary lib); (if isNew then Cmd.ofMsg (ShowToast "Saved to My library") else Cmd.none) ]
+        let m2, save = Features.saveLibrary { model with Reader = rm } lib
+        m2, Cmd.batch [ save; (if isNew then Cmd.ofMsg (ShowToast "Saved to My library") else Cmd.none) ]
     | Library_(EditNote markId) -> { model with EditingNote = markId }, Cmd.none
     | Library_ CloseMarkEditor -> { model with Reader = model.Reader |> Option.map (fun r -> { r with OpenEditor = None }) }, Cmd.none
     | Library_(SetMarkNote(workId, segRef, note)) -> saveLib model (LibraryData.setMarkNote model.Library workId segRef note)
@@ -750,7 +852,19 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
             m2, Cmd.batch [ cmd; Cmd.ofMsg (ShowToast "Imported") ]
         | Error errMsg -> model, Cmd.ofMsg (ShowToast errMsg)
     | Library_ ImportConfirmed -> model, Cmd.none
-    | Library_ ClearLibraryConfirmed -> saveLib model { Favs = []; Marks = []; AuthorNotes = Map.empty }
+    | Library_ ClearLibraryConfirmed -> saveLib { model with Review = None } (LibraryData.clearAll model.Library)
+    | Library_(SetMarkSort _ | SetMarkTag _ | SetMarkQuery _ | SaveWord _ | EditWord _ | RemoveWord _ | StartReview | RevealCard | GradeCard _ | EndReview | SavePlace _ | RemovePlace _ | SetPlaceNote _ as lm) ->
+        let m2, cmd = Features.updateLibraryExtras lm model |> Option.defaultValue (model, Cmd.none)
+        let redraw =
+            match lm with
+            | SavePlace _ | RemovePlace _ -> savedPlacesMapCmd m2
+            | _ -> Cmd.none
+        m2, Cmd.batch [ cmd; redraw ]
+
+    // -- catalogue, account, forum ------------------------------------------
+    | Shelf_ sm -> Features.updateShelf sm model
+    | Account_ am -> Features.updateAccount am model
+    | Forum_ fm -> Features.updateForum fm model
 
     // -- reader: opening / loading -----------------------------------------
     | Reader_(OpenWork(workId, grcUrnOpt, engUrnOpt, chunkOpt, segOpt)) ->
@@ -1100,10 +1214,10 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
             { model with Reader = Some { rm with ScrollLive = false } }, scrollMarksEffect model
         | _ -> model, Cmd.none
 
-    | Reader_(WordClicked(word, rectObj)) ->
+    | Reader_(WordClicked(word, rectObj, seg)) ->
         let rect: {| left: float; top: float; bottom: float |} =
             {| left = rectObj?left |> unbox<float>; top = rectObj?top |> unbox<float>; bottom = rectObj?bottom |> unbox<float> |}
-        { model with Popover = Some(WordPopover(word, rect)) }, Cmd.none
+        { model with Popover = Some(WordPopover(word, rect, seg)) }, Cmd.none
 
     // -- reader: study lenses ------------------------------------------
     | Reader_(OpenLens(kind, segOpt)) ->
@@ -1351,6 +1465,9 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         // Backslash collapses/restores the library without reaching for the
         // mouse — the counterpart to "/" focusing its search box.
         | "\\", _ -> update ToggleNavHidden model
+        | (" " | "Enter"), _ when model.Review |> Option.exists (fun r -> not r.Revealed) -> update (Library_ RevealCard) model
+        | "1", _ when model.Review |> Option.exists (fun r -> r.Revealed) -> update (Library_(GradeCard false)) model
+        | "2", _ when model.Review |> Option.exists (fun r -> r.Revealed) -> update (Library_(GradeCard true)) model
         | _ -> model, Cmd.none
     | NoOp -> model, Cmd.none
 
@@ -1371,7 +1488,9 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     match model.Route with
     | Landing -> Views.Home.render model dispatch
     | Browse -> Views.Browse.render model dispatch
-    | LibraryRoute -> Views.LibraryPage.render model dispatch
+    | LibraryRoute tab -> Views.LibraryPage.render model dispatch tab
+    | ForumRoute fr -> Views.Forum.render model dispatch fr
+    | AccountRoute -> Views.Account.render model dispatch
     | AboutRoute -> Views.About.render model
     | AuthorRoute(id, section) -> Views.WikiPages.AuthorPage model dispatch id section
     | WikiRoute WikiHome -> Views.WikiPages.home model dispatch
@@ -1413,7 +1532,7 @@ let view (model: Model) (dispatch: Msg -> unit) : Fable.React.ReactElement =
             ]
             Views.SettingsPane.render model dispatch
             Views.NotesPanel.render model dispatch
-            Views.Popover.render model.Popover dispatch
+            Views.Popover.render model dispatch
             Views.Shared.toast model.Toast dispatch
             Views.Shared.backdrop model.SideOpen dispatch
         ]

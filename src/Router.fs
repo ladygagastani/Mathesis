@@ -24,8 +24,22 @@ let parseHash (hash: string) : Route =
     else
         let p = h.Split('/') |> Array.map decodeUri |> List.ofArray
         match p with
-        | "lib" :: _ -> LibraryRoute
+        // a sign-in link from the email returns here with the session (or an
+        // error) in the fragment: that belongs to the account page
+        | first :: _ when first.StartsWith "access_token=" || first.StartsWith "error=" -> AccountRoute
+        | "lib" :: "words" :: _ -> LibraryRoute LibWords
+        | "lib" :: "places" :: _ -> LibraryRoute LibPlaces
+        | "lib" :: "favourites" :: _ -> LibraryRoute LibFavs
+        | "lib" :: "notes" :: _ -> LibraryRoute LibNotes
+        | "lib" :: _ -> LibraryRoute LibMarks
         | "about" :: _ -> AboutRoute
+        | "account" :: _ -> AccountRoute
+        | "forum" :: "t" :: id :: _ when id <> "" -> ForumRoute(ForumThread id)
+        | "forum" :: "new" :: cat :: _ when cat <> "" -> ForumRoute(ForumNew cat)
+        | "forum" :: "new" :: _ -> ForumRoute(ForumNew "square")
+        | "forum" :: cat :: _ when cat <> "" -> ForumRoute(ForumBoard cat)
+        | "forum" :: _ -> ForumRoute ForumHome
+        | "library" :: _
         | "browse" :: _ -> Browse
         | "author" :: id :: rest -> AuthorRoute(id, List.tryHead rest)
         | "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
@@ -64,8 +78,17 @@ let toHash (route: Route) : string =
     let join (segs: string list) = "#" + (segs |> List.map encodeUri |> String.concat "/")
     match route with
     | Landing -> "#"
-    | Browse -> join [ "browse" ]
-    | LibraryRoute -> join [ "lib" ]
+    | Browse -> join [ "library" ]
+    | LibraryRoute LibMarks -> join [ "lib" ]
+    | LibraryRoute LibWords -> join [ "lib"; "words" ]
+    | LibraryRoute LibPlaces -> join [ "lib"; "places" ]
+    | LibraryRoute LibFavs -> join [ "lib"; "favourites" ]
+    | LibraryRoute LibNotes -> join [ "lib"; "notes" ]
+    | AccountRoute -> join [ "account" ]
+    | ForumRoute ForumHome -> join [ "forum" ]
+    | ForumRoute(ForumBoard c) -> join [ "forum"; c ]
+    | ForumRoute(ForumThread id) -> join [ "forum"; "t"; id ]
+    | ForumRoute(ForumNew c) -> join [ "forum"; "new"; c ]
     | AboutRoute -> join [ "about" ]
     | AuthorRoute(id, section) -> join ([ "author"; id ] @ (section |> Option.toList))
     | WikiRoute WikiHome -> join [ "wiki" ]
@@ -104,11 +127,13 @@ let navKey (route: Route) : string =
     | WikiRoute _
     | AuthorRoute _
     | AboutRoute -> "wiki"
-    | LibraryRoute -> "lib"
-    | Landing
-    | GuideRoute _
+    | LibraryRoute _
+    | AccountRoute -> "lib"
+    | ForumRoute _ -> "forum"
     | Browse
-    | ReaderRoute _ -> "texts"
+    | ReaderRoute _ -> "library"
+    | Landing
+    | GuideRoute _ -> "home"
 
 let isReader (route: Route) : bool =
     match route with
@@ -119,7 +144,11 @@ let isReader (route: Route) : bool =
 /// reader has its own so that collapsing the library while reading doesn't also
 /// collapse it on the home and wiki pages, where it is the main way around.
 let navHiddenOn (route: Route) (browsingPref: bool) (readerPref: bool) : bool =
-    if isReader route then readerPref else browsingPref
+    match route with
+    | ReaderRoute _ -> readerPref
+    // the Library page is the whole catalogue already; the sidebar would repeat it
+    | Browse -> true
+    | _ -> browsingPref
 
 // ---------------------------------------------------------------------------
 // minimal DOM history interop — the in-app back/forward stack itself lives in

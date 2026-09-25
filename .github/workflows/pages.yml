@@ -41,6 +41,12 @@ jobs:
           dotnet tool restore
 
       - name: Build the site
+        # Accounts, sync and the forum: the Supabase project's address and
+        # public key, set as repository variables (see supabase/README.md).
+        # Left empty, the site builds without them and says so where they'd be.
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: |
           dotnet fable src
           npx vite build

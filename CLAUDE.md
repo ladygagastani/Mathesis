@@ -706,8 +706,9 @@ Token and class names did not change; values did, plus a final layer at the end 
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
-  notes, back-up. Phone tab bar (≤900px): Texts · Contents · Wiki · My library
-  (`.tab-phone` items); the header's `#navToggle` and `.libbtn` hide there.
+  notes, back-up. Phone tab bar (≤900px): Library · Contents · Wiki · Forum ·
+  My library (`.tab-phone` items); the header's `#navToggle` and `.libbtn` hide
+  there. (Superseded in part by §16: My library is now tabbed.)
 - **Design language** (the "Design language" layer at the end of `style.css`):
   primary actions and *every* selected state use `--solid` / `--on-solid` (ink by
   day, clay by night), never the link blue; blue is only links, references and
@@ -816,3 +817,52 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Notes button** is `Header.notesButton` (`.notes-ib`) at every width: labelled
   "Notes" above 1100px, icon only below. The floating `.notes-fab` covered the
   ends of lines and is hidden with CSS (its code is still in NotesPanel.fs).
+
+
+---
+
+## 16. Library, My library tabs, accounts and forum (added 2026-09-26)
+
+- **Names.** Top bar: *Library* (the catalogue, `Browse` route, `#library`;
+  `#browse` still parses), *Wiki*, *Forum*. The sidebar is *Contents* (the
+  phone tab already said so); it stays shut on the Library page
+  (`Router.navHiddenOn`), which is the catalogue already.
+- **Library page** (`Views/Browse.fs`): sort Author A–Z / Title A–Z / By era
+  (`Model.Shelf`, `ShelfMsg`), letter bar (letters filed with accents
+  stripped), era select, translation filter (`Model.Filter`) and genre chips
+  (`Model.Genre`), both shared with the sidebar. "Where to start" (`Content.browse`)
+  folds away above the list and hides while filtering.
+- **My library** is tabbed: `LibraryRoute of LibTab`, `#lib`, `#lib/words`,
+  `#lib/places`, `#lib/favourites`, `#lib/notes`. Bookmarks: search, order
+  (recent / by work in reading order / oldest), `#tags` written in notes
+  (`LibraryData.tagsOf`). Words: saved from the word popover with the passage
+  and its Greek context; Leitner review (`boxDays` 1, 3, 7, 16, 35 days; a
+  miss comes back in 10 minutes and, if then known, restarts at box 1);
+  keys Space/Enter, 1, 2 go through `Subscriptions.keydownSub`. Places: saved
+  from the Map lens (`.ln-save`), drawn with `Widgets.renderPlaces` (no line).
+- **One library codec**: `Storage.encodeLibrary`/`decodeLibrary`, used for
+  localStorage, export/import and sync. New fields are optional when read.
+- **Sync** merges item by item (`LibraryData.merge`): every change stamps the
+  item's key in `Library.Stamps` (deletions too); the later stamp wins. Every
+  library change must go through `LibraryData`'s functions (which stamp) and
+  `State.saveLib`/`Features.saveLibrary` (which schedules `Account_ SyncSoon`).
+  Sync = pull, merge with the *current* model, push if different; also on
+  sign-in, boot and returning to the tab.
+- **Server** (`Server.fs`): Supabase over plain HTTP (Auth + PostgREST), no
+  client library. Configured by `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` at
+  build time; unset, `Server.configured` is false and Account/Forum explain
+  themselves. Sign-in is an emailed code (or the link in the same email, which
+  returns `#access_token=…`, parsed to `AccountRoute`). The session lives in
+  `Server` and renews itself; `onSessionChange` reports back. All rules
+  (owner-only libraries, author names from profiles, moderator-only status,
+  rate limit) are in `supabase/schema.sql`: never rely on the client for them.
+- **Forum** (`Views/Forum.fs`, `ForumRoute`): boards `Content.forumBoards`
+  (ids must match the schema's check constraint); bug reports have their own
+  board, form (what / steps / expected + page and browser) and statuses, and
+  fall back to a prefilled GitHub issue when the server is off. "Discuss" in
+  the bookmark editor and the study rail starts a Passages thread.
+- **Update logic** for all of this is in `Features.fs` (before the views);
+  State.fs only routes messages there.
+- **Testing without a real project:** `node scripts/mock-supabase.mjs` serves
+  the endpoints the app uses (code 123456; mod@example.com moderates); build
+  with the two `VITE_` variables pointing at `http://localhost:54321`.

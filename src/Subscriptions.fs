@@ -7,6 +7,9 @@ open Browser.Types
 open Elmish
 open Types
 
+[<Emit("!!document.querySelector('.rv-card')")>]
+let private hasReviewCard () : bool = jsNative
+
 [<Emit("document.getElementById($0)?.classList.contains($1)")>]
 let private hasClass (id: string) (cls: string) : bool = jsNative
 
@@ -80,6 +83,11 @@ let private keydownSub: Sub<Msg> =
                   | "\\" when not isForm ->
                       ke.preventDefault ()
                       dispatch (KeyPressed("\\", false))
+                  // flashcards: Space/Enter shows the answer, 1 = again, 2 = got it
+                  // (not when a button or link has focus: that would act twice)
+                  | " " | "Enter" | "1" | "2" when not isForm && hasReviewCard () && isNull (closest ke.target "button, a") ->
+                      ke.preventDefault ()
+                      dispatch (KeyPressed(ke.key, false))
                   | _ -> ()
           document.addEventListener ("keydown", handler)
           { new System.IDisposable with
@@ -209,11 +217,21 @@ let private scrollSub: Sub<Msg> =
                   window.removeEventListener ("scroll", handler)
                   window.removeEventListener ("resize", onResize) } ]
 
+/// Coming back to the tab syncs the library, so what you saved on another
+/// device appears (ignored when not signed in).
+let private focusSub: Sub<Msg> =
+    [ [ "focus" ],
+      fun dispatch ->
+          let onVisible = fun (_: Event) -> if document?visibilityState = "visible" then dispatch (Account_ SyncSoon)
+          document.addEventListener ("visibilitychange", onVisible)
+          { new System.IDisposable with
+              member _.Dispose() = document.removeEventListener ("visibilitychange", onVisible) } ]
+
 /// The subscription set only depends on whether the app has finished booting
 /// (a one-time transition), never on ordinary Model content, so Elmish's
 /// SubId diffing starts these once and never tears them down/restarts them
 /// on later re-renders.
 let subscribe (model: Model) : Sub<Msg> =
     match model.Boot with
-    | Booted -> Sub.batch [ historySub; keydownSub; outsideClickSub; touchSub; scrollSub ]
+    | Booted -> Sub.batch [ historySub; keydownSub; outsideClickSub; touchSub; scrollSub; focusSub ]
     | _ -> Sub.none

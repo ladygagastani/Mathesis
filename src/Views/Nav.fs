@@ -145,12 +145,12 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.nav [
         prop.className ("side" + (if model.SideOpen then " open" else ""))
         prop.id "side"
-        prop.ariaLabel "Library"
+        prop.ariaLabel "Contents"
         prop.children [
             Html.div [
                 prop.className "side-head"
                 prop.children [
-                    Html.span [ prop.text "Library" ]
+                    Html.span [ prop.text "Contents" ]
                     Html.button [
                         prop.id "sideClose"
                         prop.text "Done"
