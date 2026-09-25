@@ -24,10 +24,43 @@ let parseHash (hash: string) : Route =
     else
         let p = h.Split('/') |> Array.map decodeUri |> List.ofArray
         match p with
-        | "lib" :: _ -> LibraryRoute
+        // a sign-in link from the email returns here with the session (or an
+        // error) in the fragment: that belongs to the account page
+        | first :: _ when first.StartsWith "access_token=" || first.StartsWith "error=" -> AccountRoute
+        | "lib" :: "words" :: _ -> LibraryRoute LibWords
+        | "lib" :: "places" :: _ -> LibraryRoute LibPlaces
+        | "lib" :: "favourites" :: _ -> LibraryRoute LibFavs
+        | "lib" :: "notes" :: _ -> LibraryRoute LibNotes
+        | "lib" :: _ -> LibraryRoute LibMarks
         | "about" :: _ -> AboutRoute
+        | "account" :: _ -> AccountRoute
+        | "forum" :: "t" :: id :: _ when id <> "" -> ForumRoute(ForumThread id)
+        | "forum" :: "new" :: cat :: _ when cat <> "" -> ForumRoute(ForumNew cat)
+        | "forum" :: "new" :: _ -> ForumRoute(ForumNew "square")
+        | "forum" :: cat :: _ when cat <> "" -> ForumRoute(ForumBoard cat)
+        | "forum" :: _ -> ForumRoute ForumHome
+        | "library" :: _
         | "browse" :: _ -> Browse
+        | ("study" | "learn") :: rest ->
+            LearnRoute(
+                match rest with
+                | "welcome" :: _ -> LearnWelcome
+                | "preface" :: _ -> LearnPreface
+                | "letters" :: _ -> LearnLetters
+                | "alphabet" :: _ -> LearnAlphabet
+                | "declension" :: "done" :: _ -> LearnDone
+                | "declension" :: _ -> LearnLesson
+                | "sounds" :: _ -> LearnSounds
+                | "iliad" :: _ -> LearnIliad
+                | "myth" :: _ -> LearnMyth
+                | _ -> LearnContents
+            )
         | "author" :: id :: rest -> AuthorRoute(id, List.tryHead rest)
+        | "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
+        | "start" :: _ -> GuideRoute None
+        // the guide used to live in the wiki; old links still work
+        | "wiki" :: "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
+        | "wiki" :: "start" :: _ -> GuideRoute None
         | "wiki" :: rest ->
             let wikiRoute =
                 match rest with
@@ -40,8 +73,6 @@ let parseHash (hash: string) : Route =
                 | "manuscripts" :: _ -> WikiArticles Manuscripts
                 | "variants" :: _ -> WikiArticles Variants
                 | "editions" :: _ -> WikiEditions
-                | "start" :: slug :: _ when slug <> "" -> WikiGuide(Some slug)
-                | "start" :: _ -> WikiGuide None
                 | "undated" :: _ -> WikiAuthors(Some(ByEra "undated")) // old links
                 | _ -> WikiHome
             WikiRoute wikiRoute
@@ -55,14 +86,39 @@ let parseHash (hash: string) : Route =
             ReaderRoute(id, grc, eng, chunk, seg)
         | [] -> Landing
 
+/// The hash of a Study page (the inverse of the "study" branch of `parseHash`;
+/// the section was first called Learn, and `#learn/…` links still parse).
+let learnHash (page: LearnPage) : string =
+    match page with
+    | LearnContents -> "#study"
+    | LearnWelcome -> "#study/welcome"
+    | LearnPreface -> "#study/preface"
+    | LearnLetters -> "#study/letters"
+    | LearnAlphabet -> "#study/alphabet"
+    | LearnLesson -> "#study/declension"
+    | LearnDone -> "#study/declension/done"
+    | LearnSounds -> "#study/sounds"
+    | LearnIliad -> "#study/iliad"
+    | LearnMyth -> "#study/myth"
+
 /// Inverse of `parseHash` — builds the hash fragment (including the leading
 /// '#') the app itself would navigate to for a given route.
 let toHash (route: Route) : string =
     let join (segs: string list) = "#" + (segs |> List.map encodeUri |> String.concat "/")
     match route with
     | Landing -> "#"
-    | Browse -> join [ "browse" ]
-    | LibraryRoute -> join [ "lib" ]
+    | LearnRoute page -> learnHash page
+    | Browse -> join [ "library" ]
+    | LibraryRoute LibMarks -> join [ "lib" ]
+    | LibraryRoute LibWords -> join [ "lib"; "words" ]
+    | LibraryRoute LibPlaces -> join [ "lib"; "places" ]
+    | LibraryRoute LibFavs -> join [ "lib"; "favourites" ]
+    | LibraryRoute LibNotes -> join [ "lib"; "notes" ]
+    | AccountRoute -> join [ "account" ]
+    | ForumRoute ForumHome -> join [ "forum" ]
+    | ForumRoute(ForumBoard c) -> join [ "forum"; c ]
+    | ForumRoute(ForumThread id) -> join [ "forum"; "t"; id ]
+    | ForumRoute(ForumNew c) -> join [ "forum"; "new"; c ]
     | AboutRoute -> join [ "about" ]
     | AuthorRoute(id, section) -> join ([ "author"; id ] @ (section |> Option.toList))
     | WikiRoute WikiHome -> join [ "wiki" ]
@@ -74,8 +130,8 @@ let toHash (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> join [ "wiki"; "manuscripts" ]
     | WikiRoute(WikiArticles Variants) -> join [ "wiki"; "variants" ]
     | WikiRoute WikiEditions -> join [ "wiki"; "editions" ]
-    | WikiRoute(WikiGuide None) -> join [ "wiki"; "start" ]
-    | WikiRoute(WikiGuide(Some slug)) -> join [ "wiki"; "start"; slug ]
+    | GuideRoute None -> join [ "start" ]
+    | GuideRoute(Some slug) -> join [ "start"; slug ]
     | ReaderRoute(id, grc, eng, chunk, seg) ->
         // An empty edition slot means "no preference — pick the usual one", and
         // is distinct from the literal "none", which means "show Greek only".
@@ -101,21 +157,19 @@ let navKey (route: Route) : string =
     | WikiRoute _
     | AuthorRoute _
     | AboutRoute -> "wiki"
-    | LibraryRoute -> "lib"
-    | Landing
+    | LibraryRoute _
+    | AccountRoute -> "lib"
+    | ForumRoute _ -> "forum"
+    | LearnRoute _ -> "learn"
     | Browse
-    | ReaderRoute _ -> "texts"
+    | ReaderRoute _ -> "library"
+    | Landing -> "home"
+    | GuideRoute _ -> "learn"
 
 let isReader (route: Route) : bool =
     match route with
     | ReaderRoute _ -> true
     | _ -> false
-
-/// Picks which of the two remembered sidebar states applies to a route. The
-/// reader has its own so that collapsing the library while reading doesn't also
-/// collapse it on the home and wiki pages, where it is the main way around.
-let navHiddenOn (route: Route) (browsingPref: bool) (readerPref: bool) : bool =
-    if isReader route then readerPref else browsingPref
 
 // ---------------------------------------------------------------------------
 // minimal DOM history interop — the in-app back/forward stack itself lives in

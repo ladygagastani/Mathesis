@@ -18,7 +18,7 @@ let private cleanWord (raw: string) : string =
 // The box is a fixed 17rem wide with a stable stack of contents (headword,
 // three links, hint), so its footprint is known without measuring it.
 let private POP_W = 272.0
-let private POP_H = 210.0
+let private POP_H = 250.0
 let private MARGIN = 8.0
 let private GAP = 6.0
 
@@ -35,19 +35,21 @@ let private GAP = 6.0
 /// sit above the word when there isn't room beneath it — without which a click
 /// near the right or bottom edge opened the popover partly out of view.
 /// Below 900px CSS overrides this entirely and renders it as a bottom sheet.
-let render (popover: PopoverKind option) (dispatch: Msg -> unit) : ReactElement =
+let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let popover = model.Popover
     let isOpen = popover.IsSome
 
-    let word =
+    let word, seg =
         match popover with
-        | Some(WordPopover(rawWord, _)) -> cleanWord rawWord
-        | None -> ""
+        | Some(WordPopover(rawWord, _, seg)) -> cleanWord rawWord, seg
+        | None -> "", None
+    let saved = if isOpen then LibraryData.wordFor model.Library word else None
 
     let enc = encodeUriComponent word
 
     let positionStyle =
         match popover with
-        | Some(WordPopover(_, rect)) ->
+        | Some(WordPopover(_, rect, _)) ->
             let vw = Browser.Dom.window.innerWidth
             let vh = Browser.Dom.window.innerHeight
             let left = rect.left |> min (vw - POP_W - MARGIN) |> max MARGIN
@@ -76,14 +78,40 @@ let render (popover: PopoverKind option) (dispatch: Msg -> unit) : ReactElement 
                     e.stopPropagation ()
                     dispatch ClosePopover)
             ]
-            Html.div [ prop.className "hw"; prop.id "popHw"; prop.text word ]
-            Html.button [
-                prop.className "btn small pop-trace"
-                prop.text "Trace this word"
-                prop.title "Where this word and its stem occur, part by part and era by era"
-                prop.onClick (fun e ->
-                    e.stopPropagation ()
-                    dispatch (Reader_(TraceWord word)))
+            Html.div [ prop.className "hw"; prop.id "popHw"; prop.lang "grc"; prop.text word ]
+            Html.div [
+                prop.className "pop-acts"
+                prop.children [
+                    Html.button [
+                        prop.className "btn small pop-trace"
+                        prop.text "Trace this word"
+                        prop.title "Where this word and its stem occur, part by part and era by era"
+                        prop.onClick (fun e ->
+                            e.stopPropagation ()
+                            dispatch (Reader_(TraceWord word)))
+                    ]
+                    match saved with
+                    | Some _ ->
+                        Html.a [
+                            prop.className "btn small pop-save on"
+                            prop.href "#lib/words"
+                            prop.title "This word is in My library › Words"
+                            prop.onClick (fun e ->
+                                e.preventDefault ()
+                                dispatch ClosePopover
+                                dispatch (Navigate("#lib/words", false)))
+                            prop.children [ Shared.icon "words"; Html.text "In my words" ]
+                        ]
+                    | None ->
+                        Html.button [
+                            prop.className "btn small pop-save"
+                            prop.title "Keep this word, with the passage it came from, to learn with flashcards"
+                            prop.onClick (fun e ->
+                                e.stopPropagation ()
+                                dispatch (Library_(SaveWord(word, seg))))
+                            prop.children [ Shared.icon "words"; Html.text "Save word" ]
+                        ]
+                ]
             ]
             Html.div [
                 prop.className "row"

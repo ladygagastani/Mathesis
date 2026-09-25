@@ -30,7 +30,7 @@ let eraNote: Map<string, string> =
         "imperial",
         "Under Roman rule Greek remained the language of the eastern Mediterranean and of educated people across the empire. Koine is the language of the New Testament and of Epictetus' lectures. At the same time, the writers of the \"Second Sophistic\", such as Lucian and Aelius Aristides, deliberately wrote the Attic of five centuries earlier, and Plutarch leaned the same way more moderately. The gap between the Greek people spoke and the Greek they wrote opens here, and it lasted into modern times: only in 1976 did the spoken language (Demotic) become the official language of the Greek state."
         "lateantique",
-        "From the founding of Constantinople in 330 to the early seventh century. Christianity reshaped Greek literature: Church Fathers such as Basil, Gregory of Nazianzus and John Chrysostom wrote sermons, letters and theology in a polished classical style, while the last pagan philosophers, above all the Neoplatonist Proclus, still taught in Athens and Alexandria. Procopius wrote a classicizing history of Justinian's wars. In speech, the old distinction between long and short vowels had disappeared and the pitch accent had become a stress accent, so pronunciation was moving towards medieval Greek. Poets such as Nonnus still wrote hexameters by the old vowel lengths, but shaped their line endings to suit the new stress."
+        "From the founding of Constantinople in 330 to the early seventh century. Christianity reshaped Greek literature: Church Fathers such as Basil, Gregory of Nazianzus and John Chrysostom wrote sermons, letters and theology in a polished classical style, while the last pagan philosophers, above all the Neoplatonist Proclus, still taught in Athens and Alexandria. Procopius wrote a classicising history of Justinian's wars. In speech, the old distinction between long and short vowels had disappeared and the pitch accent had become a stress accent, so pronunciation was moving towards medieval Greek. Poets such as Nonnus still wrote hexameters by the old vowel lengths, but shaped their line endings to suit the new stress."
         "byzantine",
         "Medieval Greek, from the seventh century to the fall of Constantinople in 1453. Educated writers still imitated ancient Attic while the spoken language moved further away from it. Byzantium is the reason classical literature survives at all. From the ninth century scholars recopied the ancient texts in the new minuscule script and compiled reference works such as Photius' Library, a digest of some 280 books he had read, and the tenth-century encyclopaedia known as the Suda. They gathered ancient commentary into the marginal notes known as scholia and added their own. The scholar-copyists of the last Byzantine centuries (the Palaeologan period), among them Maximus Planudes and Demetrius Triclinius, produced many of the manuscripts that modern editions rely on."
         "postbyz",
@@ -138,6 +138,60 @@ let seriesOf (desc: string) : string =
 // static article prose (mirrors GENERAL)
 // ---------------------------------------------------------------------------
 
+/// A year range written the way the rest of the site writes it: "480–323 BCE",
+/// "31 BCE – 330 CE", with "?" for an end nobody knows.
+let yearRange (from: int option) (to_: int option) : string =
+    let y (v: int) = if v < 0 then string (-v) + " BCE" else string v + " CE"
+    match from, to_ with
+    | Some a, Some b when a < 0 && b < 0 -> sprintf "%d–%d BCE" (-a) (-b)
+    | Some a, Some b when a > 0 && b > 0 -> sprintf "%d–%d CE" a b
+    | Some a, Some b -> y a + " – " + y b
+    | Some a, None -> y a + " – ?"
+    | None, Some b -> "? – " + y b
+    | None, None -> ""
+
+/// An era's span. The first era has no agreed start; like the eras band, it
+/// is dated from where the collection starts, Homer, c. 800 BCE.
+let eraSpan (e: Era) : string =
+    if e.From = -9999 then "c. 800–" + (if e.To < 0 then string (-e.To) + " BCE" else string e.To + " CE")
+    elif e.To = 9999 then "from " + (if e.From < 0 then string (-e.From) + " BCE" else string e.From + " CE")
+    else yearRange (Some e.From) (Some e.To)
+
+/// Wikidata's one-line descriptions, tidied to the site's style: a capital
+/// letter, BCE/CE rather than BC/AD, and no dates in brackets (the dates are
+/// shown beside them already).
+let cleanDesc (d: string) : string =
+    let d = Regex.Replace(d, @"\s*\([^()]*\d[^()]*\)\s*$", "")
+    let d = Regex.Replace(d, @"\bBC\b", "BCE")
+    let d = Regex.Replace(d, @"\bAD\b", "CE").Trim().TrimEnd('.')
+    if d = "" then d else string (System.Char.ToUpper d.[0]) + d.Substring 1
+
+/// The opening of an article for an index card: whole sentences up to about
+/// `limit` characters, or, when the first sentence alone is longer, cut at a
+/// word with "…". Never ends mid-word or with ".…".
+let excerpt (limit: int) (text: string) : string =
+    let para = (text.Split([| "\n\n" |], System.StringSplitOptions.RemoveEmptyEntries) |> Array.tryHead |> Option.defaultValue "").Trim()
+    let sentences = Regex.Split(para, @"(?<=[.!?])\s+(?=[A-Z\u0370-\u03FF\u1F00-\u1FFF""(])")
+    let rec take (acc: string) (rest: string list) =
+        match rest with
+        | s :: tail when acc.Length < limit / 2 || acc.Length + 1 + s.Length <= limit -> take (if acc = "" then s else acc + " " + s) tail
+        | _ -> acc
+    let whole = take "" (List.ofArray sentences)
+    if whole.Length <= int (float limit * 1.3) then whole
+    else
+        let cut = whole.Substring(0, limit)
+        let at = cut.LastIndexOf ' '
+        (if at > limit / 2 then cut.Substring(0, at) else cut).TrimEnd(',', ';', ':', ' ') + "…"
+
+/// One line for each part of the wiki, shared by the wiki's contents and the
+/// home page's Wiki card so the two never describe a section differently.
+let blurbAuthors (n: int) : string = sprintf "Lives and timelines of %d authors, by era and by genre." n
+let blurbEras: string = "From Homeric epic to Byzantine Greek: the periods and their language."
+let blurbManuscripts: string = "How the texts reached us: papyri, codices and the key witnesses."
+let blurbVariants: string = "Lines added later, lines ancient editors doubted, disputed works and other puzzles."
+let blurbEditions: string = "The printed edition behind each text here, and the editions scholars cite."
+let blurbAbout: string = "The projects, scholars and licences this reader is built on."
+
 let articleIntro (kind: ArticleKind) : string =
     match kind with
     | Manuscripts ->
@@ -169,20 +223,20 @@ let workArticles: Map<string, WorkArticle> =
           Sections =
             [ None,
               [ "The Iliad opens with a single word, μῆνιν (mēnin, \"wrath\"), and everything that follows grows out of it. The Greeks have been besieging Troy (Ilion, which gives the poem its name) for nine years, and the story covers only about fifty days of the tenth, with the fighting packed into four of them. Agamemnon, leader of the Greek army, is forced to give back his captive Chryseis to appease Apollo, and takes the captive woman Briseis from Achilles, his best warrior, in her place. Achilles withdraws from the fighting in anger, and the Trojans, led by Hector, drive the Greeks back to their ships. The poem follows what that anger costs: first the Greeks, then Achilles' closest companion Patroclus, killed by Hector, and finally Hector himself, killed by Achilles in revenge."
-                "The Iliad does not tell the whole war. The Judgement of Paris is mentioned only once, in two lines ancient critics rejected (24.29–30). The wooden horse and the fall of Troy lie outside the poem, though Hector's death foreshadows the city's. Those stories belonged to a wider tradition that audiences already knew, later gathered in the poems of the Epic Cycle. The Iliad ends quietly instead. In the last book the old king Priam, guided by the god Hermes, crosses the Greek camp at night to Achilles' hut to ransom his son's body, and the two enemies weep together. The poem closes with Hector's funeral." ]
+                "The Iliad does not tell the whole war. The Judgement of Paris is mentioned only once, near the very end (24.29–30). The wooden horse and the fall of Troy lie outside the poem, though Hector's death foreshadows the city's. Those stories belonged to a wider tradition that audiences already knew, later gathered in the poems of the Epic Cycle. The Iliad ends quietly instead. In the last book the old king Priam, guided by the god Hermes, crosses the Greek camp at night to Achilles' hut to ransom his son's body, and the two enemies weep together. The poem closes with Hector's funeral." ]
               Some "The shape of the poem",
               [ "The 24 books fall into a few large movements, and a first-time reader can find their way by them. Book 1 is the quarrel. Book 2 musters the armies, ending with the famous Catalogue of Ships. Book 3 brings Helen onto the walls of Troy to name the Greek heroes for Priam, and Book 6, where Hector says goodbye to his wife Andromache and their baby son, is often read on its own. In Book 9 the Greeks send an embassy begging Achilles to return, and he refuses. Book 16 sends Patroclus into battle in Achilles' armour. Book 18 describes the new shield the god Hephaestus makes for Achilles, a whole world in miniature. Book 22 is the death of Hector, Book 23 the funeral games for Patroclus, and Book 24 the meeting of Priam and Achilles." ]
               Some "How it was made",
-              [ "The poem runs to about 15,700 lines of dactylic hexameter. Its language is an artificial poetic dialect, mainly Ionic with Aeolic and very old forms mixed in, which nobody ever spoke. It is the product of generations of singers who composed as they performed. In the 1920s and 30s Milman Parry, and after him his student Albert Lord, showed that the repeated phrases, such as πόδας ὠκὺς Ἀχιλλεύς (podas ōkys Achilleus, \"swift-footed Achilles\"), are the working tools of this oral craft, each shaped to fill a fixed stretch of the line, rather than lapses of style. Most scholars now date the fixing of the poem in writing to the late eighth or the seventh century BCE; how and why an oral poem came to be written down is still debated. Its division into 24 books, each named by a letter of the Ionic alphabet, is usually credited to scholars at Alexandria, though some think it older." ]
+              [ "The poem runs to about 15,700 lines of dactylic hexameter. It is the product of generations of singers who composed as they performed. In the 1920s and 30s Milman Parry, and after him his student Albert Lord, showed that the repeated phrases, such as πόδας ὠκὺς Ἀχιλλεύς (podas ōkys Achilleus, \"swift-footed Achilles\"), are the working tools of this oral craft, each shaped to fill a fixed stretch of the line, rather than lapses of style. How and why an oral poem came to be written down is still debated. Its division into 24 books, each named by a letter of the Ionic alphabet, is usually credited to scholars at Alexandria, though some think it older." ]
               Some "Its afterlife",
-              [ "According to Athenian tradition, the poems were recited in full at the Panathenaia festival. By Plato's day Homer's admirers could claim that he had \"educated Greece\" (τὴν Ἑλλάδα πεπαίδευκεν, Republic 606e), a claim Socrates goes on to challenge. Plutarch (Alexander 8) tells us that Alexander took on campaign a copy corrected by Aristotle and kept it under his pillow. At the Library of Alexandria, Zenodotus, Aristophanes of Byzantium and then Aristarchus produced the first critical editions. Much of what we know of their work comes from notes in the margins of the tenth-century manuscript known as Venetus A, which is still the most important single witness to the text. The Greek you read here is Monro and Allen's Oxford edition (3rd ed., 1920)." ]
+              [ "According to Athenian tradition, the poems were recited in full at the Panathenaia festival. By Plato's day Homer's admirers could claim that he had \"educated Greece\" (τὴν Ἑλλάδα πεπαίδευκεν, Republic 606e), a claim Socrates goes on to challenge. Plutarch (Alexander 8) tells us that Alexander took on campaign a copy corrected by Aristotle and kept it under his pillow. At the Library of Alexandria, Zenodotus, Aristophanes of Byzantium and then Aristarchus produced the first critical editions; how their work reached us is told under How the text survived, below. The Greek you read here is Monro and Allen's Oxford edition (3rd ed., 1920)." ]
               Some "Reading it in Greek",
-              [ "Homer is hard at first because the word forms are unfamiliar, but the poem rewards persistence faster than almost any other Greek text, because it repeats itself. The formulas that puzzle you in Book 1 will be old friends by Book 3. A few habits account for much of the strangeness: past tenses often drop the augment (βῆ, bē, for ἔβη, \"he went\"), genitives may end in -οιο (-oio) or -αο (-ao), and ὁ, ἡ, τό is usually a pronoun (\"he, she, it\") rather than \"the\". Click any word for a dictionary entry, and try the Meter lens: the hexameter is easier to feel when you hear it." ] ] }
+              [ "Homer is hard at first because the word forms are unfamiliar, but the poem rewards persistence faster than almost any other Greek text, because it repeats itself. The formulas that puzzle you in Book 1 will be old friends by Book 3. A few habits account for much of the strangeness: past tenses often drop the augment (βῆ, bē, for ἔβη, \"he went\"), genitives may end in -οιο (-oio) or -αο (-ao), and ὁ, ἡ, τό is usually a pronoun (\"he, she, it\") rather than \"the\". Click or tap any word for a dictionary entry, and try the Meter lens: the hexameter is easier to feel when you hear it." ] ] }
     ]
 
 // ---------------------------------------------------------------------------
-// the wiki's introduction: the word μάθησις, what the philosophers made of
-// learning, and why an open reference and a living language matter
+// the Study page's introduction (the word μάθησις and what the philosophers
+// made of learning) and the wiki's (why an open reference matters)
 // ---------------------------------------------------------------------------
 
 /// A run of the introduction's prose. Greek runs get the Greek face and
@@ -218,15 +272,13 @@ type WikiIntro =
 let wikiIntro: WikiIntro =
     { Lead =
         [ Greek "Μάθησις"
-          Plain " (máthēsis) is the Greek word for learning: not the lesson itself but the act of taking it in. It is made from the verb "
+          Plain " (máthēsis) is the Greek word for learning: not the lesson on the page but the act of taking it in, the slow work of making something your own. It comes from the verb "
           Greek "μανθάνω"
-          Plain " (manthánō), \"I learn\", with the ending "
+          Plain " (manthánō), \"I learn\", and the ending "
           Greek "-σις"
-          Plain " (-sis), which turns an action into a noun, as "
+          Plain "\u00a0(\u2011sis) turns that action into a noun, as "
           Greek "ποίησις"
-          Plain " (poíēsis) is \"making\" and "
-          Greek "κίνησις"
-          Plain " (kínēsis) is \"motion\". This reader is named after it." ]
+          Plain " (poíēsis) is \"making\". This page is for the act itself: a guide that starts from the letters, and short exercises to practise what it teaches." ]
       Philosophy =
         [ Plain "The philosophers asked what learning is. In Plato's "
           Title "Meno"
@@ -247,13 +299,13 @@ let wikiIntro: WikiIntro =
           Passage("177", "tlg0085.tlg005", None, "177")
           Plain " sings of Zeus, who made it law that we learn by suffering: "
           Greek "πάθει μάθος"
-          Plain " (páthei máthos)." ]
+          Plain " (páthei máthos). Reading Greek asks for less suffering than Aeschylus had in mind: only a little, every day." ]
       WhyWiki =
         [ Plain "Greek literature did not survive by itself. It lasted because readers kept explaining it and copying it. Scholars at Alexandria edited Homer and wrote commentaries on him; the margins of Byzantine manuscripts carry notes, the "
           Greek "σχόλια"
           Plain " (skhólia), distilled from commentaries like theirs; and in the tenth century the "
           Title "Suda"
-          Plain " gathered what was known into an encyclopedia of about 31,000 entries. A text that no one can explain is soon a text that no one copies. An open reference that anyone can use is the same work in its modern form, and it is what this wiki is for: who wrote each text and when, how it reached us, and which editions to trust." ]
+          Plain " gathered what was known into an encyclopaedia of about 31,000 entries. A text that no one can explain is soon a text that no one copies. An open reference that anyone can use is the same work in its modern form, and it is what this wiki is for: who wrote each text and when, how it reached us, and which editions to trust." ]
       Living =
         [ Plain "Greek has been written for well over three thousand years, from the Linear B tablets of the Bronze Age palaces to the Greek spoken today, and English still takes from it its words for learning itself: "
           Title "mathematics"
@@ -265,7 +317,7 @@ let wikiIntro: WikiIntro =
           Title "history"
           Plain " and "
           Title "music"
-          Plain ". Every reader who learns even a little of it keeps that line unbroken. This wiki is here to make the first steps easier and the later ones better informed." ]
+          Plain ". Every reader who learns even a little of it keeps that line unbroken." ]
       Family =
         [ { Grc = "μανθάνω"; Translit = "manthánō"; Gloss = "I learn, I come to understand" }
           { Grc = "μάθησις"; Translit = "máthēsis"; Gloss = "learning, the act of learning" }

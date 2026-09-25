@@ -4,36 +4,11 @@ open Feliz
 open Fable.Core
 open Types
 
-[<Emit("matchMedia('(max-width: 900px)').matches")>]
-let private isPhoneWidth (): bool = jsNative
-
 let private iconSvg (shapes: Content.IconShape list) : ReactElement = Shared.iconShapes shapes
 
 // ---------------------------------------------------------------------------
 // individual header controls
 // ---------------------------------------------------------------------------
-
-/// When the sidebar is collapsed — which the reader now does by default — a
-/// bare hamburger is not enough of a signal that 1,800 works are one click
-/// away, so the button grows a label. CSS drops the label back to an icon on
-/// phones, where the same control opens the drawer instead.
-let navToggleButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    let hidden = Router.navHiddenOn model.Route model.NavHidden model.NavHiddenReader
-    Html.button [
-        prop.classes [ "ib"; if hidden then "nav-show" ]
-        prop.id "navToggle"
-        prop.ariaLabel (if hidden then "Show library" else "Hide library")
-        prop.title ((if hidden then "Show library" else "Hide library") + " (\\)")
-        prop.custom ("aria-expanded", not hidden)
-        prop.onClick (fun e ->
-            e.stopPropagation ()
-            if isPhoneWidth () then dispatch (ToggleSide(not model.SideOpen))
-            else dispatch ToggleNavHidden)
-        prop.children [
-            Shared.icon "contents"
-            if hidden then Html.span [ prop.className "nav-show-label"; prop.text "Library" ]
-        ]
-    ]
 
 let backButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.button [
@@ -57,114 +32,98 @@ let brand (dispatch: Msg -> unit) : ReactElement =
         prop.children [ Html.text "Μάθησις"; Html.small [ prop.text "Ancient Greek reader" ] ]
     ]
 
-/// On phones this row becomes the bottom tab bar, and gains two tabs that the
-/// header carries on wider screens (the library drawer and My library), so the
-/// two things reached for most sit under the thumb rather than at the top of
-/// the screen. Order on phones: Texts · Contents · Wiki · My library (far right). `.tab-phone` hides them above the phone breakpoint.
+/// Top bar: Library · Study · Wiki · Forum. On phones this row becomes the
+/// bottom tab bar, with Search in the middle and My library (which the header
+/// carries on wider screens) at the far right: Library · Study · Search ·
+/// Wiki · My library. Forum moves to an icon in the phone header (`.tab-desk`
+/// hides it from the tab bar), so the bar keeps five tabs and a middle.
 let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    let route = model.Route
-    let active = Router.navKey route
+    let active = Router.navKey model.Route
+    let tab (hash: string) (key: string) (iconName: string) (label: string) (title: string) (phoneOnly: bool) =
+        Html.a [
+            prop.href hash
+            prop.custom ("data-nav", key)
+            prop.classes [
+                if phoneOnly then "tab-phone"
+                if key = "forum" then "tab-desk"
+                if active = key && not model.Search.Open then "active"
+            ]
+            if active = key then prop.custom ("aria-current", "page")
+            if title <> "" then prop.title title
+            prop.onClick (fun e ->
+                e.preventDefault ()
+                if model.Search.Open then dispatch (Search_ CloseSearch)
+                dispatch (Navigate(hash, false)))
+            prop.children [ Shared.icon iconName; Html.text label ]
+        ]
     Html.nav [
         prop.className "topnav"
         prop.id "topnav"
+        prop.ariaLabel "Sections"
         prop.children [
-            Html.a [
-                prop.href "#"
-                prop.custom ("data-nav", "texts")
-                prop.classes [ if active = "texts" then "active" ]
-                prop.onClick (fun e ->
-                    e.preventDefault ()
-                    dispatch (Navigate("#", false)))
-                prop.children [
-                    Shared.icon "texts"
-                    Html.text "Texts"
-                ]
-            ]
+            tab "#library" "library" "texts" "Library" "Every text in the collection" false
+            tab "#study" "learn" "learn" "Study" "Start here: the beginner's guide and practice exercises" false
             Html.button [
-                prop.custom ("data-nav", "contents")
-                prop.classes [ "tab-phone"; if model.SideOpen then "active" ]
-                prop.custom ("aria-expanded", model.SideOpen)
+                prop.custom ("data-nav", "search")
+                prop.classes [ "tab-phone"; "tab-search"; if model.Search.Open then "active" ]
+                prop.custom ("aria-expanded", model.Search.Open)
                 prop.onClick (fun e ->
                     e.stopPropagation ()
-                    dispatch (ToggleSide(not model.SideOpen)))
-                prop.children [ Shared.icon "contents"; Html.text "Contents" ]
+                    dispatch (Search_(if model.Search.Open then CloseSearch else OpenSearch)))
+                prop.children [ Shared.icon "search"; Html.text "Search" ]
             ]
-            Html.a [
-                prop.href "#wiki"
-                prop.custom ("data-nav", "wiki")
-                prop.classes [ if active = "wiki" then "active" ]
-                prop.onClick (fun e ->
-                    e.preventDefault ()
-                    dispatch (Navigate("#wiki", false)))
-                prop.children [
-                    Shared.icon "wiki"
-                    Html.text "Wiki"
-                ]
-            ]
-            Html.a [
-                prop.href "#lib"
-                prop.custom ("data-nav", "lib")
-                prop.classes [ "tab-phone"; if active = "lib" then "active" ]
-                prop.onClick (fun e ->
-                    e.preventDefault ()
-                    dispatch (Navigate("#lib", false)))
-                prop.children [ Shared.icon "library"; Html.text "My library" ]
-            ]
+            tab "#wiki" "wiki" "wiki" "Wiki" "" false
+            tab "#forum" "forum" "forum" "Forum" "The town hall: discuss passages, debate, ask, report bugs" false
+            tab "#lib" "lib" "library" "My library" "" true
         ]
     ]
 
-/// Author › work (› chunk, for multi-part works) — empty outside the reader,
-/// mirrors the header's `#crumbs` (distinct from `Views.Shared.wikiCrumbs`,
-/// which is the wiki pages' own in-content breadcrumb).
-let crumbs (model: Model) : ReactElement =
-    match model.Reader with
-    | None -> Html.div [ prop.className "crumbs" ]
-    | Some rm ->
-        let authorName =
-            Catalog.authorOf model.Catalog rm.Work.Id
-            |> Option.map (fun a -> a.Name)
-            |> Option.defaultValue ""
-        let multi = rm.Data |> Option.map (fun d -> d.Chunks.Length > 1) |> Option.defaultValue false
-        let chunkCrumb =
-            match (if multi then rm.Chunk else None) with
-            | Some c -> [ Html.span [ prop.className "sep"; prop.text "›" ]; Html.span [ prop.text c ] ]
-            | None -> []
-        Html.div [
-            prop.className "crumbs"
-            prop.children (
-                [ Html.span [ prop.text authorName ]
-                  Html.span [ prop.className "sep"; prop.text "›" ]
-                  Html.span [ prop.text rm.Work.Title ] ]
-                @ chunkCrumb
-            )
-        ]
-
-let jumpBox (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    Html.div [
-        prop.className "jump"
-        prop.id "jump"
-        prop.hidden model.Reader.IsNone
+/// Sign in, or who is signed in and whether their library is synced.
+let accountButton (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let acc = model.Account
+    let label, title, cls =
+        match acc.Session with
+        | None -> "Sign in", "Sign in to sync your library and post in the forum", ""
+        | Some s ->
+            let who = if acc.DisplayName <> "" then acc.DisplayName else s.Email
+            match acc.Sync with
+            | SyncError e -> who, "Signed in as " + who + ". Sync failed: " + e, " warn"
+            | Syncing -> who, "Signed in as " + who + ". Syncing…", " on"
+            | _ -> who, "Signed in as " + who + ". Your library is synced.", " on"
+    Html.a [
+        prop.className ("acct-btn" + cls + (if model.Route = AccountRoute then " active" else ""))
+        prop.href "#account"
+        prop.title title
+        prop.onClick (fun e ->
+            e.preventDefault ()
+            dispatch (Navigate("#account", false)))
         prop.children [
-            Html.input [
-                prop.id "jumpIn"
-                prop.placeholder "Passage…"
-                prop.ariaLabel "Go to reference"
-                prop.value model.JumpInput
-                prop.onChange (fun (v: string) -> dispatch (Reader_(SetJumpInput v)))
-                prop.onKeyDown (fun e -> if e.key = "Enter" then dispatch (Reader_ GotoRefSubmitted))
-            ]
-            Html.button [
-                prop.id "jumpBtn"
-                prop.text "Go"
-                prop.onClick (fun _ -> dispatch (Reader_ GotoRefSubmitted))
-            ]
+            Shared.icon "account"
+            Html.span [ prop.className "acct-label"; prop.text label ]
+            match acc.Sync with
+            | Syncing when acc.Session.IsSome -> Html.span [ prop.className "acct-dot busy"; prop.ariaHidden true ]
+            | SyncError _ when acc.Session.IsSome -> Html.span [ prop.className "acct-dot err"; prop.ariaHidden true ]
+            | _ -> Html.none
         ]
     ]
 
-let tools (route: Route) (dispatch: Msg -> unit) : ReactElement =
+let tools (model: Model) (dispatch: Msg -> unit) : ReactElement =
+    let route = model.Route
     Html.div [
         prop.className "tools"
         prop.children [
+            // Phones only: the Forum's place in the tab bar went to Study.
+            Html.a [
+                prop.className ("ib forum-ib" + (if Router.navKey route = "forum" then " active" else ""))
+                prop.href "#forum"
+                prop.title "Forum"
+                prop.ariaLabel "Forum"
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#forum", false)))
+                prop.children [ Shared.icon "forum" ]
+            ]
+            accountButton model dispatch
             Html.a [
                 prop.className ("libbtn" + (if Router.navKey route = "lib" then " active" else ""))
                 prop.id "libBtn"
@@ -181,6 +140,7 @@ let tools (route: Route) (dispatch: Msg -> unit) : ReactElement =
             Html.button [
                 prop.className "ib"
                 prop.id "btnSettings"
+                prop.custom ("aria-expanded", model.SettingsOpen)
                 prop.ariaLabel "Settings"
                 prop.title "Settings"
                 prop.onClick (fun e ->
@@ -211,8 +171,8 @@ let sourceChip (model: Model) (dispatch: Msg -> unit) : ReactElement =
 
     let label, title =
         match model.Source.Mode with
-        | SourceGitHub -> "GitHub", "Texts are downloaded from GitHub as you open them"
-        | SourceUrl -> "URL", "Texts are read from " + (if model.Source.BaseUrl = "" then "this folder" else model.Source.BaseUrl)
+        | SourceGitHub -> "Online", "Texts are downloaded from GitHub as you open them"
+        | SourceUrl -> "Web address", "Texts are read from " + (if model.Source.BaseUrl = "" then "this folder" else model.Source.BaseUrl)
         | SourceLocal when not connected -> "No local copy", "Local is selected but nothing is connected — texts will come from GitHub"
         | SourceLocal when not (List.isEmpty model.Source.NeedsReconnect) ->
             "Reconnect", String.concat ", " model.Source.NeedsReconnect + " needs permission again"
@@ -222,7 +182,7 @@ let sourceChip (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 |> Map.toList
                 |> List.map (fun (r, _) -> Sources.repoName r)
                 |> String.concat " and "
-            "Local", "Reading from your computer — " + what
+            "This computer", "Reading from your computer — " + what
 
     // A cloud for the network, a drive for the disk: the icon carries the
     // distinction at a glance, the word confirms it.
@@ -278,9 +238,9 @@ let sourceChip (model: Model) (dispatch: Msg -> unit) : ReactElement =
             prop.ariaLabel "Text source"
             prop.children [
                 Html.h3 [ prop.text "Read texts from" ]
-                option_ SourceGitHub "GitHub" "Downloaded as you open them" (fun () ->
+                option_ SourceGitHub "Online" "Downloaded from GitHub as you open them" (fun () ->
                     dispatch (Source_(SetSourceMode SourceGitHub)))
-                option_ SourceLocal "Your computer" localHint (fun () ->
+                option_ SourceLocal "This computer" localHint (fun () ->
                     dispatch (Source_(SetSourceMode SourceLocal))
                     // Choosing this with nothing connected is a request for the
                     // picker; the click is still a user gesture at this point.
@@ -347,14 +307,14 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.header [
         prop.className (if Router.isReader model.Route then "reading" else "")
         prop.children [
-            navToggleButton model dispatch
-            backButton model dispatch
-            brand dispatch
-            topNav model dispatch
-            crumbs model
-            jumpBox model dispatch
-            sourceChip model dispatch
-            notesButton model dispatch
-            tools model.Route dispatch
+            Html.div [
+                prop.className "h-left"
+                prop.children [ backButton model dispatch; brand dispatch; topNav model dispatch ]
+            ]
+            SearchBox.render model dispatch
+            Html.div [
+                prop.className "h-right"
+                prop.children [ sourceChip model dispatch; notesButton model dispatch; tools model dispatch ]
+            ]
         ]
     ]

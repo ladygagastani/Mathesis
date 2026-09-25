@@ -300,62 +300,30 @@ let private homeFilterBtn (model: Model) (dispatch: Msg -> unit) (value: WorksFi
         prop.onClick (fun _ -> dispatch (SetFilter value))
     ]
 
+/// The filter for the picks below, and a way into the header search (the
+/// one search in the app) at the place a first-time visitor looks for it.
 let private homeToolsAndResults (model: Model) (dispatch: Msg -> unit) : ReactElement list =
-    let results = Catalog.searchWorks model.Catalog model.Filter model.HomeQuery
-    let hasQuery = model.HomeQuery.Trim() <> ""
     [ Html.div [
           prop.className "home-tools"
           prop.children [
-              Html.span [ prop.className "lbl"; prop.text "Show" ]
+              Html.button [
+                  prop.className "search search-open"
+                  prop.type' "button"
+                  prop.onClick (fun e ->
+                      e.stopPropagation ()
+                      dispatch (Search_ OpenSearch))
+                  prop.text (sprintf "Search %s works, authors and passages" (toLocaleString model.Catalog.WorkById.Count))
+              ]
               Html.div [
-                  prop.className "filter"
+                  prop.className "segbtn"
                   prop.role "group"
-                  prop.ariaLabel "Filter the library"
+                  prop.ariaLabel "Show"
                   prop.children [
                       homeFilterBtn model dispatch FilterAll "all" "All"
                       homeFilterBtn model dispatch FilterTranslated "trans" "With translation"
                       homeFilterBtn model dispatch FilterGreekOnly "grc" "Greek only"
                   ]
               ]
-              Html.input [
-                  prop.className "search"
-                  prop.id "homeQ"
-                  prop.placeholder "Search by author or title"
-                  prop.autoComplete "off"
-                  prop.value model.HomeQuery
-                  prop.onChange (fun (v: string) -> dispatch (SetHomeQuery v))
-              ]
-          ]
-      ]
-      Html.div [
-          prop.className "home-results"
-          prop.id "homeResults"
-          prop.children [
-              if hasQuery && List.isEmpty results then
-                  Html.div [ prop.className "quiet"; prop.text "Nothing matches that. Try an author's name, a title, or part of either." ]
-              for a, w in results do
-                  let grcTitle = Catalog.titleGrc w
-                  Html.button [
-                      prop.key w.Id
-                      prop.className "hr"
-                      prop.onClick (openWork dispatch w.Id None None)
-                      prop.children [
-                          Html.span [
-                              prop.children [
-                                  Html.b [ prop.text w.Title ]
-                                  match grcTitle with
-                                  | Some g when g <> w.Title -> Html.span [ prop.className "grc"; prop.text g ]
-                                  | _ -> Html.none
-                              ]
-                          ]
-                          Html.span [
-                              prop.className "who"
-                              prop.text (a.Name + (if Catalog.hasTranslation w then "" else " · Greek only"))
-                          ]
-                      ]
-                  ]
-              if results.Length >= 40 then
-                  Html.div [ prop.className "quiet"; prop.text "Showing the 40 best matches. Keep typing to narrow them down." ]
           ]
       ] ]
 
@@ -401,16 +369,17 @@ let private wikiCardSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
         model.Meta.Eras
         |> List.filter (fun e -> model.Meta.Authors |> Map.exists (fun _ m -> m.Era = Some e.Id))
         |> List.map (fun e -> stripParenSuffix e.Name)
-    Shared.collapsibleSection dispatch model.Collapsed "home-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" None) [
+    let strip (s: string) = s.TrimEnd('.')
+    Shared.collapsibleSection dispatch model.Collapsed "home-card wiki-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" None) [
         Html.div [
             prop.className "mini-list"
             prop.children [
-                miniLink dispatch "#wiki/start" "Start here" "A beginner's guide to letters, sounds, dictionaries and words"
-                miniLink dispatch "#wiki/authors" "Authors" "Lives and timelines, by era and by genre"
+                miniLink dispatch "#wiki/authors" "Authors" (strip (WikiData.blurbAuthors model.Catalog.Authors.Length))
                 miniLink dispatch "#wiki/eras" "Eras of Greek" (String.concat " · " eraNames)
-                miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" "How the texts survived, and the manuscripts that matter"
-                miniLink dispatch "#wiki/variants" "Textual variants" "Added lines, disputed works and other puzzles"
-                miniLink dispatch "#wiki/editions" "Editions & translations" "The editions scholars use, and where these texts come from"
+                miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" (strip WikiData.blurbManuscripts)
+                miniLink dispatch "#wiki/variants" "Textual variants" (strip WikiData.blurbVariants)
+                miniLink dispatch "#wiki/editions" "Editions & translations" (strip WikiData.blurbEditions)
+                miniLink dispatch "#about" "About & acknowledgments" (strip WikiData.blurbAbout)
             ]
         ]
     ]
@@ -544,7 +513,7 @@ let private erasStripSection (model: Model) (dispatch: Msg -> unit) : ReactEleme
 // ---------------------------------------------------------------------------
 
 /// The home page's alphabet and tips are the short version of the "Start here"
-/// guide; each ends with a way into the long one.
+/// guide, which follows them at the foot of the page; each links to its step.
 let private deeperLink (dispatch: Msg -> unit) (slug: string) (label: string) : ReactElement =
     let h = GuideData.hashOf slug
     Html.p [
@@ -569,7 +538,7 @@ let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
                     ]
             ]
         ]
-        deeperLink dispatch "alphabet-and-sounds" "The alphabet and its sounds, in depth →"
+        deeperLink dispatch "alphabet-and-sounds" "How to say each letter: step 1 of the guide in Study →"
     ]
 
 let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -588,7 +557,28 @@ let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     ]
             ]
         ]
-        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation, in depth →"
+        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide in Study →"
+    ]
+
+/// The beginner's guide, at the foot of the page: its steps from the alphabet
+/// to a word study, and a way in. Never folds: it is the page's last word.
+/// The foot of the home page points to Study, where the guide and the
+/// practice lessons now live.
+let private startHereSection (dispatch: Msg -> unit) : ReactElement =
+    let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
+    Shared.fixedSection "home-block start-here" "sh" [ Html.text "New to Greek? Start in Study" ] [
+        Html.p [
+            prop.className "sh-lede"
+            prop.text
+                "A guide in eight steps, from the letters and their sounds to the life story of a word, and short exercises to practise with. You need no Greek to begin; steps 1 to 3 take about half an hour."
+        ]
+        Html.div [
+            prop.className "g-begin"
+            prop.children [
+                Html.a [ prop.className "btn primary"; prop.href "#study"; prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
+                Html.a [ prop.className "btn"; prop.href first; prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
+            ]
+        ]
     ]
 
 let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -602,7 +592,7 @@ let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         Html.span [ prop.className "num"; prop.text "1" ]
                         Html.b [ prop.text "Choose a text" ]
                         Html.span [
-                            prop.text "Open the library (☰) or search below. Where there's a translation you'll see it beside the Greek; otherwise the Greek has the page to itself."
+                            prop.text "Open the Library, or search from the box at the top of every page. Where there's a translation you'll see it beside the Greek; otherwise the Greek has the page to itself."
                         ]
                     ]
                 ]
@@ -719,7 +709,7 @@ let private sourcesFooter (dispatch: Msg -> unit) : ReactElement =
         prop.children [
             Html.a [ prop.href "#about"; prop.text "About & acknowledgments"; prop.onClick (navigateTo dispatch "#about") ]
             Html.text
-                " · Texts from the Perseus Digital Library and Open Greek and Latin's First1KGreek, both CC BY-SA 4.0. Word lookups link to Logeion (University of Chicago) and the Perseus word study tool. Every passage has a Canonical Text Services (CTS) URN, a permanent citation you can see and copy by hovering over the passage."
+                " · Texts from the Perseus Digital Library and Open Greek and Latin's First1KGreek, both CC BY-SA 4.0. Word lookups link to Logeion (University of Chicago) and the Perseus word study tool. Every passage has a Canonical Text Services (CTS) URN, a permanent citation: tap or click a passage's number to copy it."
         ]
     ]
 
@@ -791,10 +781,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
             @ (readingPathsSection model dispatch |> Option.toList)
             // 3. the shape of the whole collection, to scale.
             @ (erasStripSection model dispatch |> Option.toList)
-            // 4. the beginner lane, labelled rather than floating mid-page.
-            @ [ alphabetSection model dispatch
-                tipsSection model dispatch
-                Html.div [
+            @ [ Html.div [
                     prop.className "home-bottom"
                     prop.children [ howToSection model dispatch ]
                 ]
@@ -804,6 +791,11 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     prop.children [ wikiCardSection model dispatch ]
                 ]
                 offlineSection model dispatch
+                // 4. the beginner lane at the foot of the page: the alphabet and
+                // the marks at a glance, then the guide that teaches them.
+                alphabetSection model dispatch
+                tipsSection model dispatch
+                startHereSection dispatch
                 sourcesFooter dispatch ]
         )
     ]

@@ -1,7 +1,8 @@
-/// The "Start here" beginner's guide (`#wiki/start/<slug>`), rendered from the
+/// The "Start here" beginner's guide (`#start/<slug>`), rendered from the
 /// Markdown in content/start-here/ (see GuideData). Greek runs get the Greek
-/// face and `lang="grc"`; "page N" in the running text links to that page;
+/// face and `lang="grc"`; "step N" in the running text links to that step;
 /// links written `read:<workId>:<ref>` open the passage in the reader.
+/// `path` (the steps, grouped by part) is also the home page's "Start here".
 module Views.Guide
 
 open Feliz
@@ -21,7 +22,7 @@ let private greekRun =
         + "(?:[\\s,.;:··—–/()\\-]+[Ͱ-Ͽἀ-῿][Ͱ-Ͽἀ-῿̀-ͯʼ’᾽']*)*"
     )
 
-let private pageRef = Regex(@"\bpage ([1-9])\b")
+let private stepRef = Regex(@"\b[Ss]tep ([1-9])\b")
 
 /// Splits `s` into (isMatch, text) pieces around the matches of `re`.
 let private pieces (re: Regex) (s: string) : (bool * string) list =
@@ -41,11 +42,11 @@ let private greekText (key: string) (s: string) : ReactElement list =
         else Html.text t)
 
 let private textRuns (dispatch: Msg -> unit) (key: string) (s: string) : ReactElement list =
-    pieces pageRef s
+    pieces stepRef s
     |> List.mapi (fun i (isRef, t) ->
         let k = key + "p" + string i
         if isRef then
-            match GuideData.hashOfPageNumber (int (pageRef.Match t).Groups.[1].Value) with
+            match GuideData.hashOfStep (int (stepRef.Match t).Groups.[1].Value) with
             | Some h -> [ Html.a [ prop.key k; prop.href h; prop.text t; prop.onClick (navigateTo dispatch h) ] ]
             | None -> [ Html.text t ]
         else
@@ -59,7 +60,7 @@ let private resolveHref (href: string) : string * bool =
         let i = rest.IndexOf ':'
         if i > 0 then Router.toHash (ReaderRoute(rest.Substring(0, i), "", "", None, Some(rest.Substring(i + 1)))), false
         else Router.toHash (ReaderRoute(rest, "", "", None, None)), false
-    elif href.EndsWith ".md" then (GuideData.hashOfFile href |> Option.defaultValue "#wiki/start"), false
+    elif href.EndsWith ".md" then (GuideData.hashOfFile href |> Option.defaultValue "#start"), false
     elif href.StartsWith "#" then href, false
     else href, true
 
@@ -71,6 +72,7 @@ let rec private inlines (dispatch: Msg -> unit) (key: string) (xs: Inline list) 
         | Text s -> textRuns dispatch k s
         | Strong ys -> [ Html.strong [ prop.key k; prop.children (inlines dispatch k ys) ] ]
         | Em ys -> [ Html.em [ prop.key k; prop.children (inlines dispatch k ys) ] ]
+        | Under ys -> [ Html.u [ prop.key k; prop.children (inlines dispatch k ys) ] ]
         | Link(href, ys) ->
             let h, external = resolveHref href
             [ Html.a (
@@ -84,7 +86,7 @@ let private firstChar (xs: Inline list) : char option =
     let rec go xs =
         match xs with
         | Text s :: _ when s <> "" -> Some s.[0]
-        | (Strong ys | Em ys | Link(_, ys)) :: rest -> (match go ys with Some c -> Some c | None -> go rest)
+        | (Strong ys | Em ys | Under ys | Link(_, ys)) :: rest -> (match go ys with Some c -> Some c | None -> go rest)
         | _ :: rest -> go rest
         | [] -> None
     go xs
@@ -115,6 +117,7 @@ let rec private blocks (dispatch: Msg -> unit) (key: string) (bs: Block list) : 
                         Html.div [ prop.key j; prop.className cls; prop.children (inlines dispatch (k + "q" + string j) line) ]
                 ]
             ]
+        | Note inner -> Html.div [ prop.key k; prop.className "g-note"; prop.children (blocks dispatch k inner) ]
         | Bullets items -> Html.ul [ prop.key k; prop.className "g-list"; prop.children (listItems dispatch k items) ]
         | Numbered(start, items) ->
             // prop.custom: Feliz's `prop.start` overload compiles to a throw
@@ -166,6 +169,84 @@ and private listItems (dispatch: Msg -> unit) (key: string) (items: Block list l
         | Para xs :: rest -> Html.li [ prop.key k; prop.children (inlines dispatch k xs @ blocks dispatch k rest) ]
         | _ -> Html.li [ prop.key k; prop.children (blocks dispatch k item) ])
 
+/// Home › Start here › page. The guide hangs off the home page, not the wiki.
+let private crumbs (dispatch: Msg -> unit) (parts: (string * string option) list) : ReactElement =
+    Html.div [
+        prop.className "wcrumbs"
+        prop.children [
+            Html.a [ prop.href "#study"; prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
+            for label, hash in parts do
+                Html.text " › "
+                match hash with
+                | Some h -> Html.a [ prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+                | None -> Html.span [ prop.text label ]
+        ]
+    ]
+
+/// The guide's steps, grouped by part, each with what it teaches: the
+/// contents page and the home page's "Start here" block.
+let path (dispatch: Msg -> unit) : ReactElement =
+    Html.div [
+        prop.className "gpath"
+        prop.children [
+            for part, steps in GuideData.steps |> List.groupBy (fun (_, p) -> p.Part) ->
+                Html.div [
+                    prop.key part
+                    prop.className "gp-part"
+                    prop.children [
+                        Html.h3 [ prop.className "gp-h"; prop.text part ]
+                        Html.ol [
+                            prop.className "gp-steps"
+                            prop.children [
+                                for i, p in steps ->
+                                    let h = GuideData.hashOf p.Slug
+                                    Html.li [
+                                        prop.key p.Slug
+                                        prop.children [
+                                            Html.a [
+                                                prop.className "gp-step"
+                                                prop.href h
+                                                prop.onClick (navigateTo dispatch h)
+                                                prop.children [
+                                                    Html.span [ prop.className "num"; prop.text (string i) ]
+                                                    Html.span [
+                                                        prop.className "gp-body"
+                                                        prop.children [
+                                                            Html.b [ prop.className "gp-t"; prop.text p.Title ]
+                                                            Html.span [ prop.className "gp-s"; prop.text p.Summary ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                            ]
+                        ]
+                    ]
+                ]
+        ]
+    ]
+
+/// One mark per step, the current one filled: where you are, and a way to jump.
+let private progress (dispatch: Msg -> unit) (idx: int) : ReactElement =
+    Html.nav [
+        prop.className "g-progress"
+        prop.ariaLabel "Steps of the guide"
+        prop.children [
+            for i, p in GuideData.steps ->
+                let h = GuideData.hashOf p.Slug
+                Html.a [
+                    prop.key p.Slug
+                    prop.href h
+                    prop.title (sprintf "Step %d: %s" i p.Title)
+                    prop.className (if i = idx then "on" elif i < idx then "done" else "")
+                    if i = idx then prop.custom ("aria-current", "step")
+                    prop.text (string i)
+                    prop.onClick (navigateTo dispatch h)
+                ]
+        ]
+    ]
+
 let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactElement =
     let pages = GuideData.pages
     let idx =
@@ -173,16 +254,31 @@ let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactE
         | Some p -> pages |> List.findIndex (fun q -> q.Slug = p.Slug)
         | None -> 0
     let p = pages.[idx]
-    let pagerLink (target: GuideData.GuidePage) (label: string) =
-        let h = GuideData.hashOf target.Slug
-        Html.a [ prop.className "btn"; prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+    let nSteps = pages.Length - 1
+    let body = Markdown.parse p.Markdown
+    let pagerLink (i: int) (label: string) (cls: string) =
+        let h = GuideData.hashOf pages.[i].Slug
+        Html.a [ prop.className cls; prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
     Html.div [
         prop.className "page guide"
         prop.children [
-            Shared.wikiCrumbs dispatch (if idx = 0 then [ "Start here", None ] else [ "Start here", Some "#wiki/start"; p.Title, None ])
+            crumbs dispatch (if idx = 0 then [ "Start here", None ] else [ "Start here", Some "#start"; p.Title, None ])
             if idx > 0 then
-                Html.p [ prop.className "g-kicker"; prop.text (sprintf "Start here · page %d of %d" idx (pages.Length - 1)) ]
-            Html.article [ prop.className "g-body"; prop.children (blocks dispatch p.Slug (Markdown.parse p.Markdown)) ]
+                Html.p [ prop.className "g-kicker"; prop.text (sprintf "Step %d of %d · %s" idx nSteps p.Part) ]
+                progress dispatch idx
+            if idx = 0 then
+                // the contents page: its introduction, then the steps, then the
+                // conventions (everything from the first ## heading on)
+                let intro, rest =
+                    match body |> List.tryFindIndex (function Heading(2, _) -> true | _ -> false) with
+                    | Some n -> List.splitAt n body
+                    | None -> body, []
+                Html.article [ prop.className "g-body"; prop.children (blocks dispatch "intro" intro) ]
+                path dispatch
+                Html.div [ prop.className "g-begin"; prop.children [ pagerLink 1 ("Begin: " + pages.[1].Title + " →") "btn primary" ] ]
+                Html.article [ prop.className "g-body"; prop.children (blocks dispatch "rest" rest) ]
+            else
+                Html.article [ prop.className "g-body"; prop.children (blocks dispatch p.Slug body) ]
             // Pages that quote the texts (every quotation links into the reader)
             // say whose translation it is: ours, not the published one the
             // reader shows beside the Greek.
@@ -195,14 +291,15 @@ let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactE
                         Html.text " marks a rendering we are unsure of, or one that scholars dispute."
                     ]
                 ]
-            Html.div [
-                prop.className "pager"
-                prop.children [
-                    (if idx > 0 then pagerLink pages.[idx - 1] ("← " + (if idx = 1 then "Contents" else pages.[idx - 1].Title))
-                     else Html.span [])
-                    (if idx < pages.Length - 1 then pagerLink pages.[idx + 1] ((if idx = 0 then "Begin: " + pages.[1].Title else pages.[idx + 1].Title) + " →")
-                     else Html.span [])
+            if idx > 0 then
+                Html.div [
+                    prop.className "pager g-pager"
+                    prop.children [
+                        (if idx > 1 then pagerLink (idx - 1) (sprintf "← Step %d: %s" (idx - 1) pages.[idx - 1].Title) "btn"
+                         else pagerLink 0 "← Start here" "btn")
+                        (if idx < nSteps then pagerLink (idx + 1) (sprintf "Step %d: %s →" (idx + 1) pages.[idx + 1].Title) "btn primary"
+                         else pagerLink 0 "Back to Start here" "btn")
+                    ]
                 ]
-            ]
         ]
     ]

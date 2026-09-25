@@ -15,6 +15,40 @@ open Types
 // settings sheet stand in, which are in the DOM whether or not the sheet is open.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Enter finishes an edit
+//
+// In every box that can hold more than one line (notes, forum posts), Enter
+// finishes the edit: saves, closes or posts. Shift+Enter is how to start a new
+// line. Keys pressed while an input method is composing (Greek polytonic
+// keyboards, Japanese…) are left alone, or the first Enter of a composition
+// would post half a word.
+// ---------------------------------------------------------------------------
+
+[<Emit("($0.isComposing || $0.keyCode === 229)")>]
+let private composing (e: Browser.Types.KeyboardEvent) : bool = jsNative
+
+let onEnterSave (finish: unit -> unit) : IReactProperty =
+    prop.onKeyDown (fun (e: Browser.Types.KeyboardEvent) ->
+        if e.key = "Enter" && not e.shiftKey && not (composing e) then
+            e.preventDefault ()
+            e.stopPropagation ()
+            finish ())
+
+/// In a form of several boxes: Enter goes on to the next box of the form.
+[<Emit("(() => { const t = $0.target, f = t.closest('form, .f-form, .mk-edit'); if (!f) return; const els = [...f.querySelectorAll('input:not([type=hidden]):not([disabled]), textarea')]; const i = els.indexOf(t); if (i >= 0 && i < els.length - 1) els[i + 1].focus(); })()")>]
+let private focusNextIn (e: Browser.Types.KeyboardEvent) : unit = jsNative
+
+let onEnterNext : IReactProperty =
+    prop.onKeyDown (fun (e: Browser.Types.KeyboardEvent) ->
+        if e.key = "Enter" && not e.shiftKey && not (composing e) then
+            e.preventDefault ()
+            focusNextIn e)
+
+/// The line under a multi-line box that says how its keys work.
+let enterHint (what: string) : ReactElement =
+    Html.span [ prop.className "enter-hint"; prop.text ("Enter " + what + " · Shift+Enter for a new line") ]
+
 [<Emit("document.getElementById($0)?.click()")>]
 let private clickElementById (id: string) : unit = jsNative
 
@@ -131,15 +165,19 @@ let toast (toastState: (int * string) option) (dispatch: Msg -> unit) : ReactEle
         ]
     ]
 
-let backdrop (show: bool) (dispatch: Msg -> unit) : ReactElement =
-    Html.div [
-        prop.className ("backdrop" + (if show then " show" else ""))
-        prop.onClick (fun _ -> dispatch (ToggleSide false))
-    ]
-
 // ---------------------------------------------------------------------------
 // favourites
 // ---------------------------------------------------------------------------
+
+/// A work's title as text, marked as Greek when the catalogue has only a
+/// Greek title for it (many of the grammarians' and Church Fathers' works),
+/// so it is set in the Greek face rather than the interface's sans.
+let isGreekScript (t: string) : bool =
+    t.Length > 0
+    && (let c = int t.[0] in (c >= 0x0370 && c <= 0x03FF) || (c >= 0x1F00 && c <= 0x1FFF))
+
+let titleText (t: string) : ReactElement =
+    if isGreekScript t then Html.span [ prop.className "t-grc"; prop.lang "grc"; prop.text t ] else Html.text t
 
 let favButton (lib: Library) (workId: string) (dispatch: Msg -> unit) : ReactElement =
     let on = LibraryData.isFav lib workId
@@ -236,11 +274,12 @@ let noteEditor (dispatch: Msg -> unit) (mark: Mark) : ReactElement =
                 prop.placeholder "Write a note about this passage."
                 prop.defaultValue mark.Note
                 prop.onChange (fun (v: string) -> dispatch (Library_(SetMarkNote(mark.Work, mark.Ref, v))))
+                onEnterSave (fun () -> dispatch (Library_(EditNote None)))
             ]
             Html.div [
                 prop.className "note-edit-foot"
                 prop.children [
-                    Html.span [ prop.className "quiet"; prop.text "Saved as you type." ]
+                    Html.span [ prop.className "quiet"; prop.text "Saved as you type. Enter to finish · Shift+Enter for a new line" ]
                     Html.button [
                         prop.className "btn small primary"
                         prop.text "Done"
@@ -319,7 +358,7 @@ let workCard (catalog: Catalog) (dispatch: Msg -> unit) (work: Work) : ReactElem
     ]
 
 // ---------------------------------------------------------------------------
-// genre chips (sidebar catalogue + My library)
+// genre chips (the Library page + My library)
 // ---------------------------------------------------------------------------
 
 /// The genre a work belongs to, taken from its author (see `WikiData.genreOf`).
@@ -392,50 +431,85 @@ let private eraRange (from: int) (to_: int) : string =
     else string from + "–" + string to_ + " CE"
 
 /// Every era as a column whose width is its length in years and whose height
-/// is the number of works in the library by its authors. The open-ended ends
-/// of the first and last eras are drawn from where the corpus starts (Homer,
-/// c. 800 BCE) and to 1600 CE; eras with no works are left out.
+/// is the number of works in the library by authors of that era, both to
+/// scale. Works whose authors have no date form a column of their own, set
+/// apart at the end (its width means nothing, only its height). The first era
+/// has no agreed start; it is drawn from c. 800 BCE, where the library begins.
+/// Every number is counted from the catalogue and the author data.
+///
+/// On phones the same chart is turned on its side: years run down the page
+/// (each row as tall as its era is long) and the bars run across (as long as
+/// the era has works).
 let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let eraOfAuthor (a: Author) = model.Meta.Authors.TryFind a.Id |> Option.bind (fun m -> m.Era)
-    let worksIn (eraId: string option) =
-        model.Catalog.Authors |> List.filter (fun a -> eraOfAuthor a = eraId) |> List.sumBy (fun a -> a.Works.Length)
+    let eraIds = model.Meta.Eras |> List.map (fun e -> e.Id) |> Set.ofList
+    let worksIn (eraId: string) =
+        model.Catalog.Authors |> List.filter (fun a -> eraOfAuthor a = Some eraId) |> List.sumBy (fun a -> a.Works.Length)
     let eras =
         model.Meta.Eras
         |> List.map (fun e ->
             let from = if e.From = -9999 then -800 else e.From
             let to_ = if e.To = 9999 then 1600 else e.To
-            e, from, to_, worksIn (Some e.Id))
+            e, from, to_, worksIn e.Id)
         |> List.filter (fun (_, from, to_, n) -> n > 0 && to_ > from)
+    let allWorks = model.Catalog.Authors |> List.sumBy (fun a -> a.Works.Length)
+    // no date, or a date outside the eras drawn
+    let undated =
+        model.Catalog.Authors
+        |> List.filter (fun a ->
+            match eraOfAuthor a with
+            | Some id -> not (eraIds.Contains id) || not (eras |> List.exists (fun (e, _, _, _) -> e.Id = id))
+            | None -> true)
+        |> List.sumBy (fun a -> a.Works.Length)
     if List.isEmpty eras then Html.none
     else
         let first = eras |> List.map (fun (_, f, _, _) -> f) |> List.min
         let last = eras |> List.map (fun (_, _, t, _) -> t) |> List.max
         let span = float (last - first)
-        let most = eras |> List.map (fun (_, _, _, n) -> n) |> List.max |> float
-        let total = eras |> List.sumBy (fun (_, _, _, n) -> n)
-        let undated = worksIn None
-        let pct (x: float) = System.Math.Round(x * 100.0, 2).ToString(System.Globalization.CultureInfo.InvariantCulture) + "%"
-        let widthOf from to_ = "calc(" + pct (float (to_ - from) / span) + " - 3px)"
+        let dated = eras |> List.sumBy (fun (_, _, _, n) -> n)
+        let most = (undated :: (eras |> List.map (fun (_, _, _, n) -> n))) |> List.max |> float
+        let inv = System.Globalization.CultureInfo.InvariantCulture
+        let pct (x: float) = System.Math.Round(x * 100.0, 3).ToString(inv) + "%"
+        let rem (x: float) = System.Math.Round(x, 3).ToString(inv) + "rem"
+        // The years get 88% of the width; a gap and the undated column the rest.
+        let yearsShare = if undated > 0 then 0.88 else 1.0
+        let widthOf from to_ = pct (float (to_ - from) / span * yearsShare)
+        let heightOf (n: int) = pct (float n / most)
         let name (e: Era) = System.Text.RegularExpressions.Regex.Replace(e.Name, @" \(.*\)", "")
+        let works (n: int) = (if n = 1 then "1 work" else n.ToString("N0") + " works")
         let go (id: string) (ev: Browser.Types.MouseEvent) =
             ev.preventDefault ()
             dispatch (Navigate("#wiki/eras/" + id, false))
-        Html.div [
+        // phones: 36rem of height for the whole span of years
+        let rowHeight from to_ = rem (float (to_ - from) / span * 36.0)
+        Html.figure [
             prop.className "eras-band"
             prop.children [
                 Html.div [
                     prop.className "eb-cols"
                     prop.children [
-                        for e, from, to_, n in eras ->
+                        for e, from, to_, n in eras do
                             Html.a [
                                 prop.key e.Id
+                                prop.className "eb-col"
                                 prop.href ("#wiki/eras/" + e.Id)
                                 prop.style [ style.custom ("flexBasis", widthOf from to_) ]
-                                prop.ariaLabel (name e + ", " + eraRange from to_ + ": " + string n + " works")
+                                prop.ariaLabel (name e + ", " + eraRange from to_ + ": " + works n)
                                 prop.onClick (go e.Id)
                                 prop.children [
-                                    Html.b [ prop.text (string n) ]
-                                    Html.i [ prop.style [ style.custom ("height", pct (max 0.015 (float n / most))) ] ]
+                                    Html.b [ prop.style [ style.custom ("bottom", heightOf n) ]; prop.text (n.ToString("N0")) ]
+                                    Html.i [ prop.style [ style.custom ("height", heightOf n) ] ]
+                                ]
+                            ]
+                        if undated > 0 then
+                            Html.span [ prop.key "gap"; prop.className "eb-gap"; prop.ariaHidden true ]
+                            Html.div [
+                                prop.key "undated"
+                                prop.className "eb-col eb-undated"
+                                prop.ariaLabel ("Authors of uncertain date: " + works undated)
+                                prop.children [
+                                    Html.b [ prop.style [ style.custom ("bottom", heightOf undated) ]; prop.text (undated.ToString("N0")) ]
+                                    Html.i [ prop.style [ style.custom ("height", heightOf undated) ] ]
                                 ]
                             ]
                     ]
@@ -444,44 +518,67 @@ let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     prop.className "eb-labels"
                     prop.ariaHidden true
                     prop.children [
-                        for e, from, to_, _ in eras ->
+                        for e, from, to_, _ in eras do
                             Html.div [
                                 prop.key e.Id
                                 prop.style [ style.custom ("flexBasis", widthOf from to_) ]
                                 prop.children [ Html.span [ prop.text (name e) ]; Html.text (eraRange from to_) ]
                             ]
+                        if undated > 0 then
+                            Html.span [ prop.key "gap"; prop.className "eb-gap" ]
+                            Html.div [ prop.key "undated"; prop.className "eb-undated-l"; prop.children [ Html.span [ prop.text "Undated" ]; Html.text "no span" ] ]
                     ]
                 ]
-                // Phones: the same data turned on its side, years running down.
+                // Phones: the same chart on its side.
                 Html.div [
                     prop.className "eb-rows"
                     prop.children [
-                        for e, from, to_, n in eras ->
+                        for e, from, to_, n in eras do
                             Html.a [
                                 prop.key e.Id
                                 prop.href ("#wiki/eras/" + e.Id)
                                 prop.onClick (go e.Id)
+                                prop.style [ style.custom ("height", rowHeight from to_) ]
                                 prop.children [
                                     Html.span [
+                                        prop.className "eb-r-l"
+                                        prop.children [ Html.b [ prop.text (name e) ]; Html.small [ prop.text (eraRange from to_) ] ]
+                                    ]
+                                    Html.span [
+                                        prop.className "eb-r-bar"
                                         prop.children [
-                                            Html.b [ prop.text (name e) ]
-                                            Html.small [ prop.text (" " + eraRange from to_ + " · " + string n + " works") ]
+                                            Html.i [ prop.style [ style.custom ("width", heightOf n) ] ]
+                                            Html.small [ prop.text (n.ToString("N0")) ]
                                         ]
                                     ]
-                                    Html.i [ prop.style [ style.custom ("width", pct (max 0.01 (float n / most))) ] ]
+                                ]
+                            ]
+                        if undated > 0 then
+                            Html.div [
+                                prop.key "undated"
+                                prop.className "eb-r-undated"
+                                prop.children [
+                                    Html.span [ prop.className "eb-r-l"; prop.children [ Html.b [ prop.text "Undated" ]; Html.small [ prop.text "no span of years" ] ] ]
+                                    Html.span [
+                                        prop.className "eb-r-bar"
+                                        prop.children [ Html.i [ prop.style [ style.custom ("width", heightOf undated) ] ]; Html.small [ prop.text (undated.ToString("N0")) ] ]
+                                    ]
                                 ]
                             ]
                     ]
                 ]
-                Html.p [
+                let counts =
+                    sprintf " the number of works in the library by its authors: %s dated works in all%s. The first era is drawn from c. 800 BCE, where the library begins."
+                        (dated.ToString("N0"))
+                        (if undated > 0 then sprintf ", and %s by authors of uncertain date, shown apart at the end" (undated.ToString("N0")) else "")
+                Html.figcaption [
                     prop.className "eb-note"
-                    prop.text (
-                        "Width is the length of each era; height, the works in the library by its authors ("
-                        + string total
-                        + " in all"
-                        + (if undated > 0 then ", plus " + string undated + " by authors of uncertain date" else "")
-                        + ")."
-                    )
+                    prop.children [
+                        Html.span [ prop.className "eb-note-cols"; prop.text ("Each column's width is the length of its era in years; its height," + counts) ]
+                        Html.span [ prop.className "eb-note-rows"; prop.text ("Each row's height is the length of its era in years; the bar's length," + counts) ]
+                        if dated + undated <> allWorks then
+                            Html.text (sprintf " (%s works in the library altogether.)" (allWorks.ToString("N0")))
+                    ]
                 ]
             ]
         ]

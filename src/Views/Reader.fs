@@ -8,6 +8,16 @@ open Types
 
 let private PAGE_SIZE = 250
 
+/// The passage a clicked word sits in (its `.seg`'s data-ref), so a saved
+/// word can keep its context.
+[<Emit("(($0.closest && $0.closest('.seg')) ? $0.closest('.seg').getAttribute('data-ref') : null)")>]
+let private segRefAttr (el: obj) : string = jsNative
+
+let private segRefOf (el: obj) : string option =
+    match segRefAttr el with
+    | null -> None
+    | r -> Some r
+
 let private langNames =
     Map.ofList [
         "grc", "Greek"; "eng", "English"; "lat", "Latin"; "ger", "German"; "fre", "French"
@@ -109,7 +119,7 @@ let private tokensWith (dispatch: Msg -> unit) (greek: bool) (initial: bool) (te
                     prop.onClick (fun e ->
                         e.stopPropagation ()
                         let target = e.currentTarget :?> Element
-                        dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ())))))
+                        dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ()), segRefOf target))))
                 ]
             )
         else
@@ -167,7 +177,7 @@ let private scannedTokens (dispatch: Msg -> unit) (ctx: MeterCtx) (line: int) (t
                         prop.onClick (fun e ->
                             e.stopPropagation ()
                             let target = e.currentTarget :?> Element
-                            dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ())))))
+                            dispatch (Reader_(WordClicked(m, box (target.getBoundingClientRect ()), segRefOf target))))
                         prop.children [
                             for (pi, (t, ko)) in List.indexed pieces ->
                                 match ko with
@@ -273,7 +283,7 @@ let private wordKeys (dispatch: Msg -> unit) (e: KeyboardEvent) =
             e.preventDefault ()
             e.stopPropagation ()
             let word = target.getAttribute "data-w"
-            dispatch (Reader_(WordClicked(word, box (target.getBoundingClientRect ()))))
+            dispatch (Reader_(WordClicked(word, box (target.getBoundingClientRect ()), segRefOf target)))
         | _ -> ()
 
 // ---------------------------------------------------------------------------
@@ -329,7 +339,7 @@ let private workHead (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : 
         prop.children [
             Html.h1 [
                 prop.children (
-                    [ Html.text w.Title ]
+                    [ Shared.titleText w.Title ]
                     @ (match rm.Grc.Label with
                        | l when l <> "" && l <> w.Title -> [ Html.span [ prop.className "grc"; prop.text l ] ]
                        | _ -> [])
@@ -491,57 +501,69 @@ let private statusPane (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) 
 // page bar / cover note / column headings
 // ---------------------------------------------------------------------------
 
-/// Long parts are split into pages of PAGE_SIZE passages. A button per page
-/// (each labelled with the passage it starts at) ran to several rows above
-/// the text for a long book; one line (previous, a page picker, next) does
-/// the same job.
-let private pageBar (dispatch: Msg -> unit) (chunk: Chunk) (currentPage: int) : ReactElement option =
-    let npages = int (ceil (float chunk.Segments.Length / float PAGE_SIZE))
-    if npages <= 1 then
-        None
-    else
-        let go (i: int) = dispatch (Reader_(ShowChunk(chunk.Ref, None, Some i)))
-        Some(
-            Html.div [
-                prop.className "pages"
+/// One stepper: previous · a picker · next. Used for the parts of a work
+/// (books, speeches, odes) and for the pages of a long part.
+let private stepper (cls: string) (label: string) (noun: string) (options: (string * string) list) (current: int) (go: int -> unit) : ReactElement =
+    let n = options.Length
+    Html.div [
+        prop.className ("pages " + cls)
+        prop.role "group"
+        prop.ariaLabel label
+        prop.children [
+            Html.span [ prop.className "pg-label"; prop.text label ]
+            Html.button [
+                prop.className "pg-step"
+                prop.ariaLabel ("Previous " + noun)
+                prop.title ("Previous " + noun)
+                prop.disabled (current <= 0)
+                prop.text "‹"
+                prop.onClick (fun _ -> go (current - 1))
+            ]
+            Html.label [
+                prop.className "pg-pick"
                 prop.children [
-                    Html.button [
-                        prop.className "pg-step"
-                        prop.ariaLabel "Previous page"
-                        prop.title "Previous page"
-                        prop.disabled ((currentPage = 0))
-                        prop.text "‹"
-                        prop.onClick (fun _ -> go (currentPage - 1))
-                    ]
-                    Html.label [
-                        prop.className "pg-pick"
-                        prop.children [
-                            Html.span [ prop.text "Page" ]
-                            Html.select [
-                                prop.value (string currentPage)
-                                prop.onChange (fun (v: string) -> go (int v))
-                                prop.children [
-                                    for i in 0 .. npages - 1 ->
-                                        Html.option [
-                                            prop.key (string i)
-                                            prop.value (string i)
-                                            prop.text (sprintf "%d of %d, from %s" (i + 1) npages chunk.Segments.[i * PAGE_SIZE].Ref)
-                                        ]
-                                ]
-                            ]
-                        ]
-                    ]
-                    Html.button [
-                        prop.className "pg-step"
-                        prop.ariaLabel "Next page"
-                        prop.title "Next page"
-                        prop.disabled (currentPage >= npages - 1)
-                        prop.text "›"
-                        prop.onClick (fun _ -> go (currentPage + 1))
+                    Html.select [
+                        prop.ariaLabel label
+                        prop.value (string current)
+                        prop.onChange (fun (v: string) -> go (int v))
+                        prop.children [ for i, (_, text) in List.indexed options -> Html.option [ prop.key (string i); prop.value (string i); prop.text text ] ]
                     ]
                 ]
             ]
-        )
+            Html.button [
+                prop.className "pg-step"
+                prop.ariaLabel ("Next " + noun)
+                prop.title ("Next " + noun)
+                prop.disabled (current >= n - 1)
+                prop.text "›"
+                prop.onClick (fun _ -> go (current + 1))
+            ]
+        ]
+    ]
+
+/// Where you are in the work: which part (a book of the Iliad, a speech), and
+/// for a long part which page of it. Parts were reached from the sidebar
+/// before it was retired; this puts them above the text.
+let private readerNav (rm: ReaderModel) (dispatch: Msg -> unit) (d: AlignedText) (chunk: Chunk) (currentPage: int) : ReactElement option =
+    let unit =
+        match rm.Grc.Refs with
+        | first :: _ :: _ when first <> "" -> first.Substring(0, 1).ToUpperInvariant() + first.Substring 1
+        | _ -> "Part"
+    let parts =
+        if d.Chunks.Length <= 1 then None
+        else
+            let ci = d.Chunks |> List.tryFindIndex (fun c -> c.Ref = chunk.Ref) |> Option.defaultValue 0
+            let options = d.Chunks |> List.mapi (fun i c -> c.Ref, sprintf "%s of %d" c.Ref d.Chunks.Length)
+            Some(stepper "parts" unit (unit.ToLowerInvariant()) options ci (fun i -> dispatch (Reader_(ShowChunk(d.Chunks.[i].Ref, None, None)))))
+    let npages = int (ceil (float chunk.Segments.Length / float PAGE_SIZE))
+    let pages =
+        if npages <= 1 then None
+        else
+            let options = [ for i in 0 .. npages - 1 -> string i, sprintf "%d of %d, from %s" (i + 1) npages chunk.Segments.[i * PAGE_SIZE].Ref ]
+            Some(stepper "pages-of-part" "Page" "page" options currentPage (fun i -> dispatch (Reader_(ShowChunk(chunk.Ref, None, Some i)))))
+    match parts, pages with
+    | None, None -> None
+    | a, b -> Some(Html.div [ prop.className "reader-nav"; prop.children (Option.toList a @ Option.toList b) ])
 
 let private coverNote (coverage: Coverage option) : ReactElement option =
     match coverage with
@@ -704,7 +726,10 @@ let private markEditor (model: Model) (dispatch: Msg -> unit) (workId: string) (
                 prop.placeholder "Write a note about this passage."
                 prop.defaultValue note
                 prop.onChange (fun (v: string) -> dispatch (Library_(SetMarkNote(workId, segRef, v))))
+                // Saved as you type; Enter closes the editor like "Done".
+                Shared.onEnterSave (fun () -> dispatch (Library_ CloseMarkEditor))
             ]
+            Shared.enterHint "to finish"
             Html.div [
                 prop.className "mk-linked"
                 prop.children [
@@ -795,6 +820,12 @@ let private markEditor (model: Model) (dispatch: Msg -> unit) (workId: string) (
                     Html.button [ prop.className "btn primary mk-save"; prop.text "Done"; prop.onClick (fun _ -> dispatch (Library_ CloseMarkEditor)) ]
                     Html.text " "
                     Html.button [ prop.className "btn danger mk-del"; prop.text "Remove bookmark"; prop.onClick (fun _ -> dispatch (Library_(RemoveMark(workId, segRef)))) ]
+                    Html.button [
+                        prop.className "btn mk-discuss"
+                        prop.title "Start a thread about this passage in the forum"
+                        prop.onClick (fun _ -> dispatch (Forum_(StartThread("passages", workId, segRef))))
+                        prop.children [ Shared.icon "forum"; Html.text " Discuss" ]
+                    ]
                 ]
             ]
         ]
@@ -826,7 +857,20 @@ let private segmentView (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit)
             Html.div [
                 prop.className "ref"
                 prop.children [
-                    Html.b [ prop.text (segLabel seg) ]
+                    // The number copies the citation too: the URN beside it
+                    // only shows on hover, which phones do not have.
+                    Html.b [
+                        prop.role "button"
+                        prop.tabIndex 0
+                        prop.title ("Copy the citation: " + urnText)
+                        prop.text (segLabel seg)
+                        prop.onClick (fun _ -> dispatch (Reader_(CopyUrn urnText)))
+                        prop.onKeyDown (fun e ->
+                            if e.key = "Enter" || e.key = " " then
+                                e.preventDefault ()
+                                e.stopPropagation ()
+                                dispatch (Reader_(CopyUrn urnText)))
+                    ]
                     Html.span [
                         prop.className "urn"
                         prop.title "Copy CTS URN"
@@ -1032,11 +1076,51 @@ let private chunkShape (rm: ReaderModel) : string =
         if sample.Length > 0 && verseCount * 2 > sample.Length then "verse" else "prose"
     | _ -> "prose"
 
+/// The width, in ems of the Greek face, of this text's longest verse lines,
+/// estimated from their length in characters (Gentium averages 0.43em a
+/// letter). The stylesheet shrinks verse to fit that width in the column,
+/// so a hexameter stays on one line on a phone instead of wrapping. The
+/// 99.8th percentile ignores a stray over-long line (an editor's note run
+/// into the verse), which may still wrap. Worked out once per text: the
+/// whole work is thousands of lines.
+let private verseWidths = System.Collections.Generic.Dictionary<string, float>()
+
+let private markerRx = System.Text.RegularExpressions.Regex("⟦[^⟧]*⟧")
+
+let private verseEm (rm: ReaderModel) (d: AlignedText) : float =
+    let key = rm.Grc.Urn + "|" + string d.Segments.Length
+    match verseWidths.TryGetValue key with
+    | true, v -> v
+    | _ ->
+        let lengths =
+            [| for s in d.Segments do
+                   for b in s.Grc do
+                       match b with
+                       | Verse(_, lines) ->
+                           for (_, t) in lines do
+                               let n = markerRx.Replace(t, "").Trim().Length
+                               if n > 0 then yield n
+                       | _ -> () |]
+            |> Array.sort
+        let at (q: float) = float lengths.[min (lengths.Length - 1) (int (float lengths.Length * q))]
+        // In a single metre (Homer, Hesiod) nearly every line is close to the
+        // longest, so fit them all. Where long lines are a different metre
+        // (lyric in tragedy, tetrameters in comedy), fitting them would shrink
+        // the whole play for them; they wrap instead.
+        let v = if lengths.Length = 0 then 0.0 else min (at 0.998) (at 0.95 * 1.12) * 0.43
+        verseWidths.[key] <- v
+        v
+
 let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactElement =
     let shape = chunkShape rm
+    let fit =
+        match rm.Phase, rm.Data with
+        | Ready, Some d -> verseEm rm d
+        | _ -> 0.0
     Html.div [
         prop.className ("reader" + (if rm.Lens.IsSome then " with-lens" else "") + (if rm.MeterOn && shape = "verse" then " meter-on" else ""))
         prop.custom ("data-shape", shape)
+        if fit > 0.0 then prop.style [ style.custom ("--verse-em", sprintf "%.2f" fit) ]
         prop.children (
             [ workHead model rm dispatch ]
             @ (statusPane model rm dispatch |> Option.toList)
@@ -1045,7 +1129,7 @@ let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactEleme
                    let chunk = d.Chunks |> List.tryFind (fun c -> Some c.Ref = rm.Chunk) |> Option.defaultValue d.Chunks.Head
                    let page = rm.Page
                    let pageSegs = chunk.Segments |> Array.skip (page * PAGE_SIZE) |> Array.truncate PAGE_SIZE
-                   (pageBar dispatch chunk page |> Option.toList)
+                   (readerNav rm dispatch d chunk page |> Option.toList)
                    @ (coverNote d.Coverage |> Option.toList)
                    @ [ lensBar rm (shape = "verse") dispatch ]
                    @ [ columnHead rm ]

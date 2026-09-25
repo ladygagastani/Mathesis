@@ -7,6 +7,9 @@ open Browser.Types
 open Elmish
 open Types
 
+[<Emit("!!document.querySelector('.rv-card')")>]
+let private hasReviewCard () : bool = jsNative
+
 [<Emit("document.getElementById($0)?.classList.contains($1)")>]
 let private hasClass (id: string) (cls: string) : bool = jsNative
 
@@ -17,21 +20,6 @@ let private isFormTarget (target: obj) : bool = jsNative
 
 [<Emit("$0 && $0.closest && $0.closest($1)")>]
 let private closest (target: obj) (selector: string) : obj = jsNative
-
-[<Emit("matchMedia('(max-width: 900px)').matches")>]
-let private isPhoneWidth () : bool = jsNative
-
-[<Emit("$0.touches.length")>]
-let private touchCount (e: obj) : int = jsNative
-
-[<Emit("$0.touches[0].clientX")>]
-let private touchX (e: obj) : float = jsNative
-
-[<Emit("$0.touches[0].clientY")>]
-let private touchY (e: obj) : float = jsNative
-
-[<Emit("document.addEventListener($0, $1, { passive: true })")>]
-let private addPassiveDocListener (eventType: string) (handler: Event -> unit) : unit = jsNative
 
 /// Passive, so following the scroll never blocks it.
 [<Emit("window.addEventListener($0, $1, { passive: true })")>]
@@ -57,7 +45,7 @@ let private historySub: Sub<Msg> =
                   window.removeEventListener ("hashchange", handler)
                   window.removeEventListener ("popstate", handler) } ]
 
-/// Escape closes the popover/settings/sidebar unconditionally; the arrow keys,
+/// Escape closes the popover/settings/search unconditionally; the arrow keys,
 /// `/` (focus the library search) and `\` (collapse/restore the library) are
 /// ignored while typing in an input, select or text box.
 let private keydownSub: Sub<Msg> =
@@ -77,15 +65,17 @@ let private keydownSub: Sub<Msg> =
                   | "/" when not isForm ->
                       ke.preventDefault ()
                       dispatch (KeyPressed("/", false))
-                  | "\\" when not isForm ->
+                  // flashcards: Space/Enter shows the answer, 1 = again, 2 = got it
+                  // (not when a button or link has focus: that would act twice)
+                  | " " | "Enter" | "1" | "2" when not isForm && hasReviewCard () && isNull (closest ke.target "button, a") ->
                       ke.preventDefault ()
-                      dispatch (KeyPressed("\\", false))
+                      dispatch (KeyPressed(ke.key, false))
                   | _ -> ()
           document.addEventListener ("keydown", handler)
           { new System.IDisposable with
               member _.Dispose() = document.removeEventListener ("keydown", handler) } ]
 
-/// Closes the settings pane / sidebar / popover on an outside click (mirrors
+/// Closes the settings pane / search / popover on an outside click (mirrors
 /// the original's three independent `closest` checks); reads the live DOM
 /// class rather than the Model so the subscription's shape never depends on
 /// state (Elmish would otherwise treat a changing SubId as start/stop churn).
@@ -108,38 +98,16 @@ let private outsideClickSub: Sub<Msg> =
                      && isNullOrUndefined (closest target "#srcChip")
                      && hasClass "srcMenu" "show" then
                       dispatch (Source_ ToggleSourceMenu)
-                  if isNullOrUndefined (closest target "#side") && isNullOrUndefined (closest target "#navToggle") && hasClass "side" "open" then
-                      dispatch (ToggleSide false)
+                  // the search dropdown (the phone tab that opens it is its toggle)
+                  if isNullOrUndefined (closest target ".hsearch")
+                     && isNullOrUndefined (closest target ".tab-search")
+                     && not (isNullOrUndefined (document.querySelector ".hsearch.open")) then
+                      dispatch (Search_ CloseSearch)
                   if isNullOrUndefined (closest target "#pop") && isNullOrUndefined (closest target ".w") then
                       dispatch ClosePopover
           document.addEventListener ("click", handler)
           { new System.IDisposable with
               member _.Dispose() = document.removeEventListener ("click", handler) } ]
-
-/// Phone-only swipe-open/close gesture for the library drawer (mirrors the
-/// original's touch handlers), simplified to a start/end threshold decision
-/// rather than a live pixel-tracking transform — see the `DrawerTouch` case
-/// in State.fs for why.
-let private touchSub: Sub<Msg> =
-    [ [ "touch" ],
-      fun dispatch ->
-          let touchStart =
-              fun (e: Event) ->
-                  if isPhoneWidth () && touchCount e = 1 then
-                      dispatch (DrawerTouch("start", touchX e, touchY e))
-          let touchMove =
-              fun (e: Event) ->
-                  if touchCount e > 0 then
-                      dispatch (DrawerTouch("move", touchX e, touchY e))
-          let touchEnd = fun (_: Event) -> dispatch (DrawerTouch("end", 0.0, 0.0))
-          addPassiveDocListener "touchstart" touchStart
-          addPassiveDocListener "touchmove" touchMove
-          document.addEventListener ("touchend", touchEnd)
-          { new System.IDisposable with
-              member _.Dispose() =
-                  document.removeEventListener ("touchstart", touchStart)
-                  document.removeEventListener ("touchmove", touchMove)
-                  document.removeEventListener ("touchend", touchEnd) } ]
 
 /// Which passage sits just under the sticky column heading. `elementFromPoint`
 /// keeps this O(1) — walking 250 segments' bounding boxes on every scroll frame
@@ -209,11 +177,21 @@ let private scrollSub: Sub<Msg> =
                   window.removeEventListener ("scroll", handler)
                   window.removeEventListener ("resize", onResize) } ]
 
+/// Coming back to the tab syncs the library, so what you saved on another
+/// device appears (ignored when not signed in).
+let private focusSub: Sub<Msg> =
+    [ [ "focus" ],
+      fun dispatch ->
+          let onVisible = fun (_: Event) -> if document?visibilityState = "visible" then dispatch (Account_ SyncSoon)
+          document.addEventListener ("visibilitychange", onVisible)
+          { new System.IDisposable with
+              member _.Dispose() = document.removeEventListener ("visibilitychange", onVisible) } ]
+
 /// The subscription set only depends on whether the app has finished booting
 /// (a one-time transition), never on ordinary Model content, so Elmish's
 /// SubId diffing starts these once and never tears them down/restarts them
 /// on later re-renders.
 let subscribe (model: Model) : Sub<Msg> =
     match model.Boot with
-    | Booted -> Sub.batch [ historySub; keydownSub; outsideClickSub; touchSub; scrollSub ]
+    | Booted -> Sub.batch [ historySub; keydownSub; outsideClickSub; scrollSub; focusSub ]
     | _ -> Sub.none

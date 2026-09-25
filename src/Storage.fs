@@ -148,16 +148,6 @@ let saveTheme (v: ThemePref) = setJson "theme" encodeThemePref v
 let loadFilter () : WorksFilter = getJson "filter" decodeWorksFilter FilterAll
 let saveFilter (v: WorksFilter) = setJson "filter" encodeWorksFilter v
 
-let loadNavHidden () : bool = getJson "navHidden" Decode.bool false
-let saveNavHidden (v: bool) = setJson "navHidden" Encode.bool v
-
-/// The reader keeps its own sidebar state, defaulting to collapsed: an 18rem
-/// tree of 1,800 works beside a poem is a distraction, and reading is the one
-/// place where the chrome should get out of the way. Once the reader opens it
-/// there, that choice sticks and this returns false from then on.
-let loadNavHiddenReader () : bool = getJson "navHiddenReader" Decode.bool true
-let saveNavHiddenReader (v: bool) = setJson "navHiddenReader" Encode.bool v
-
 let loadSourceMode () : SourceMode = getJson "src" decodeSourceMode SourceGitHub
 let saveSourceMode (v: SourceMode) = setJson "src" encodeSourceMode v
 
@@ -213,6 +203,30 @@ let loadMeterOn () : bool = getJson "meter" Decode.bool false
 let saveMeterOn (v: bool) = setJson "meter" Encode.bool v
 
 // ---------------------------------------------------------------------------
+// Learn progress
+// ---------------------------------------------------------------------------
+
+let learnDefault: LearnProgress = { Onboarded = false; Pace = 1; Step = 0; AlphaDone = false }
+
+let loadLearn () : LearnProgress =
+    let decoder =
+        Decode.object (fun get ->
+            { Onboarded = get.Optional.Field "onboarded" Decode.bool |> Option.defaultValue false
+              Pace = get.Optional.Field "pace" Decode.int |> Option.defaultValue 1 |> max 0 |> min 2
+              Step = get.Optional.Field "step" Decode.int |> Option.defaultValue 0 |> max 0 |> min 6
+              AlphaDone = get.Optional.Field "alpha" Decode.bool |> Option.defaultValue false })
+    getJson "learn" decoder learnDefault
+
+let saveLearn (p: LearnProgress) =
+    setJson "learn" (fun (p: LearnProgress) ->
+        Encode.object [
+            "onboarded", Encode.bool p.Onboarded
+            "pace", Encode.int p.Pace
+            "step", Encode.int p.Step
+            "alpha", Encode.bool p.AlphaDone
+        ]) p
+
+// ---------------------------------------------------------------------------
 // library (favourites, bookmarks/marks, per-author notes)
 // ---------------------------------------------------------------------------
 
@@ -252,23 +266,94 @@ let private decodeMark : Decoder<Mark> =
           Links = get.Optional.Field "links" (Decode.list decodeMarkLink) |> Option.defaultValue []
           Ts = get.Required.Field "ts" Decode.float })
 
-let private encodeLibrary (lib: Library) =
+let private encodeWord (w: WordCard) =
+    Encode.object [
+        "id", Encode.string w.Id
+        "word", Encode.string w.Word
+        "lemma", Encode.string w.Lemma
+        "gloss", Encode.string w.Gloss
+        "work", Encode.string w.Work
+        "ref", Encode.string w.Ref
+        "ctx", Encode.string w.Context
+        "ts", Encode.float w.Ts
+        "box", Encode.int w.Box
+        "due", Encode.float w.Due
+    ]
+
+let private decodeWord : Decoder<WordCard> =
+    Decode.object (fun get ->
+        ({ Id = get.Required.Field "id" Decode.string
+           Word = get.Required.Field "word" Decode.string
+           Lemma = get.Optional.Field "lemma" Decode.string |> Option.defaultValue ""
+           Gloss = get.Optional.Field "gloss" Decode.string |> Option.defaultValue ""
+           Work = get.Optional.Field "work" Decode.string |> Option.defaultValue ""
+           Ref = get.Optional.Field "ref" Decode.string |> Option.defaultValue ""
+           Context = get.Optional.Field "ctx" Decode.string |> Option.defaultValue ""
+           Ts = get.Optional.Field "ts" Decode.float |> Option.defaultValue 0.0
+           Box = get.Optional.Field "box" Decode.int |> Option.defaultValue 0
+           Due = get.Optional.Field "due" Decode.float |> Option.defaultValue 0.0 }
+        : WordCard))
+
+let private encodePlace (p: SavedPlace) =
+    Encode.object [
+        "qid", Encode.string p.Qid
+        "label", Encode.string p.Label
+        "pleiades", Encode.string p.Pleiades
+        "lat", Encode.float p.Lat
+        "lon", Encode.float p.Lon
+        "seen", p.Seen |> List.map (fun (w, r) -> Encode.list [ Encode.string w; Encode.string r ]) |> Encode.list
+        "note", Encode.string p.Note
+        "ts", Encode.float p.Ts
+    ]
+
+let private decodeSeen : Decoder<string * string> =
+    Decode.list Decode.string
+    |> Decode.andThen (function
+        | [ w; r ] -> Decode.succeed (w, r)
+        | _ -> Decode.fail "expected [work, ref]")
+
+let private decodePlace : Decoder<SavedPlace> =
+    Decode.object (fun get ->
+        { Qid = get.Required.Field "qid" Decode.string
+          Label = get.Optional.Field "label" Decode.string |> Option.defaultValue ""
+          Pleiades = get.Optional.Field "pleiades" Decode.string |> Option.defaultValue ""
+          Lat = get.Required.Field "lat" Decode.float
+          Lon = get.Required.Field "lon" Decode.float
+          Seen = get.Optional.Field "seen" (Decode.list decodeSeen) |> Option.defaultValue []
+          Note = get.Optional.Field "note" Decode.string |> Option.defaultValue ""
+          Ts = get.Optional.Field "ts" Decode.float |> Option.defaultValue 0.0 })
+
+/// The one JSON shape of a library: in localStorage, in exports, and on the
+/// sync server. Fields added later are optional when read, so older saves load.
+let encodeLibrary (lib: Library) =
     Encode.object [
         "favs", Encode.list (List.map Encode.string lib.Favs)
         "marks", Encode.list (List.map encodeMark lib.Marks)
         "anotes", lib.AuthorNotes |> Map.toList |> List.map (fun (k, v) -> k, Encode.string v) |> Encode.object
+        "words", Encode.list (List.map encodeWord lib.Words)
+        "places", Encode.list (List.map encodePlace lib.Places)
+        "stamps", lib.Stamps |> Map.toList |> List.map (fun (k, v) -> k, Encode.float v) |> Encode.object
     ]
 
-let private decodeLibrary : Decoder<Library> =
+let decodeLibrary : Decoder<Library> =
     Decode.object (fun get ->
         { Favs = get.Optional.Field "favs" (Decode.list Decode.string) |> Option.defaultValue []
           Marks = get.Optional.Field "marks" (Decode.list decodeMark) |> Option.defaultValue []
           AuthorNotes =
             get.Optional.Field "anotes" (Decode.keyValuePairs Decode.string)
             |> Option.map Map.ofList
+            |> Option.defaultValue Map.empty
+          Words = get.Optional.Field "words" (Decode.list decodeWord) |> Option.defaultValue []
+          Places = get.Optional.Field "places" (Decode.list decodePlace) |> Option.defaultValue []
+          Stamps =
+            get.Optional.Field "stamps" (Decode.keyValuePairs Decode.float)
+            |> Option.map Map.ofList
             |> Option.defaultValue Map.empty })
 
-let defaultLibrary : Library = { Favs = []; Marks = []; AuthorNotes = Map.empty }
+let libraryToJson (lib: Library) : string = Encode.toString 0 (encodeLibrary lib)
+
+let defaultLibrary : Library =
+    { Favs = []; Marks = []; AuthorNotes = Map.empty; Words = []; Places = []; Stamps = Map.empty }
 
 let loadLibrary () : Library = getJson "lib" decodeLibrary defaultLibrary
 let saveLibrary (v: Library) = setJson "lib" encodeLibrary v
@@ -341,3 +426,40 @@ new Promise((resolve, reject) => {
 })
 """)>]
 let idbDelete (key: string) : JS.Promise<unit> = jsNative
+
+// ---------------------------------------------------------------------------
+// account session (see Account.fs). Kept in localStorage so a reload stays
+// signed in; the refresh token renews the short-lived access token.
+// ---------------------------------------------------------------------------
+
+let private encodeSession (s: Session) =
+    Encode.object [
+        "access", Encode.string s.AccessToken
+        "refresh", Encode.string s.RefreshToken
+        "exp", Encode.float s.ExpiresAt
+        "uid", Encode.string s.UserId
+        "email", Encode.string s.Email
+    ]
+
+let private decodeSession : Decoder<Session> =
+    Decode.object (fun get ->
+        { AccessToken = get.Required.Field "access" Decode.string
+          RefreshToken = get.Required.Field "refresh" Decode.string
+          ExpiresAt = get.Required.Field "exp" Decode.float
+          UserId = get.Required.Field "uid" Decode.string
+          Email = get.Optional.Field "email" Decode.string |> Option.defaultValue "" })
+
+/// Whose library this browser holds: the account it last synced with. A
+/// different account signing in replaces it rather than merging into it.
+let loadLibOwner () : string = getJson "libOwner" Decode.string ""
+let saveLibOwner (uid: string) = setJson "libOwner" Encode.string uid
+
+let loadSession () : Session option = getJson "session" (Decode.option decodeSession) None
+let saveSession (s: Session option) =
+    match s with
+    | Some v -> setJson "session" encodeSession v
+    | None -> (try localStorage.removeItem (prefixed "session") with _ -> ())
+
+/// Searches a result was chosen for, newest first (the search box's "Recent").
+let loadSearches () : string list = getJson "searches" (Decode.list Decode.string) []
+let saveSearches (v: string list) = setJson "searches" (fun (xs: string list) -> Encode.list (List.map Encode.string xs)) v

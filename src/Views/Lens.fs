@@ -438,10 +438,22 @@ let private map (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : React
                       prop.children [
                           for h in hits ->
                               let isHere = match here with Some r -> List.contains r h.Refs | None -> false
+                              let saved = LibraryData.placeFor model.Library h.Qid
+                              let savedHere =
+                                  saved |> Option.exists (fun p -> h.Refs |> List.forall (fun r -> List.contains (rm.Work.Id, r) p.Seen))
                               Html.li [
                                   prop.key h.Pleiades
                                   prop.className (if isHere then "here" else "")
                                   prop.children [
+                                      Html.button [
+                                          prop.className ("ln-save" + (if savedHere then " on" else ""))
+                                          prop.title (if savedHere then "Saved in My library › Places" else "Save this place, with these passages, to My library")
+                                          prop.ariaLabel ((if savedHere then "Saved: " else "Save ") + h.Label)
+                                          prop.custom ("aria-pressed", savedHere)
+                                          prop.disabled savedHere
+                                          prop.onClick (fun _ -> dispatch (Library_(SavePlace h)))
+                                          prop.children [ Shared.icon "place"; Html.span [ prop.text (if savedHere then "Saved" else "Save") ] ]
+                                      ]
                                       Html.b [ prop.text h.Label ]
                                       if h.Label <> h.Name then Html.span [ prop.className "ln-quiet"; prop.text (" “" + h.Name + "”") ]
                                       Html.div [
@@ -636,5 +648,17 @@ let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactEleme
                         | _ -> [ quiet "Choose a passage with its ◇ button to study it here." ]
                     )
                 ]
+                // Study turns into conversation: take the passage to the forum.
+                if segRef <> "" && lens.Kind <> LensMap && lens.Kind <> LensWords then
+                    Html.div [
+                        prop.className "ln-foot"
+                        prop.children [
+                            Html.button [
+                                prop.className "btn small"
+                                prop.onClick (fun _ -> dispatch (Forum_(StartThread("passages", rm.Work.Id, segRef))))
+                                prop.children [ Shared.icon "forum"; Html.text (" Discuss " + segRef + " in the forum") ]
+                            ]
+                        ]
+                    ]
             ]
         ]

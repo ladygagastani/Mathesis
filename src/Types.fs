@@ -145,6 +145,32 @@ type TextOrigin =
     | OriginGitHub
     | OriginUrl of baseUrl: string
 
+/// A word saved from the reader for review (My library › Words). Declared
+/// before `Mark` so that Mark keeps the field names `Id`/`Work`/`Ref` for
+/// type inference; construct these with a type annotation.
+type WordCard =
+    { Id      : string
+      Word    : string              // the form as met in the text (NFC)
+      Lemma   : string              // dictionary form, filled in by the reader ("" until then)
+      Gloss   : string              // meaning, filled in by the reader
+      Work    : string
+      Ref     : string
+      Context : string              // the Greek around it, for the front of the card
+      Ts      : float               // when it was saved
+      Box     : int                 // Leitner box: 0 new, 1..5 learned more and more
+      Due     : float }             // next review (ms since epoch)
+
+/// A place saved from the Map lens (My library › Places).
+type SavedPlace =
+    { Qid      : string
+      Label    : string
+      Pleiades : string
+      Lat      : float
+      Lon      : float
+      Seen     : (string * string) list    // (workId, passage ref) where you met it
+      Note     : string
+      Ts       : float }
+
 type MarkLink = { Work: string; Ref: string; Label: string option }
 
 type Mark =
@@ -155,7 +181,13 @@ type Mark =
 type Library =
     { Favs        : string list
       Marks       : Mark list
-      AuthorNotes : Map<string, string> }
+      AuthorNotes : Map<string, string>
+      Words       : WordCard list
+      Places      : SavedPlace list
+      /// When each item last changed, deletions included, keyed "fav:<work>",
+      /// "mark:<work>|<ref>", "anote:<author>", "word:<id>", "place:<qid>".
+      /// Syncing merges two libraries key by key: the later change wins.
+      Stamps      : Map<string, float> }
 
 type RecentEntry = { Id: string; Chunk: string option; Ts: float }
 
@@ -168,18 +200,47 @@ type WikiRoute =
     | WikiEras    of string option
     | WikiArticles of ArticleKind
     | WikiEditions
-    /// The "Start here" guide: None = its contents page, Some slug = one page
-    | WikiGuide of slug: string option
+
+/// Tabs of My library (`#lib/<tab>`).
+type LibTab = LibMarks | LibWords | LibPlaces | LibFavs | LibNotes
+
+type ForumRoute =
+    | ForumHome
+    | ForumBoard  of category: string
+    | ForumThread of id: string
+    | ForumNew    of category: string
+
+/// The Learn section's pages (`#learn/…`). Leaves *within* a lesson are not
+/// pages: they live on `LearnModel`, so the browser's back button leaves the
+/// lesson instead of un-turning one leaf at a time.
+type LearnPage =
+    | LearnWelcome          // #learn/welcome   first visit only
+    | LearnPreface          // #learn/preface   choose a pace
+    | LearnContents         // #learn
+    | LearnLetters          // #learn/letters   the alphabet at a glance, with sound
+    | LearnAlphabet         // #learn/alphabet  Book I, Lesson 1 (5 leaves)
+    | LearnLesson           // #learn/declension  Book II, Lesson 3 (6 leaves)
+    | LearnDone             // #learn/declension/done
+    | LearnSounds           // #learn/sounds    pitch accent
+    | LearnIliad            // #learn/iliad     Iliad 1.1–5 with glosses
+    | LearnMyth             // #learn/myth      Odysseus and the Cyclops (3 leaves)
 
 type Route =
     | Landing
+    /// The catalogue ("Library" in the top bar), `#library`
     | Browse
-    | LibraryRoute
+    | LibraryRoute of LibTab
+    | ForumRoute   of ForumRoute
+    | AccountRoute
     | AboutRoute
     | AuthorRoute of id: string * section: string option
     | WikiRoute   of WikiRoute
+    /// The "Start here" guide, which hangs off the home page: None = its
+    /// contents page, Some slug = one page
+    | GuideRoute  of slug: string option
     | ReaderRoute of workId: string * grcSuffix: string * engSuffix: string
                      * chunk: string option * seg: string option
+    | LearnRoute  of LearnPage
 
 // ---------------------------------------------------------------------------
 // 3.4 Reader state & async wrappers
@@ -271,6 +332,210 @@ type ReaderModel =
       Manifest  : ManifestState }
 
 // ---------------------------------------------------------------------------
+// The catalogue page, word review, accounts and the forum
+// ---------------------------------------------------------------------------
+
+type ShelfSort = ByAuthor | ByTitle | ByDate
+
+/// The Library (catalogue) page's own controls. The search box is
+/// `BrowseQuery`, the genre chip `Genre`, and the translation filter `Filter`,
+/// all shared with the sidebar.
+type ShelfState =
+    { Sort   : ShelfSort
+      Letter : string option        // "A".."Z", or None for every letter
+      Era    : string option }      // a Meta era id, or "undated"
+
+/// A review of the saved words that are due, one card at a time.
+type ReviewState =
+    { Queue    : string list        // word ids still to see, the current one first
+      Revealed : bool
+      Seen     : int
+      Right    : int              // known at the first try
+      Missed   : string list }    // missed this session: a later "got it" starts again at box 1
+
+/// A signed-in session with the sync/forum server (see Account.fs).
+type Session =
+    { AccessToken  : string
+      RefreshToken : string
+      ExpiresAt    : float          // ms since epoch
+      UserId       : string
+      Email        : string }
+
+type SignInStage =
+    | EnterEmail
+    | CodeSent of email: string
+    | Verifying
+
+type SyncStatus =
+    | SyncOff
+    | Syncing
+    | Synced of at: float
+    | SyncError of string
+
+type AccountState =
+    /// False when the site was built without a server address: accounts and
+    /// the forum then explain themselves instead of failing.
+    { Configured  : bool
+      Session     : Session option
+      DisplayName : string          // as saved on the server
+      IsAdmin     : bool
+      Stage       : SignInStage
+      EmailInput  : string
+      CodeInput   : string
+      NameInput   : string
+      Busy        : bool
+      Error       : string option
+      Sync        : SyncStatus
+      SyncToken   : int }           // debounces pushes: only the newest timer syncs
+
+type Remote<'T> =
+    | NotAsked
+    | InFlight
+    | Loaded of 'T
+    | Failed of string
+
+type ForumThread =
+    { Id         : string
+      Category   : string
+      Title      : string
+      Body       : string
+      AuthorId   : string
+      AuthorName : string
+      Work       : string           // "" unless it is about a passage
+      Ref        : string
+      Status     : string           // bug reports: "open" | "confirmed" | "fixed" | "wontfix"; "" otherwise
+      Created    : float
+      LastPost   : float
+      Replies    : int }
+
+type ForumPost =
+    { Id         : string
+      ThreadId   : string
+      Body       : string
+      AuthorId   : string
+      AuthorName : string
+      Created    : float }
+
+/// The new-thread form. Bug reports use the three `Bug*` fields in place of a body.
+type ForumDraft =
+    { Category    : string
+      Title       : string
+      Body        : string
+      Work        : string
+      Ref         : string
+      BugWhat     : string
+      BugSteps    : string
+      BugExpected : string
+      FromHash    : string }        // the page the reader came from, sent with a bug report
+
+type ForumState =
+    { Board   : Remote<ForumThread list>
+      BoardOf : string              // the category the list is for ("" = latest across all)
+      Thread  : Remote<ForumThread * ForumPost list>
+      Draft   : ForumDraft
+      Reply   : string
+      Posting : bool }
+
+/// The header search. `Scope` narrows the results: "all", "texts",
+/// "authors", "mine" (My library) or "guide" (the guide and the wiki).
+type SearchState =
+    { Query  : string
+      Open   : bool
+      Active : int                  // the highlighted result, for the arrow keys
+      Scope  : string
+      Recent : string list }        // searches you chose a result for, newest first
+// Learn — the beginner's lessons (#learn), ported from the "Arche" design
+// ---------------------------------------------------------------------------
+
+/// What survives a reload (`anag:learn`). Everything else on `LearnModel` is
+/// the state of an exercise in progress and starts fresh each visit.
+type LearnProgress =
+    { Onboarded : bool
+      Pace      : int              // 0 a line, 1 a page, 2 a book (per day)
+      Step      : int              // Book II lesson leaf, 0..5; 6 = finished
+      AlphaDone : bool }           // Book I, Lesson 1 read to the end
+
+type LearnModel =
+    { Progress : LearnProgress
+      // Book II, Lesson 3 — the first declension
+      Queue    : int list          // flashcards still to show; "Again" re-queues one
+      QueuePos : int
+      Flipped  : bool
+      MatchG   : int option        // selected Greek word in the match grid
+      MatchE   : int option        // ... and English meaning
+      Matched  : Set<int>          // Greek indices paired off
+      MatchWrong : (int * int) option
+      WrongSeq : int               // guards the timer that clears MatchWrong
+      Mc       : int option        // multiple-choice pick
+      Line     : string list       // tile ids on the composing line, in order
+      Built    : bool option       // result of "Check the line"
+      Cells    : Map<string, string>   // paradigm slot ("gs", "dp"…) → chosen ending
+      Active   : string option     // the slot the next ending goes into
+      TableChecked : bool
+      // Letters, Iliad, myth
+      Letter   : int
+      Gloss    : (int * int) option    // (line, word) in the Iliad passage
+      ShowTrans: bool
+      MythLeaf : int
+      MythPick : int option
+      // Book I, Lesson 1 — the alphabet
+      AStep    : int
+      WriteIdx : int
+      Written  : bool
+      FfIdx    : int
+      FfPick   : int option
+      DcWord   : int
+      DcShown  : int list
+      NameShown: bool
+      // Sounds
+      Playing  : (int * int) option    // (accent example, syllable) sounding now
+      PlayToken: int
+      ExWord   : int
+      ExPick   : int option
+      ExPlayed : bool }
+
+type LearnMsg =
+    | SetPace of int
+    | FinishOnboarding of hash: string
+    | StartLesson
+    | LeafTo of int
+    | Flip
+    | NextCard of again: bool
+    | TapMatch of greek: bool * index: int
+    | ClearMatchWrong of seq_: int
+    | PickMc of int
+    | TapTile of id: string * fromBank: bool
+    | MoveTile of id: string * toLine: bool * index: int
+    | CheckLine
+    | TapCell of slot: string
+    | TapChip of ending: string
+    | CheckTable
+    | FinishLesson
+    | PickLetter of int
+    | Listen
+    | PickGloss of line: int * word: int
+    | ToggleTrans
+    | MythTo of int
+    | PickMyth of int
+    | AlphaTo of int
+    | PickWriteLetter of int
+    | Inked
+    | ClearInk
+    | WatchLetter
+    | PickFf of int
+    | NextFf
+    | ShowDcLetter of int
+    | NextDcWord
+    | ShowName
+    | ToBookTwo
+    | PlayAccent of int
+    | Playhead of token: int * at: (int * int) option
+    | PlayExercise
+    | PickExercise of int
+    | AnotherSound
+    | SetExercise of int
+
+// ---------------------------------------------------------------------------
 // 3.5 Boot + shell + Model
 // ---------------------------------------------------------------------------
 
@@ -279,7 +544,8 @@ type BootState =
     | BootFailed of string
     | Booted
 
-type PopoverKind = WordPopover of word: string * anchorRect: {| left: float; top: float; bottom: float |}
+/// `seg` is the passage the word was clicked in, so it can be saved with its context.
+type PopoverKind = WordPopover of word: string * anchorRect: {| left: float; top: float; bottom: float |} * seg: string option
 
 /// Something the reader can drag around. `X`/`Y` are viewport coordinates of
 /// its top-left corner; `None` means it hasn't been moved and still sits where
@@ -309,36 +575,34 @@ type Model =
       Library  : Library
       Source   : SourceState
       Reader   : ReaderModel option
+      Learn    : LearnModel
 
       // shell / chrome
-      // The desktop sidebar remembers two states, not one: reading is a focus
-      // mode, so the reader collapses it by default, while the browsing pages
-      // keep it open. Toggling on a reader route updates only NavHiddenReader.
-      // Use `Router.navHiddenOn` to pick the one that applies to a route.
-      NavHidden       : bool              // desktop sidebar collapsed, browsing pages
-      NavHiddenReader : bool              // ... and on a reader route
-      SideOpen     : bool                 // phone drawer open
       SettingsOpen : bool
       SourceMenuOpen : bool               // the header chip's own text-source menu
       Notes        : NotesPanel           // draggable notes panel, shown while reading
       EditingNote  : string option        // mark id whose note is open for editing in the panel / My library
       Popover      : PopoverKind option
       Toast        : (int * string) option    // (id, message) — id lets Cmd cancel
-      JumpInput    : string
 
-      // sidebar
-      NavQuery     : string
-      OpenAuthors  : Set<string>          // expanded when no query
-      ClosedAuthors: Set<string>          // collapsed while a query is active ("!"+id in JS)
-      PartsOpen    : bool
-      /// Genre chip (a `WikiData` genre id, or "other"), shared by the sidebar
-      /// catalogue and My library. Session-only: deliberately not persisted.
+      // search (the header box)
+      Search       : SearchState
+      /// Genre chip (a `WikiData` genre id, or "other"), shared by the Library
+      /// page and My library. Session-only: deliberately not persisted.
       Genre        : string option
 
       // search boxes
-      HomeQuery    : string
       BrowseQuery  : string
       WikiQuery    : string
+      Shelf        : ShelfState
+      /// My library › Bookmarks: sort order ("recent" | "work" | "oldest"),
+      /// a #tag filter, and a search box over labels, snippets and notes
+      MarkSort     : string
+      MarkTag      : string option
+      MarkQuery    : string
+      Review       : ReviewState option
+      Account      : AccountState
+      Forum        : ForumState
 
       // misc
       Recent    : RecentEntry list        // max 6
@@ -347,7 +611,6 @@ type Model =
       OriginCache : Map<string, TextOrigin>      // ... and where each came from
       History   : string list             // in-app back stack of hashes
       CurrentHash : string
-      DrawerDrag  : {| StartX: float; Dx: float; Mode: string; Width: float |} option
       NextToken   : int }
 
 // ---------------------------------------------------------------------------
@@ -389,10 +652,82 @@ type LibraryMsg =
     | RemoveMark of workId: string * segRef: string
     | SetAuthorNote of authorId: string * text: string
     | SaveAuthorNote of authorId: string
+    | SetMarkSort of string
+    | SetMarkTag of string option
+    | SetMarkQuery of string
+    // -- words --
+    | SaveWord of word: string * seg: string option
+    | EditWord of id: string * lemma: string * gloss: string
+    | RemoveWord of id: string
+    | StartReview
+    | RevealCard
+    | GradeCard of knew: bool
+    | EndReview
+    // -- places --
+    | SavePlace of PlaceHit
+    | RemovePlace of qid: string
+    | SetPlaceNote of qid: string * note: string
     | ExportRequested
     | ImportText of string
     | ImportConfirmed
     | ClearLibraryConfirmed
+
+type ShelfMsg =
+    | SetShelfSort of ShelfSort
+    | SetShelfLetter of string option
+    | SetShelfEra of string option
+
+type AccountMsg =
+    | SetEmailInput of string
+    | SetCodeInput of string
+    | SetNameInput of string
+    | SendCode
+    | CodeSentOk of email: string
+    | VerifyCode
+    | SignedIn of Session
+    /// A sign-in link from the email lands on the site with the session in the URL
+    | SessionFromUrl of Session
+    | AuthFailed of string
+    | ProfileLoaded of name: string * isAdmin: bool
+    | SaveName
+    | NameSaved of string
+    /// `forget`: also remove the library from this browser (a shared computer)
+    | SignOut of forget: bool
+    | UseDifferentEmail
+    | SyncSoon
+    | SyncNow of token: int
+    | SyncPulled of Result<Library, string>
+    | SyncPushed of Result<float, string>
+    | SessionRefreshed of Session option
+
+type ForumMsg =
+    | LoadBoard of category: string
+    | BoardLoaded of category: string * Result<ForumThread list, string>
+    | LoadThread of id: string
+    | ThreadLoaded of id: string * Result<ForumThread * ForumPost list, string>
+    | StartThread of category: string * work: string * ref_: string
+    | SetDraft of ForumDraft
+    | SubmitThread
+    | ThreadPosted of Result<string, string>
+    | SetReply of string
+    | SubmitReply
+    | ReplyPosted of Result<unit, string>
+    | SetBugStatus of threadId: string * status: string
+    | DeletePost of threadId: string * postId: string
+    | DeleteThread of threadId: string
+    | ForumDone of Result<string, string>
+
+type SearchMsg =
+    | SetSearchQuery of string
+    | OpenSearch
+    | CloseSearch
+    | MoveSearch of delta: int
+    | SetSearchScope of string
+    /// Enter: run the highlighted result
+    | ChooseActive
+    /// A result was chosen (by click or Enter): remember the query, close
+    | Chose
+    | ForgetSearches
 
 type ReaderMsg =
     | OpenWork of workId: string * grcUrn: string option * engUrn: string option
@@ -407,10 +742,10 @@ type ReaderMsg =
     | ShowChunk of chunkRef: string * seg: string option * page: int option
     | PrevUnit
     | NextUnit
-    | GotoRefSubmitted
-    | SetJumpInput of string
+    /// Go to a passage reference in the open text (from the search box)
+    | GotoRef of string
     | CopyUrn of string
-    | WordClicked of word: string * rect: obj
+    | WordClicked of word: string * rect: obj * seg: string option
     | ScrolledTo of segRef: string option
     | ScrollIdle of seq_: int
     | RepaintMarks
@@ -443,14 +778,13 @@ type Msg =
     | Source_ of SourceMsg
     | Library_ of LibraryMsg
     | Reader_ of ReaderMsg
+    | Shelf_ of ShelfMsg
+    | Account_ of AccountMsg
+    | Forum_ of ForumMsg
+    | Search_ of SearchMsg
+    | Learn_ of LearnMsg
     | SetFilter of WorksFilter
-    | SetNavQuery of string
     | SetGenre of string option
-    | ToggleAuthor of authorId: string
-    | ToggleParts
-    | ToggleNavHidden
-    | ToggleSide of bool
-    | SetHomeQuery of string
     | SetBrowseQuery of string
     | SetWikiQuery of string
     | ToggleCollapsed of key: string
@@ -463,7 +797,6 @@ type Msg =
     | ShowToastFor of message: string * lingerMs: int
     | HideToast of int
     | WikipediaSummary of authorId: string * extract: string
-    | DrawerTouch of phase: string * x: float * y: float
     | ToggleNotesPanel
     /// Dragging the notes panel ("panel") or its floating button ("button").
     /// "move" carries the new top-left the view worked out from the pointer;

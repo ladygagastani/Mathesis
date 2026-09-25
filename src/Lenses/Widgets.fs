@@ -69,14 +69,16 @@ let OSD_IMAGES = "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/ima
 // ---------------------------------------------------------------------------
 
 /// A place as the map script wants it: plain fields, no F# types.
+/// `pick` is what a click on the marker hands back (the first passage).
 type MapPlace =
-    { lat: float; lon: float; label: string; name: string; refs: string array; pleiades: string; here: bool }
+    { lat: float; lon: float; label: string; name: string; refs: string array; pleiades: string; here: bool; pick: string }
 
-let mapPlace lat lon label name refs pleiades here : MapPlace =
-    { lat = lat; lon = lon; label = label; name = name; refs = refs; pleiades = pleiades; here = here }
+let mapPlace lat lon label name (refs: string array) pleiades here : MapPlace =
+    { lat = lat; lon = lon; label = label; name = name; refs = refs; pleiades = pleiades; here = here
+      pick = (if refs.Length > 0 then refs.[0] else "") }
 
 [<Emit("""(() => {
-  const __id = $0, __places = $1, __onPick = $2;
+  const __id = $0, __places = $1, __onPick = $2, __join = $3;
   const el = document.getElementById(__id);
   if (!el || !window.L) return;
   const L = window.L;
@@ -99,13 +101,13 @@ let mapPlace lat lon label name refs pleiades here : MapPlace =
   const hot = css.getPropertyValue('--accent-2').trim() || '#9A3B2E';
   if (st.key !== key) {
     st.layer.clearLayers(); st.markers = {};
-    if (__places.length > 1) {
+    if (__join && __places.length > 1) {
       L.polyline(__places.map(p => [p.lat, p.lon]), { color: accent, weight: 1.5, opacity: .55, dashArray: '4 5' }).addTo(st.layer);
     }
     __places.forEach((p, i) => {
       const m = L.circleMarker([p.lat, p.lon], { radius: 6, color: accent, weight: 2, fillColor: accent, fillOpacity: .35 });
       const tip = document.createElement('div');
-      const b = document.createElement('b'); b.textContent = (i + 1) + '. ' + p.label; tip.appendChild(b);
+      const b = document.createElement('b'); b.textContent = (__join ? (i + 1) + '. ' : '') + p.label; tip.appendChild(b);
       if (p.label !== p.name) { tip.appendChild(document.createTextNode(' (“' + p.name + '”)')); }
       tip.appendChild(document.createElement('br'));
       tip.appendChild(document.createTextNode(p.refs.length === 1 ? 'named at ' + p.refs[0] : 'named at ' + p.refs.slice(0, 6).join(', ') + (p.refs.length > 6 ? '…' : '')));
@@ -113,7 +115,7 @@ let mapPlace lat lon label name refs pleiades here : MapPlace =
       const a = document.createElement('a'); a.href = 'https://pleiades.stoa.org/places/' + p.pleiades; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Pleiades ' + p.pleiades; tip.appendChild(a);
       m.bindTooltip(p.label, { direction: 'top', offset: [0, -6] });
       m.bindPopup(tip);
-      m.on('click', () => __onPick(p.refs[0]));
+      m.on('click', () => { if (p.pick) __onPick(p.pick); });
       m.addTo(st.layer);
       st.markers[p.pleiades] = m;
     });
@@ -137,10 +139,15 @@ let mapPlace lat lon label name refs pleiades here : MapPlace =
     if (p.here) m.bringToFront();
   });
 })()""")>]
-let private drawMap (elId: string) (places: MapPlace array) (onPick: string -> unit) : unit = jsNative
+let private drawMap (elId: string) (places: MapPlace array) (onPick: string -> unit) (joinLine: bool) : unit = jsNative
 
+/// The Map lens: places in the order the text names them, joined by a line.
 let renderMap (elId: string) (places: MapPlace array) (onPick: string -> unit) : JS.Promise<unit> =
-    loadScript LEAFLET LEAFLET_CSS |> Promise.map (fun () -> drawMap elId places onPick)
+    loadScript LEAFLET LEAFLET_CSS |> Promise.map (fun () -> drawMap elId places onPick true)
+
+/// My library's saved places: no order, so no line.
+let renderPlaces (elId: string) (places: MapPlace array) (onPick: string -> unit) : JS.Promise<unit> =
+    loadScript LEAFLET LEAFLET_CSS |> Promise.map (fun () -> drawMap elId places onPick false)
 
 // ---------------------------------------------------------------------------
 // deep-zoom image

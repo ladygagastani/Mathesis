@@ -116,6 +116,18 @@ let icons: Map<string, Icon> =
             IFill "M11.1 13.2h1.8L12 15z"
             IPath "M9.6 17.6l1.2.8 1.2-.8 1.2.8 1.2-.8"
         ]
+        // Plain glyphs, like back: closing a lesson and playing a sound must be
+        // understood at once.
+        "close", icon [ IPath "M18 6L6 18M6 6l12 12" ]
+        "play", icon [ IFill "M8 5v14l11-7z" ]
+        // An open codex with an alpha on its first leaf: the lessons (Learn).
+        "learn",
+        icon [
+            IPath "M3 5.6c3-1 6-1 9 .9 3-1.9 6-1.9 9-.9v13.1c-3-1-6-1-9 .9-3-1.9-6-1.9-9-.9z"
+            IPath "M12 6.5v13.1"
+            IPath "M5.4 15l2.2-5.8 2.2 5.8M6.2 13.1h2.8"
+            IPath "M14.4 10h4.2M14.4 12.6h4.2M14.4 15.2h3"
+        ]
         // A wax tablet (deltos) and stylus: notes.
         "notes",
         icon [
@@ -123,6 +135,41 @@ let icons: Map<string, Icon> =
             IPath "M6 7.5h7v10H6z"
             IPath "M7.8 11h3.4M7.8 13.8h2.4"
             IPath "M21 3.2l-5.8 11.6-.9.6.1-1.1L20.2 2.7z"
+        ]
+        // The plan of a council house (bouleutērion): tiers of seats round the
+        // speaker's floor. The forum, the site's town hall.
+        "forum",
+        icon [
+            IPath "M3.5 18.5a8.5 8.5 0 0 1 17 0"
+            IPath "M6.8 18.5a5.2 5.2 0 0 1 10.4 0"
+            IPath "M10.1 18.5a1.9 1.9 0 0 1 3.8 0"
+            IPath "M2.5 20.5h19"
+        ]
+        // A plain magnifier (search stays a plain glyph, like back).
+        "search",
+        icon [
+            ICircle(10.5, 10.5, 6.0)
+            IPath "M15 15l5.5 5.5"
+        ]
+        // A reader: head and shoulders, as on a grave stele.
+        "account",
+        icon [
+            ICircle(12.0, 8.0, 3.6)
+            IPath "M4.5 20.5c.9-4.3 3.9-6.4 7.5-6.4s6.6 2.1 7.5 6.4"
+        ]
+        // Two word-cards, the front one lettered α: your words.
+        "words",
+        icon [
+            IPath "M7.5 3.5h12v14"
+            IPath "M4.5 6.5h12v14h-12z"
+            IPath "M12.4 16c-.4-2.2-1.4-4.5-3-4.5-1.1 0-1.8 1-1.8 2.3s.7 2.2 1.8 2.2c1.3 0 2.4-1.6 3-4.5"
+        ]
+        // A place on the map: a marker over a coast line.
+        "place",
+        icon [
+            IPath "M12 16.5s-5-5-5-8.7a5 5 0 0 1 10 0c0 3.7-5 8.7-5 8.7z"
+            ICircle(12.0, 7.8, 1.7)
+            IPath "M3 20.5c2.5-1.3 4.5-1.3 6 0s3.5 1.3 6 0 4.5-1.3 6 0"
         ]
     ]
 
@@ -167,7 +214,7 @@ type Tip = { Grc: string; Label: string; Text: string }
 let tips: Tip list =
     [ { Grc = "ἁ ἀ"
         Label = "Breathings"
-        Text = "Every word that begins with a vowel carries a breathing mark. The rough breathing ( ῾ ) adds an h sound, so ἁ is \"ha\"; the smooth breathing ( ᾿ ) adds nothing. A word-initial ρ always takes the rough one, which is why ῥήτωρ comes into English as \"rhetor\"." }
+        Text = "Every word that begins with a vowel carries a breathing mark. The rough breathing ( ῾ ) adds an h sound, so ἁ is \"ha\"; the smooth breathing ( ᾿ ) adds nothing. A word-initial ρ always takes the rough one, which is why ῥήτωρ comes into English as \"rhetor\"." }
       { Grc = "ά ᾶ ὰ"
         Label = "Accents"
         Text = "The acute, circumflex and grave marked the rise and fall of the voice in ancient speech. Scholars at Alexandria began writing them down around 200 BCE. Today they are usually read as stress, and now and then they tell apart two words spelled alike." }
@@ -179,7 +226,7 @@ let tips: Tip list =
         Text = "σ inside a word, ς at the end of one: the same letter in two shapes." }
       { Grc = "; ·"
         Label = "Punctuation"
-        Text = "The Greek question mark looks like an English semicolon ( ; ), and a raised dot ( · ) does the work of a colon or semicolon." } ]
+        Text = "The Greek question mark looks like an English semicolon ( ; ), and a raised dot ( · ) does the work of a colon or semicolon." } ]
 
 // ---------------------------------------------------------------------------
 // passage of the day
@@ -236,3 +283,38 @@ let browse: BrowseSection list =
       { Title = "Koine and early Christian writing"; WorkIds = [ "tlg0031.tlg001"; "tlg0031.tlg004"; "tlg0031.tlg005"; "tlg0031.tlg006"; "tlg0527.tlg001"; "tlg0018.tlg001"; "tlg1271.tlg001"; "tlg1443.tlg001" ] }
       { Title = "Science, mathematics and medicine"; WorkIds = [ "tlg1799.tlg001"; "tlg0057.tlg002"; "tlg0093.tlg001"; "tlg0627.tlg003"; "tlg0552.tlg001"; "tlg0086.tlg014" ] }
       { Title = "Novel, satire and later prose"; WorkIds = [ "tlg0062.tlg002"; "tlg0062.tlg001"; "tlg0561.tlg001"; "tlg0641.tlg001"; "tlg0008.tlg001"; "tlg0525.tlg001" ] } ]
+
+// ---------------------------------------------------------------------------
+// forum boards (Views.Forum). Ids must match the check constraint in
+// supabase/schema.sql.
+// ---------------------------------------------------------------------------
+
+type ForumBoardInfo = { Id: string; Name: string; Grc: string; Blurb: string }
+
+let forumBoards: ForumBoardInfo list =
+    [ { Id = "passages"
+        Name = "Passages"
+        Grc = "Χωρία"
+        Blurb = "One passage at a time: what it says, how to read it, and what the Greek does that the translation can't." }
+      { Id = "debate"
+        Name = "Debate"
+        Grc = "Ἀγών"
+        Blurb = "Disputed readings, rival interpretations, big questions. Make your case and cite the text." }
+      { Id = "learning"
+        Name = "Learning Greek"
+        Grc = "Μάθησις"
+        Blurb = "Grammar, vocabulary, pronunciation, where to start. No question is too simple." }
+      { Id = "square"
+        Name = "Town square"
+        Grc = "Ἀγορά"
+        Blurb = "Everything else: introductions, reading groups, recommendations, news." }
+      { Id = "suggestions"
+        Name = "Suggestions"
+        Grc = "Γνῶμαι"
+        Blurb = "Ideas for the site: a text or feature you'd like, or something that could work better." }
+      { Id = "bugs"
+        Name = "Bug reports"
+        Grc = "Σφάλματα"
+        Blurb = "Something broken, wrong or confusing in the app? Report it here and follow it to the fix." } ]
+
+let forumBoard (id: string) : ForumBoardInfo option = forumBoards |> List.tryFind (fun b -> b.Id = id)

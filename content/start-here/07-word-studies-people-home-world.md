@@ -1,7 +1,8 @@
 # Word studies I: people, home and world
 
 Six words for the most basic things: a person, a mother, a foot, a house, water and a god.
-Page 7 explains the terms and the ✓ / ? marks.
+
+Step 6 explains the terms, and the ✓ and **?** marks.
 
 ---
 
@@ -9,22 +10,18 @@ Page 7 explains the terms and the ✓ / ? marks.
 
 **Dictionary form:** ἄνθρωπος, -ου, ὁ, "human being, person"
 
-**Why this word.** It is one of the commonest nouns in Greek, and its written form has
-barely changed since Homer. Its oldest spelling reveals a sound Greek later lost, and it
-teaches the difference from its partner ἀνήρ, "man".
+**Why this word.** One of the commonest nouns in Greek, spelled the same since Homer. Its
+oldest spelling shows a sound Greek later lost, and it teaches the difference from ἀνήρ,
+"man".
 
-**Where it comes from: ? uncertain.** The word is as old as Greek writing, but no one agrees
-where it came from. Two ideas are commonly discussed:
-- a compound of ἀνήρ "man" and ὤψ "face" ("man-faced"), which runs into difficulties with
-  the sounds;
-- a borrowing from a language spoken in the Aegean before Greek arrived.
-
-Neither is proven.
+**Where it comes from: ? uncertain.** No one agrees. It may be a compound of ἀνήρ "man" and
+ὤψ "face" ("man-faced"), though the sounds do not fit well, or a borrowing from a language
+spoken in the Aegean before Greek arrived. Neither is proven.
 
 ### Through the eras
-- **Mycenaean:** written *a-to-ro-qo*. By the spelling rules on page 7 this stands for
-  *anthrōkʷos*, with the rounded *kʷ* sound. In Greek of the first millennium BCE that sound
-  became π before ο, so *-kʷos* became -πος.
+- **Mycenaean:** written *a-to-ro-qo*. By the Linear B spelling rules (step 6) this
+  stands for *anthrōkʷos*, with the rounded *kʷ* sound. Later that sound became π before ο,
+  so *-kʷos* became -πος.
 - **Homeric:** ἄνθρωποι are "mortals", humans as opposed to gods. The heroes themselves are
   more often ἄνδρες, "men".
 - **Classical:** ἄνθρωπος is the human being in general, woman or man; ἀνήρ is the adult
@@ -58,8 +55,7 @@ Neither is proven.
 **Dictionary form:** μήτηρ, μητρός, ἡ, "mother"
 
 **Why this word.** Few words are so securely traced to Proto-Indo-European. It also shows the
-most important sound difference between the dialects, and how Modern Greek remade its
-irregular nouns.
+main sound difference between the dialects, and how Modern Greek remade irregular nouns.
 
 **Where it comes from: ✓ certain.** From PIE \*méh₂tēr, "mother". Its cognates include:
 - Latin *māter*
@@ -92,7 +88,7 @@ irregular nouns.
 > "My mother says I am his; but I myself do not know."
 > ([Homer, *Odyssey* 1.215–16](read:tlg0012.tlg002:1.215))
 
-(ἔμμεναι is the Homeric form of εἶναι, "to be". See the study of εἰμί on the next page.)
+(ἔμμεναι is the Homeric form of εἶναι, "to be": see εἰμί in step 8.)
 
 ### In English
 *metropolis*, *metropolitan* (from μητρόπολις). English *mother* is a cognate, a cousin of
@@ -104,7 +100,7 @@ irregular nouns.
 
 **Dictionary form:** πούς, ποδός, ὁ, "foot"
 
-**Why this word.** Set beside Latin *pēs* and English *foot*, it is the textbook example of
+**Why this word.** Beside Latin *pēs* and English *foot*, it is the textbook example of
 regular sound change. In Modern Greek it was replaced by its own "little" form.
 
 **Where it comes from: ✓ certain.** From PIE \*pṓds, with the stem \*ped- in other cases.
@@ -144,9 +140,8 @@ opposite" ours), *podium* (via Latin, from πόδιον), *gastropod*, *podiatry
 
 **Dictionary form:** οἶκος, -ου, ὁ, "house, household, family estate"
 
-**Why this word.** It preserves the memory of a lost letter. In everyday Modern Greek it was
-replaced by a word borrowed from Latin, yet it gave English one of its largest families of
-learned words.
+**Why this word.** It remembers a lost letter. Everyday Modern Greek replaced it with a word
+borrowed from Latin, yet it gave English one of its largest families of learned words.
 
 **Where it comes from: ✓ certain.** From PIE \*wóyḱos, "settlement". Its cognates include:
 - Latin *vīcus*, "village, district of a town"
@@ -160,10 +155,9 @@ English place names in *-wich* and *-wick* (Norwich, Warwick) come from the Lati
 - **Mycenaean:** *wo-ko*, *woikos*. The initial *w* was written in some later Greek
   alphabets with the letter **digamma** (Ϝ), so called because it looks like one gamma on
   top of another. In Attic and Ionic the sound was lost, and the word became οἶκος.
-- **Homeric:** the *w* was gone from ordinary speech by Homer's time, but the verse often
-  behaves as though it were still there. The vowel before οἶκος is frequently not dropped,
-  as it would be before a true vowel. This is one of many signs that the epic language is
-  very old.
+- **Homeric:** the *w* was gone from speech by Homer's time, but the verse often behaves as
+  though it were still there: a vowel before οἶκος is often not dropped, as it would be
+  before a true vowel. One of many signs that the epic language is very old.
 - **Classical:** the οἶκος is the household, not just the building: family, slaves, land and
   goods, the basic unit of the city. Running it was οἰκονομία *oikonomia*, "household
   management", the subject of Xenophon's dialogue the *Oeconomicus*.
@@ -194,8 +188,8 @@ English place names in *-wich* and *-wick* (Norwich, Warwick) come from the Lati
 
 **Dictionary form:** ὕδωρ, ὕδατος, τό, "water"
 
-**Why this word.** Its English cousin is obvious: *water*. In everyday Greek it was replaced
-by a word that once meant "fresh", and it survives in every *hydro-* word in English.
+**Why this word.** Its English cousin is obvious: *water*. Everyday Greek replaced it with a
+word that once meant "fresh", but it survives in every English *hydro-* word.
 
 **Where it comes from: ✓ certain.** From PIE \*wódr̥, genitive \*udn-és. Its cognates
 include:
@@ -207,7 +201,7 @@ include:
 
 The PIE word had *r* in the nominative and *n* in the other cases. Greek turned that *n*
 into α, which is why the genitive is ὕδ**α**τος. The rough breathing follows the rule for
-initial υ (page 3).
+initial υ (step 3).
 
 ### Through the eras
 - **Classical:** Pindar begins his first *Olympian* ode, written for Hieron of Syracuse,
@@ -240,7 +234,7 @@ initial υ (page 3).
 
 **Dictionary form:** θεός, -οῦ, ὁ or ἡ, "god, goddess"
 
-**Why this word.** Almost nothing about it has changed in 3,300 years. It is also the best
+**Why this word.** Almost nothing about it has changed in 3,300 years, and it is the best
 warning in Greek against trusting look-alikes.
 
 **Where it comes from: ? uncertain.** The early Greek form was \*thehos (hence Linear B
@@ -284,6 +278,7 @@ parts reversed) and *Timothy* ("honouring god").
 ---
 
 ## For review (not for publication)
+- **Shortened (25 Sep 2026):** the "Why this word" paragraphs and the ἄνθρωπος etymology were tightened (same claims, fewer words); "In Greek of the first millennium BCE that sound became π" is now "Later that sound became π"; the page references now read "step N".
 - **ἄνθρωπος.** Its etymologies are summarized from Wiktionary, which reports the ἀνήρ + ὤψ proposal (defended by Rosén), Beekes' pre-Greek view, and Garnier's PIE proposal. Worth checking against Beekes' *Etymological Dictionary of Greek* and Chantraine.
 - **Where *a-to-ro-qo* is attested.** I have not stated which site it comes from. I believe Pylos; please confirm in *DMic* or Ventris & Chadwick.
 - ***ma-te-re te-i-ja*.** PY Fr 1202 is its only attestation. The phrasing "perhaps one borrowed from Anatolia, or even a woman of the palace" reflects the range of views in the literature I found, which includes a UNC thesis questioning the goddess reading.

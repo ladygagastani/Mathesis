@@ -1,7 +1,9 @@
 # Word studies II: mind, city and two verbs
 
-Six more words: two for the inner life, one for the community, one for value, and the two
-verbs you cannot read a page without. Page 7 explains the terms and the ✓ / ? marks.
+Six more words: two for the inner life, one for the city, one for value, and the two verbs
+you cannot read without.
+
+Step 6 explains the terms, and the ✓ and **?** marks. The step ends with where to go next.
 
 ---
 
@@ -9,9 +11,9 @@ verbs you cannot read a page without. Page 7 explains the terms and the ✓ / ? 
 
 **Dictionary form:** ψυχή, -ῆς, ἡ, "life, soul, spirit; ghost"
 
-**Why this word.** No Greek word changed its meaning more. It began as the breath that
-leaves a dying body, and became the self, the soul, and in the end the "psyche" of modern
-psychology. Its sound also shows two of the changes from page 3.
+**Why this word.** No Greek word changed its meaning more: from the breath that leaves a
+dying body, to the self, the soul, and the "psyche" of modern psychology. Its sound shows
+two of the changes in step 3.
 
 **Where it comes from: ? uncertain beyond Greek.** Within Greek it belongs with the verb
 ψύχω *psykhō* "breathe, blow; cool", so the earliest sense was "breath". Comparisons outside
@@ -82,8 +84,8 @@ English has taken a similar path with *tell*, which once meant "count": a bank *
   Aristotle makes it what distinguishes humans (see below).
 
   The verb's principal parts show why it is hard to look up: λέγω, **ἐρῶ**, **εἶπον**,
-  εἴρηκα. The future and aorist come from quite different roots (page 4).
-- **Koine:** the Gospel of John opens with ὁ λόγος, "the Word" (quoted on page 8). How much
+  εἴρηκα. The future and aorist come from quite different roots (step 4).
+- **Koine:** the Gospel of John opens with ὁ λόγος, "the Word" (quoted in step 7). How much
   the idea owes to Greek philosophy and how much to Jewish scripture's creative "word of God"
   is much debated.
 - **Modern:** λόγος *lóghos* means "speech" (a speech) and "reason, cause": για ποιο λόγο;
@@ -171,7 +173,7 @@ seen in οἶκος. Homer's scansion still shows it (below). A connection with 
   usually counts as *long* in Homer's verse (κᾱλός), a trace of the lost *w*.
 - **Classical:** beauty and moral excellence merge. τὸ καλόν is "the fine, the noble", what
   is admirable in conduct as well as in looks. The Athenian ideal gentleman was καλὸς
-  κἀγαθός, "fine and good" (κἀγαθός is καὶ ἀγαθός run together, page 3). Athenian painted
+  κἀγαθός, "fine and good" (κἀγαθός is καὶ ἀγαθός run together: step 3). Athenian painted
   vases often carry the words "Λέαγρος καλός", "Leagros is beautiful", praise of a
   fashionable young man.
 - **Koine:** in the Septuagint's creation story God sees each thing "that it was καλόν"
@@ -187,7 +189,7 @@ seen in οἶκος. Homer's scansion still shows it (below). A connection with 
 ### In the texts
 > καὶ ἴδεν ὁ θεὸς τὸ φῶς ὅτι καλόν
 > "And God saw the light, that it was good."
-> ([Genesis 1:4](read:tlg0527.tlg001:1.4), Septuagint. On the spelling ἴδεν, see page 3.)
+> ([Genesis 1:4](read:tlg0527.tlg001:1.4), Septuagint. On the spelling ἴδεν, see step 3.)
 
 ### In English
 *calligraphy* (from κάλλος "beauty": "beautiful writing"), *kaleidoscope* (coined in 1817 by
@@ -202,16 +204,17 @@ David Brewster from καλός, εἶδος "form" and σκοπέω "look at"), 
 
 **Principal parts:** ἔχω, ἕξω (or σχήσω), ἔσχον, ἔσχηκα. The imperfect is εἶχον.
 
-**Why this word.** It is one of the commonest verbs, and it is written in Linear B and in
-today's Athens in the same way. Its principal parts also contain a hidden story of sound
-change: why ἔχω has a smooth breathing but ἕξω a rough one.
+**Why this word.** One of the commonest verbs, written the same way in Linear B and in
+today's Athens. Its principal parts hide a story of sound change: why ἔχω has a smooth
+breathing but ἕξω a rough one.
 
 **Where it comes from: ✓ certain.** From the PIE root \*seǵʰ-, "hold, overpower". Its
 cognates include Sanskrit *sáhate* "overcomes, endures" and Gothic *sigis* (German *Sieg*)
 "victory".
 
-### The story in the spelling
-1. **The *s* became *h*.** An *s* at the start of a word became *h* in Greek (page 7), so
+<details><summary>Why ἔχω, but ἕξω? The story in the spelling</summary>
+
+1. **The *s* became *h*.** An *s* at the start of a word became *h* in Greek (step 6), so
    the root began *hekh-*.
 2. **Grassmann's law.** Greek did not tolerate two "breathy" sounds in neighbouring
    syllables: the first lost its breath. *hekhō* has *h* and *kh*, so it became ἔχω, with
@@ -223,6 +226,7 @@ cognates include Sanskrit *sáhate* "overcomes, endures" and Gothic *sigis* (Ger
 
 Three spellings of one root, all explained by rule. English *hectic* (from ἑκτικός
 "habitual", related to ἕξις "state") still carries the *h*.
+</details>
 
 ### Through the eras
 - **Mycenaean:** *e-ke*, "holds", is one of the commonest words in the land records from
@@ -276,12 +280,12 @@ compensation, which is why it is spelled ει.
 
 ### Through the eras
 - **Homeric:** many old forms. The infinitive is often ἔμμεναι, where Attic has εἶναι. You
-  met it in Telemachus' line on page 8.
+  met it in Telemachus' line in step 7.
 - **Classical:** the forms matter for meaning. When ἐστί means "is" joining two things
   ("Socrates is wise"), it is an enclitic that leans on the word before it. Accented on the
   first syllable, ἔστι means "exists" or "it is possible". Philosophers built on the
   participle ὤν, ὄντος, "being": τὰ ὄντα means "the things that are".
-- **Koine:** John's "In the beginning *was* the Word" (page 8) uses the imperfect ἦν three
+- **Koine:** John's "In the beginning *was* the Word" (step 7) uses the imperfect ἦν three
   times. Koine also began giving the verb middle endings (like -μαι) in some forms.
 - **Modern:** είμαι, είσαι, είναι, είμαστε, είστε, είναι. The endings now look like those of
   the middle voice (compare λύομαι "I am loosened"). The ancient active forms are gone.
@@ -380,7 +384,28 @@ the same ancestor) or a *borrowing* from it?
 
 ---
 
+## Where to go next
+
+You can now sound out the Greek, find a word in the dictionary, and follow it through time.
+The best next step is to read. A path through the texts in this app, from easiest to
+hardest:
+
+1. Easy Attic prose: Xenophon's *Anabasis* (where the soldiers shout θάλαττα θάλαττα,
+   "The sea! The sea!", [4.7.24](read:tlg0032.tlg006:4.7.24)), and Lysias' speech *On the
+   Murder of Eratosthenes*.
+2. Plato's *Apology*, whose first sentence you looked up in step 5.
+3. Herodotus, in Ionic.
+4. Homer.
+5. Last, the dense choral poetry of Pindar and of tragedy.
+
+> **A gentle side door:** the Gospels and the Septuagint. Their Koine sentences are short and
+> the vocabulary is small.
+
+---
+
 ## For review (not for publication)
+- **Where to go next (25 Sep 2026)** is the reading path from old page 1. Check that the works it names (Xenophon, Lysias 1, Plato's *Apology*, Herodotus, Homer, Pindar, the Gospels, the Septuagint) all load in the reader. They are all in the catalogue.
+- **Shortened (25 Sep 2026):** the "Why this word" paragraphs of ψυχή and ἔχω were tightened, and ἔχω's "story in the spelling" is now folded away (it is the hardest part of the page); the page references now read "step N".
 - **ψυχή.** The ψύχω connection is the usual one; the page does not claim a PIE root. "Courage, heart" as a Modern sense comes from Wiktionary. The Classical summary of Plato and Aristotle is general and uncontroversial, with no quotations.
 - **λόγος in Homer.** I believe it occurs only twice (*Iliad* 15.393 and *Odyssey* 1.56), and the page says just "rare". Please confirm with a concordance. The "tell = count" parallel is standard English etymology. The John 1:1 aside is deliberately neutral.
 - **λέγω's principal parts.** Only four are given. The full Attic set is λέγω, ἐρῶ / λέξω, εἶπον / ἔλεξα, εἴρηκα, εἴρημαι / λέλεγμαι, ἐλέχθην / ἐρρήθην.

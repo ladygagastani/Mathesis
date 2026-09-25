@@ -657,7 +657,7 @@ Rules: Leaflet and OpenSeadragon are loaded only when their lens opens
 ## 12. Genre chips, work articles, centred reader (added 2026-09-23)
 
 - **Genre filter.** `Model.Genre : string option` + `Msg.SetGenre`. One value shared by
-  the sidebar catalogue (`Views.Nav`) and My library (`Views.LibraryPage`), rendered by
+  the Library page (`Views.Browse`) and My library (`Views.LibraryPage`), rendered by
   `Views.Shared.genreChips`. Session-only by design: no `localStorage` key.
 - **Genres.** `WikiData.genreOf` decides from the Wikidata description first, then
   occupations, then the name, taking the *earliest* keyword match (list order is not a
@@ -702,12 +702,13 @@ Token and class names did not change; values did, plus a final layer at the end 
   3. the eras band (`Shared.erasBand`): width = years, height = works; rows on phones
      and in the wiki-home aside.
 - **Layout.** Home: continue → hero (+ Passage of the day) → find → paths → eras →
-  beginners → how it works → corpus → wiki → offline → sources. Wiki home is a ruled
+  how it works → corpus → wiki → offline → alphabet → tips → Start here → sources. Wiki home is a ruled
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
-  notes, back-up. Phone tab bar (≤900px): Texts · Contents · Wiki · My library
-  (`.tab-phone` items); the header's `#navToggle` and `.libbtn` hide there.
+  notes, back-up. Phone tab bar (≤900px): Library · Wiki · Search · Forum ·
+  My library (`.tab-phone` items; Search in the middle); the header's `.libbtn`
+  hides there. (Superseded in part by §16–17.)
 - **Design language** (the "Design language" layer at the end of `style.css`):
   primary actions and *every* selected state use `--solid` / `--on-solid` (ink by
   day, clay by night), never the link blue; blue is only links, references and
@@ -733,7 +734,7 @@ Token and class names did not change; values did, plus a final layer at the end 
 
 ## 14. "Start here" beginner's guide (added 2026-09-23)
 
-- **Source of truth:** Markdown in `content/start-here/00–09-*.md`, edited by the
+- **Source of truth:** Markdown in `content/start-here/00–08-*.md`, edited by the
   user as scholar-editor. Each file ends with `## For review (not for publication)`.
   Vite's `guide-markdown` loader (`vite.config.js`) serves `*.md?guide` imports as
   strings and **cuts everything from that heading down at build time**. Never render
@@ -741,13 +742,24 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Files:** `Markdown.fs` (pure parser for the subset used: headings, paragraphs,
   rules, quotes, tables, nested lists, `<details><summary>`, `**`/`*`/links/`\*`)
   and `GuideData.fs` (one `importDefault` per page; slug = file name minus number)
-  sit after `Content.fs`. `Views/Guide.fs` sits after `Views/WikiPages.fs`.
-- **Route:** `WikiRoute(WikiGuide of string option)`, hashes `#wiki/start` and
-  `#wiki/start/<slug>`. Entry points: first row of Wiki home, "Start here" in the
-  home wiki card, and "in depth →" links under the home alphabet and tips.
+  sit after `Content.fs`. `Views/Guide.fs` sits before `Views/Home.fs` (Home renders
+  `Guide.path`).
+- **Route:** `GuideRoute of string option`, hashes `#start` and `#start/<slug>`
+  (old `#wiki/start…` links still parse; `GuideData.tryFind` maps merged slugs).
+  The guide hangs off the home page (crumbs Home › Start here), not the wiki.
+  Entry point: the "Start here" block at the foot of the home page
+  (`Guide.path`: eight steps in three parts), plus the links under the home
+  alphabet and tips. Each step's description in the path is its page's first
+  paragraph, so keep that to one or two sentences.
+- **Steps:** 1 alphabet and sounds, 2 vowels and diphthongs, 3 breathings, accents,
+  punctuation (and sound change), 4 dictionary forms, 5 looking up a word,
+  6 reading a word study (stages of Greek), 7–8 word studies (8 ends with a
+  reading path). "step N" in running text auto-links.
 - **Link syntax in the Markdown:** `[label](read:<workId>:<ref>)` opens the reader
   (a verse line number resolves to the passage holding it); `[…](03-….md)` links
-  a guide page; "page N" in running text auto-links. Greek runs render as
+  a guide page; `<u>…</u>` underlines the sound-making letters of an example word
+  (`*c<u>u</u>p*`). A `>` quote whose first line is not Greek, `"` or `(` is a
+  note box (`Markdown.Note`, `.g-note`) and may hold lists. Greek runs render as
   `span.grc[lang=grc]` in the Greek face. Quote lines are classed by their first
   character: Greek → `.q-grc`, `"` → `.q-tr`, `(` → `.q-ref`.
 - Feliz's `prop.start` compiles to a throw; use `prop.custom("start", n)`.
@@ -805,3 +817,211 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Notes button** is `Header.notesButton` (`.notes-ib`) at every width: labelled
   "Notes" above 1100px, icon only below. The floating `.notes-fab` covered the
   ends of lines and is hidden with CSS (its code is still in NotesPanel.fs).
+
+
+---
+
+## 16. Library, My library tabs, accounts and forum (added 2026-09-26)
+
+- **Names.** Top bar: *Library* (the catalogue, `Browse` route, `#library`;
+  `#browse` still parses), *Wiki*, *Forum*. (The sidebar was removed in §17.)
+- **Library page** (`Views/Browse.fs`): sort Author A–Z / Title A–Z / By era
+  (`Model.Shelf`, `ShelfMsg`), letter bar (letters filed with accents
+  stripped), era select, translation filter (`Model.Filter`) and genre chips
+  (`Model.Genre`), both shared with the sidebar. "Where to start" (`Content.browse`)
+  folds away above the list and hides while filtering.
+- **My library** is tabbed: `LibraryRoute of LibTab`, `#lib`, `#lib/words`,
+  `#lib/places`, `#lib/favourites`, `#lib/notes`. Bookmarks: search, order
+  (recent / by work in reading order / oldest), `#tags` written in notes
+  (`LibraryData.tagsOf`). Words: saved from the word popover with the passage
+  and its Greek context; Leitner review (`boxDays` 1, 3, 7, 16, 35 days; a
+  miss comes back in 10 minutes and, if then known, restarts at box 1);
+  keys Space/Enter, 1, 2 go through `Subscriptions.keydownSub`. Places: saved
+  from the Map lens (`.ln-save`), drawn with `Widgets.renderPlaces` (no line).
+- **One library codec**: `Storage.encodeLibrary`/`decodeLibrary`, used for
+  localStorage, export/import and sync. New fields are optional when read.
+- **Sync** merges item by item (`LibraryData.merge`): every change stamps the
+  item's key in `Library.Stamps` (deletions too); the later stamp wins. Every
+  library change must go through `LibraryData`'s functions (which stamp) and
+  `State.saveLib`/`Features.saveLibrary` (which schedules `Account_ SyncSoon`).
+  Sync = pull, merge with the *current* model, push if different; also on
+  sign-in, boot and returning to the tab.
+- **Server** (`Server.fs`): Supabase over plain HTTP (Auth + PostgREST), no
+  client library. Configured by `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` at
+  build time; unset, `Server.configured` is false and Account/Forum explain
+  themselves. Sign-in is an emailed code (or the link in the same email, which
+  returns `#access_token=…`, parsed to `AccountRoute`). The session lives in
+  `Server` and renews itself; `onSessionChange` reports back. All rules
+  (owner-only libraries, author names from profiles, moderator-only status,
+  rate limit) are in `supabase/schema.sql`: never rely on the client for them.
+- **Forum** (`Views/Forum.fs`, `ForumRoute`): boards `Content.forumBoards`
+  (ids must match the schema's check constraint); bug reports have their own
+  board, form (what / steps / expected + page and browser) and statuses, and
+  fall back to a prefilled GitHub issue when the server is off. "Discuss" in
+  the bookmark editor and the study rail starts a Passages thread.
+- **Update logic** for all of this is in `Features.fs` (before the views);
+  State.fs only routes messages there.
+- **Testing without a real project:** `node scripts/mock-supabase.mjs` serves
+  the endpoints the app uses (code 123456; mod@example.com moderates); build
+  with the two `VITE_` variables pointing at `http://localhost:54321`.
+
+
+---
+
+## 17. Header search; the sidebar retired (added 2026-09-27)
+
+- **No sidebar.** `Views/Nav.fs`, the Contents toggle, the phone drawer and its
+  touch handling, and their Model fields/Msgs are gone. Finding a text is the
+  header search; browsing is the Library page; moving between parts of a work
+  is the reader's own part picker (`Reader.readerNav`: part stepper and, for
+  long parts, the page stepper — label · ‹ · menu · ›).
+- **Header** is a three-column grid: `.h-left` (back, brand, sections) ·
+  `.hsearch` · `.h-right` (text source, notes, account, My library, Αα, theme).
+  Side columns are `minmax(max-content,1fr)`, so the search sits in the true
+  centre when there is room and never covers the links. Every `.h-right`
+  control is the same bordered `--r2` box; labels drop to icons below 1180px.
+  The old header crumbs and "Passage… Go" box are gone: the search does both.
+- **Search** (`Search.fs`, pure; `Views/SearchBox.fs`, the ARIA combobox).
+  Accent-, breathing-, case- and final-sigma-insensitive; every query word must
+  match. Groups: Go to (passage refs: "Iliad 1.33", "Il. 1.33", "Apology 17a",
+  "tlg0012.tlg001 1.1", a bare "1.33" while reading) · Texts · Authors · My
+  library (bookmarks, words, places; "#tag") · Guide & wiki · Look up (a Greek
+  word → Logeion/Perseus/Wiktionary). Scope chips narrow it. An author's name
+  puts Authors first; texts rank by match, the author's own works, well-known
+  works (`Content.browse`/`paths`/`passages`), then having a translation.
+  Empty box: continue reading, recent searches (`anag:searches`), examples.
+  Keys: `/` opens, ↑ ↓ move, Enter opens, Esc closes. A hit carries the Msgs
+  that open it; `State.updateSearch` runs the highlighted one on Enter.
+- **Phones:** the box is hidden until the middle tab opens it as a full-screen
+  sheet (`.hsearch.open`), with Cancel. The home page's "Find something to
+  read" field is a button that opens the same search.
+- **One page width:** `.page` and `.landing` share `max-width:82rem`, so the
+  left edge doesn't move between pages; narrow content (guide, account) stays
+  left-aligned inside it.
+- The header text-source chip uses the Settings names: Online, This computer,
+  Web address.
+
+
+---
+
+## 18. Verse fit, audit fixes and wiki copy-edit (added 2026-09-27)
+
+- **Verse fits its column.** `Views.Reader.verseEm` estimates, once per text,
+  how wide the long lines are in ems (characters × 0.43; the 99.8th
+  percentile, or 1.12 × the 95th where long lines are a different metre, so
+  tragedy's lyric and comedy's tetrameters wrap rather than shrinking the
+  whole play). The reader sets it as `--verse-em`; `.col.grc` is a size
+  container and `.line` takes `min(1em, 100cqi / (verse-em + hang + extra))`,
+  scaled by `--text-scale` (the Text size setting as a ratio, set in
+  `applySettingsEffect`). Floors: `.84rem` on phones, `.84em` above 760px.
+  Phones also get a narrower number gutter and a shorter hanging indent.
+  Scansion adds `--extra` for the ▸ play button at the line's *end*; never
+  change `--hang` for it (the line numbers sit in the hang).
+- **Anything positioned inside a verse line** needs `text-indent:0`: it
+  inherits the line's negative hanging indent (scansion marks did).
+- **Titles.** `Json.englishTitles` gives English titles where the catalogue
+  has only Latin ones readers don't use (Meditations, Elements…).
+  `Shared.titleText` sets titles the catalogue has only in Greek in the Greek
+  face (`.t-grc`, `lang="grc"`).
+- **Wiki.** Home: title and lead → contents → the essay "On learning". Author
+  page on phones: works → article → timeline → notes (CSS order; the rail
+  stays first in the DOM). Section blurbs live once in `WikiData.blurb*` and
+  feed both the wiki contents and the home Wiki card. Dates:
+  `WikiData.yearRange`/`eraSpan` ("480–323 BCE", "c. 800–480 BCE");
+  Wikidata descriptions go through `WikiData.cleanDesc`. Index cards use
+  `WikiData.excerpt` (whole sentences, never mid-word).
+- **Copy style for all wiki prose** (meta blob and WikiData): double quotes for
+  glosses, terms and nicknames ("the Graces"); British -ise spellings;
+  "encyclopaedia"; play titles as the catalogue names them (Oedipus
+  Tyrannus). A work article sits directly above its author's article, so it
+  must not repeat what the author article says (dialect, dating, Venetus A).
+- A passage's number copies its CTS citation (phones have no hover for the URN).
+---
+
+## 16b. Learn — beginner's lessons (added 2026-09-25; now the Study section, see §19)
+
+Ported from the "Arche" design (Claude Design handoff, `Arche Prototype v2`),
+restyled in the Stoichedon design language: no papyrus texture, torn edges or
+hand-drawn corners. The design's page turn and ink-in reveal are kept.
+
+- **Routes:** `Route.LearnRoute of LearnPage`; hashes `#learn` (contents),
+  `/welcome`, `/preface`, `/letters`, `/alphabet` (Book I, Lesson 1, 5 leaves),
+  `/declension` (Book II, Lesson 3, 6 leaves), `/declension/done`, `/sounds`,
+  `/iliad`, `/myth` (3 leaves). `Router.learnHash` is the inverse. Leaves inside
+  a lesson are model state, not routes, so Back leaves the lesson. A first visit
+  to `#learn` is redirected (replaceState) to `#learn/welcome` until onboarded.
+  Header tab "Learn" (`navKey` "learn", icon `learn`); phone tab bar order is
+  Texts · Contents · Learn · Wiki · My library.
+- **Files:** `LearnData.fs` (all lesson content: edit wording there),
+  `LearnFx.fs` (DOM/audio effects), `LearnState.fs` (`init`, `enterPage`,
+  `update`; State routes `Learn_` messages and calls `enterPage` from
+  `loadForRoute`), `Views/Learn.fs`. Types: `LearnPage`, `LearnProgress`,
+  `LearnModel`, `LearnMsg`; `Model.Learn`.
+- **Persistence:** `anag:learn` = `{onboarded, pace, step, alpha}`. Exercise
+  state (cards, pairs, tiles, paradigm cells…) is session-only by design.
+- **Page turn:** the view calls `LearnFx.snapshot()` in the click handler, only
+  for messages that turn a leaf (`turning` / `pageLink` in the view); the update
+  returns `LearnFx.turn`. A snapshot that nobody turns removes itself after
+  1.5 s, so never snapshot for a message that doesn't turn. `[data-ink]` marks
+  what blurs in when a leaf opens; `[data-reveal=name]` blocks do the same when
+  an answer appears. Both are skipped under prefers-reduced-motion.
+- **LearnFx** keeps its JavaScript in one object bound once with `emitJsExpr`
+  (an `[<Emit>]` would be pasted into every call site: it made the file 183 kB).
+  Pitch tones share `window.__anagAudio` with the meter lens, so one sound
+  plays at a time. Speech uses the device's `el-GR` voice (modern Greek).
+- **CSS:** "Learn" layer at the end of `style.css`, classes `lx-*`. One new token,
+  `--ok` (olive), for right answers; wrong is `--danger`. Answer buttons share
+  `.lx-opt` + `sel/ok/bad/dim/done`.
+- **Views:** in a Feliz list, don't mix `for … ->` with other items. An explicit
+  yield turns off implicit yields and the other items are silently dropped
+  (FS0020). Use `for … do`.
+- **Bundle:** `vite.config.js` puts the Learn modules in their own `learn` chunk.
+- **Left out of the design on purpose:** the myth's placeholder plate (no image
+  yet), the placeholder "Day twelve · 214 words" stats, and the design's own dark
+  toggle (the header's theme button covers it).
+
+
+---
+
+## 19. Study section, Enter to save, forum suggestions, eras to scale (added 2026-09-27)
+
+- **Study** (`#study`, top-bar tab "Study", `navKey` "learn") is the Learn
+  section of §16b renamed: `Router.learnHash` writes `#study/…`, and `#learn/…`
+  still parses. Its front page (`LearnRoute LearnContents`) is `Views/Study.fs`:
+  the μάθησις hero (text in `WikiData.wikiIntro.Lead`, rewritten about
+  studying) with the root family, the "Start here" guide path, **Practise**
+  (the lessons' contents leaf, `Learn.contents`, with a "just for fun, not an
+  assessment" note), and the essay "On learning" (philosophers, quotations).
+  A first visit is no longer redirected to the welcome leaf. The guide
+  (`#start…`) belongs to Study: crumbs Study › Start here, Study tab active.
+  The home page's foot now points to Study instead of listing the steps.
+- **Header:** Library · Study · Wiki · Forum. Phones: Library · Study · Search
+  · Wiki · My library; Forum becomes an icon in the phone header
+  (`.forum-ib`; the tab is `.tab-desk`).
+- **Wiki front page:** its own lead (`WhyWiki`), contents, and a right rail
+  ("Start with": featured Iliad article, Study). No μάθησις hero, no eras chart.
+- **Enter finishes an edit** in every multi-line box (`Shared.onEnterSave`):
+  bookmark notes (closes the editor), the small note editor, author notes
+  (saves), place notes, word fields, forum reply and post body (posts), the
+  import box (loads). Shift+Enter is a new line; IME composition is ignored.
+  In the bug-report form Enter moves to the next box (`Shared.onEnterNext`)
+  and posts from the last. Put `Shared.enterHint` under a box that says so.
+- **Forum:** Bug reports and **Suggestions** (board id `suggestions`, Greek
+  Γνῶμαι) are two panels side by side under the welcome, above Boards and
+  Latest. The schema's category check includes `suggestions`; an existing
+  Supabase project must re-run `supabase/schema.sql` (it widens the check).
+- **Greek through the centuries** (`Shared.erasBand`) is drawn to scale:
+  column width = the era's share of the years (inline `flex-basis`), bar
+  height = its share of the works (inline %), so CSS must not add gaps or
+  padding to columns. Works by undated authors (or eras not drawn) are a
+  dashed column set apart at the end. Every count is computed. Phones turn it
+  on its side (row height = years, bar length = works). It lives on the Eras
+  page (`#wiki/eras`) and the home page, no longer on the wiki front.
+- **Page grid:** one main column plus, where a page has one, a right rail of
+  `--rail` (16–22rem) with `--gutter` between, sections spaced by `--sect`.
+  Used by Study, the wiki front, My library (back-up in the rail), Account
+  (why sign in, in the rail) and the author page.
+- **Feliz lists, again:** `prop.classes [ if a then "x"; if b then "y" ]` on one
+  line parses as a nested sequence (the second `if` only runs when the first
+  is true): put each `if` on its own line. The header's active tab never
+  showed on desktop because of this.
