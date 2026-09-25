@@ -183,11 +183,6 @@ let private welcome (model: Model) (dispatch: Msg -> unit) : ReactElement =
                             prop.onClick (fun _ -> dispatch (Forum_(StartThread("square", "", ""))))
                             prop.text "Start a discussion"
                         ]
-                        Html.button [
-                            prop.className "btn"
-                            prop.onClick (fun _ -> dispatch (Forum_(StartThread("bugs", "", ""))))
-                            prop.text "Report a bug"
-                        ]
                     ]
                 ]
         ]
@@ -197,7 +192,7 @@ let private boardsList (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "f-boards"
         prop.children [
-            for b in Content.forumBoards |> List.filter (fun b -> b.Id <> "bugs") ->
+            for b in Content.forumBoards |> List.filter (fun b -> b.Id <> "bugs" && b.Id <> "suggestions") ->
                 link dispatch "f-board" ("#forum/" + b.Id) [
                     Html.span [ prop.className "f-b-grc grc"; prop.lang "grc"; prop.ariaHidden true; prop.text b.Grc ]
                     Html.b [ prop.text b.Name ]
@@ -206,25 +201,38 @@ let private boardsList (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
-let private bugPanel (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    let b = (Content.forumBoard "bugs").Value
+/// Bug reports and Suggestions: the two boards about the site itself, side by
+/// side at the top of the forum, each a panel with its own button.
+let private sitePanel (dispatch: Msg -> unit) (id: string) (how: string) (action: string) (seeAll: string) : ReactElement =
+    let b = (Content.forumBoard id).Value
     Html.section [
-        prop.className "f-bugs"
-        prop.ariaLabel "Bug reports"
+        prop.className ("f-bugs f-site-" + id)
+        prop.ariaLabel b.Name
         prop.children [
-            Html.h2 [ prop.className "sh"; prop.text "Bug reports" ]
+            Html.p [ prop.className "f-b-grc grc"; prop.lang "grc"; prop.ariaHidden true; prop.text b.Grc ]
+            Html.h2 [ prop.className "sh"; prop.text b.Name ]
             Html.p [ prop.text b.Blurb ]
-            Html.p [
-                prop.className "quiet"
-                prop.text "A good report says what you did, what happened and what you expected. The page you were on and your browser are added for you. Each report is marked Open, Confirmed or Fixed as it is dealt with."
-            ]
+            Html.p [ prop.className "quiet"; prop.text how ]
             Html.div [
                 prop.className "f-cta"
                 prop.children [
-                    Html.button [ prop.className "btn primary"; prop.text "Report a bug"; prop.onClick (fun _ -> dispatch (Forum_(StartThread("bugs", "", "")))) ]
-                    link dispatch "btn" "#forum/bugs" [ Html.text "See all reports" ]
+                    Html.button [ prop.className "btn primary"; prop.text action; prop.onClick (fun _ -> dispatch (Forum_(StartThread(id, "", "")))) ]
+                    link dispatch "btn" ("#forum/" + id) [ Html.text seeAll ]
                 ]
             ]
+        ]
+    ]
+
+let private sitePanels (dispatch: Msg -> unit) : ReactElement =
+    Html.div [
+        prop.className "f-site"
+        prop.children [
+            sitePanel dispatch "bugs"
+                "A good report says what you did, what happened and what you expected. The page you were on and your browser are added for you. Each report is marked Open, Confirmed or Fixed as it is dealt with."
+                "Report a bug" "See all reports"
+            sitePanel dispatch "suggestions"
+                "Say what you'd like and why it would help your reading. Other readers can add their voice in the replies, which is how we tell what matters most."
+                "Make a suggestion" "See all suggestions"
         ]
     ]
 
@@ -233,20 +241,15 @@ let private home (model: Model) (dispatch: Msg -> unit) : ReactElement list =
       if not model.Account.Configured then
           notConfigured dispatch model
       else
+          sitePanels dispatch
           Html.div [
-              prop.className "f-cols"
-              prop.children [
-                  Html.div [
-                      prop.className "f-main"
-                      prop.children (
-                          [ Html.h2 [ prop.className "sh"; prop.text "Boards" ]
-                            boardsList dispatch
-                            Html.h2 [ prop.className "sh"; prop.text "Latest discussions" ] ]
-                          @ remoteView model.Forum.Board (fun ts -> [ threadList model dispatch true ts ]) (fun () -> dispatch (Forum_(LoadBoard "")))
-                      )
-                  ]
-                  Html.aside [ prop.className "f-rail"; prop.children [ bugPanel model dispatch ] ]
-              ]
+              prop.className "f-main"
+              prop.children (
+                  [ Html.h2 [ prop.className "sh"; prop.text "Boards" ]
+                    boardsList dispatch
+                    Html.h2 [ prop.className "sh"; prop.text "Latest discussions" ] ]
+                  @ remoteView model.Forum.Board (fun ts -> [ threadList model dispatch true ts ]) (fun () -> dispatch (Forum_(LoadBoard "")))
+              )
           ] ]
 
 // ---------------------------------------------------------------------------
@@ -269,7 +272,7 @@ let private board (model: Model) (dispatch: Msg -> unit) (cat: string) : ReactEl
                   if model.Account.Configured then
                       Html.button [
                           prop.className "btn primary"
-                          prop.text (if cat = "bugs" then "Report a bug" else "New thread")
+                          prop.text (if cat = "bugs" then "Report a bug" elif cat = "suggestions" then "Make a suggestion" else "New thread")
                           prop.onClick (fun _ -> dispatch (Forum_(StartThread(cat, "", ""))))
                       ]
               ]
@@ -409,7 +412,10 @@ let private thread (model: Model) (dispatch: Msg -> unit) (id: string) : ReactEl
                               prop.value model.Forum.Reply
                               prop.placeholder "Write a reply. Link a passage with [[tlg0012.tlg001:1.1]]."
                               prop.onChange (fun (v: string) -> dispatch (Forum_(SetReply v)))
+                              Shared.onEnterSave (fun () ->
+                                  if not model.Forum.Posting && model.Forum.Reply.Trim() <> "" then dispatch (Forum_ SubmitReply))
                           ]
+                          Shared.enterHint "posts"
                           Html.button [
                               prop.className "btn primary"
                               prop.disabled (model.Forum.Posting || model.Forum.Reply.Trim() = "")
@@ -489,6 +495,7 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
       if not model.Account.Configured then
           notConfigured dispatch model
       else
+          let submit () = if not model.Forum.Posting then dispatch (Forum_ SubmitThread)
           Html.div [
               prop.className "f-form"
               prop.children [
@@ -523,6 +530,7 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
                           prop.value d.Title
                           prop.maxLength 140
                           prop.onChange (fun (v: string) -> set { d with Title = v })
+                          Shared.onEnterNext
                       ]
                   )
                   if cat = "passages" then
@@ -538,18 +546,19 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
                                   prop.placeholder "Reference, e.g. 1.33 or 17a"
                                   prop.ariaLabel "Passage reference"
                                   prop.onChange (fun (v: string) -> set { d with Ref = v })
+                                  Shared.onEnterNext
                               ]
                           ]
                       ]
                   if isBug then
                       field "What happened?" "" (
-                          Html.textarea [ prop.rows 4; prop.value d.BugWhat; prop.onChange (fun (v: string) -> set { d with BugWhat = v }) ]
+                          Html.textarea [ prop.rows 4; prop.value d.BugWhat; prop.onChange (fun (v: string) -> set { d with BugWhat = v }); Shared.onEnterNext ]
                       )
-                      field "How can we make it happen?" "The steps, one per line: which text, which button." (
-                          Html.textarea [ prop.rows 4; prop.value d.BugSteps; prop.onChange (fun (v: string) -> set { d with BugSteps = v }) ]
+                      field "How can we make it happen?" "The steps, one per line (Shift+Enter starts a new line): which text, which button." (
+                          Html.textarea [ prop.rows 4; prop.value d.BugSteps; prop.onChange (fun (v: string) -> set { d with BugSteps = v }); Shared.onEnterNext ]
                       )
                       field "What did you expect?" "" (
-                          Html.textarea [ prop.rows 2; prop.value d.BugExpected; prop.onChange (fun (v: string) -> set { d with BugExpected = v }) ]
+                          Html.textarea [ prop.rows 2; prop.value d.BugExpected; prop.onChange (fun (v: string) -> set { d with BugExpected = v }); Shared.onEnterSave submit ]
                       )
                       Html.details [
                           prop.className "f-attached"
@@ -559,8 +568,8 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
                           ]
                       ]
                   else
-                      field "Your post" "Plain text. Blank lines make paragraphs; [[tlg0012.tlg001:1.1]] links a passage." (
-                          Html.textarea [ prop.rows 9; prop.maxLength 8000; prop.value d.Body; prop.onChange (fun (v: string) -> set { d with Body = v }) ]
+                      field "Your post" "Plain text. Enter posts; Shift+Enter starts a new line, and a blank line a new paragraph. [[tlg0012.tlg001:1.1]] links a passage." (
+                          Html.textarea [ prop.rows 9; prop.maxLength 8000; prop.value d.Body; prop.onChange (fun (v: string) -> set { d with Body = v }); Shared.onEnterSave submit ]
                       )
                   match postGate model dispatch (if isBug then "send a report" else "post") with
                   | Some gate -> gate

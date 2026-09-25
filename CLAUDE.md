@@ -936,3 +936,92 @@ Token and class names did not change; values did, plus a final layer at the end 
   Tyrannus). A work article sits directly above its author's article, so it
   must not repeat what the author article says (dialect, dating, Venetus A).
 - A passage's number copies its CTS citation (phones have no hover for the URN).
+---
+
+## 16b. Learn — beginner's lessons (added 2026-09-25; now the Study section, see §19)
+
+Ported from the "Arche" design (Claude Design handoff, `Arche Prototype v2`),
+restyled in the Stoichedon design language: no papyrus texture, torn edges or
+hand-drawn corners. The design's page turn and ink-in reveal are kept.
+
+- **Routes:** `Route.LearnRoute of LearnPage`; hashes `#learn` (contents),
+  `/welcome`, `/preface`, `/letters`, `/alphabet` (Book I, Lesson 1, 5 leaves),
+  `/declension` (Book II, Lesson 3, 6 leaves), `/declension/done`, `/sounds`,
+  `/iliad`, `/myth` (3 leaves). `Router.learnHash` is the inverse. Leaves inside
+  a lesson are model state, not routes, so Back leaves the lesson. A first visit
+  to `#learn` is redirected (replaceState) to `#learn/welcome` until onboarded.
+  Header tab "Learn" (`navKey` "learn", icon `learn`); phone tab bar order is
+  Texts · Contents · Learn · Wiki · My library.
+- **Files:** `LearnData.fs` (all lesson content: edit wording there),
+  `LearnFx.fs` (DOM/audio effects), `LearnState.fs` (`init`, `enterPage`,
+  `update`; State routes `Learn_` messages and calls `enterPage` from
+  `loadForRoute`), `Views/Learn.fs`. Types: `LearnPage`, `LearnProgress`,
+  `LearnModel`, `LearnMsg`; `Model.Learn`.
+- **Persistence:** `anag:learn` = `{onboarded, pace, step, alpha}`. Exercise
+  state (cards, pairs, tiles, paradigm cells…) is session-only by design.
+- **Page turn:** the view calls `LearnFx.snapshot()` in the click handler, only
+  for messages that turn a leaf (`turning` / `pageLink` in the view); the update
+  returns `LearnFx.turn`. A snapshot that nobody turns removes itself after
+  1.5 s, so never snapshot for a message that doesn't turn. `[data-ink]` marks
+  what blurs in when a leaf opens; `[data-reveal=name]` blocks do the same when
+  an answer appears. Both are skipped under prefers-reduced-motion.
+- **LearnFx** keeps its JavaScript in one object bound once with `emitJsExpr`
+  (an `[<Emit>]` would be pasted into every call site: it made the file 183 kB).
+  Pitch tones share `window.__anagAudio` with the meter lens, so one sound
+  plays at a time. Speech uses the device's `el-GR` voice (modern Greek).
+- **CSS:** "Learn" layer at the end of `style.css`, classes `lx-*`. One new token,
+  `--ok` (olive), for right answers; wrong is `--danger`. Answer buttons share
+  `.lx-opt` + `sel/ok/bad/dim/done`.
+- **Views:** in a Feliz list, don't mix `for … ->` with other items. An explicit
+  yield turns off implicit yields and the other items are silently dropped
+  (FS0020). Use `for … do`.
+- **Bundle:** `vite.config.js` puts the Learn modules in their own `learn` chunk.
+- **Left out of the design on purpose:** the myth's placeholder plate (no image
+  yet), the placeholder "Day twelve · 214 words" stats, and the design's own dark
+  toggle (the header's theme button covers it).
+
+
+---
+
+## 19. Study section, Enter to save, forum suggestions, eras to scale (added 2026-09-27)
+
+- **Study** (`#study`, top-bar tab "Study", `navKey` "learn") is the Learn
+  section of §16b renamed: `Router.learnHash` writes `#study/…`, and `#learn/…`
+  still parses. Its front page (`LearnRoute LearnContents`) is `Views/Study.fs`:
+  the μάθησις hero (text in `WikiData.wikiIntro.Lead`, rewritten about
+  studying) with the root family, the "Start here" guide path, **Practise**
+  (the lessons' contents leaf, `Learn.contents`, with a "just for fun, not an
+  assessment" note), and the essay "On learning" (philosophers, quotations).
+  A first visit is no longer redirected to the welcome leaf. The guide
+  (`#start…`) belongs to Study: crumbs Study › Start here, Study tab active.
+  The home page's foot now points to Study instead of listing the steps.
+- **Header:** Library · Study · Wiki · Forum. Phones: Library · Study · Search
+  · Wiki · My library; Forum becomes an icon in the phone header
+  (`.forum-ib`; the tab is `.tab-desk`).
+- **Wiki front page:** its own lead (`WhyWiki`), contents, and a right rail
+  ("Start with": featured Iliad article, Study). No μάθησις hero, no eras chart.
+- **Enter finishes an edit** in every multi-line box (`Shared.onEnterSave`):
+  bookmark notes (closes the editor), the small note editor, author notes
+  (saves), place notes, word fields, forum reply and post body (posts), the
+  import box (loads). Shift+Enter is a new line; IME composition is ignored.
+  In the bug-report form Enter moves to the next box (`Shared.onEnterNext`)
+  and posts from the last. Put `Shared.enterHint` under a box that says so.
+- **Forum:** Bug reports and **Suggestions** (board id `suggestions`, Greek
+  Γνῶμαι) are two panels side by side under the welcome, above Boards and
+  Latest. The schema's category check includes `suggestions`; an existing
+  Supabase project must re-run `supabase/schema.sql` (it widens the check).
+- **Greek through the centuries** (`Shared.erasBand`) is drawn to scale:
+  column width = the era's share of the years (inline `flex-basis`), bar
+  height = its share of the works (inline %), so CSS must not add gaps or
+  padding to columns. Works by undated authors (or eras not drawn) are a
+  dashed column set apart at the end. Every count is computed. Phones turn it
+  on its side (row height = years, bar length = works). It lives on the Eras
+  page (`#wiki/eras`) and the home page, no longer on the wiki front.
+- **Page grid:** one main column plus, where a page has one, a right rail of
+  `--rail` (16–22rem) with `--gutter` between, sections spaced by `--sect`.
+  Used by Study, the wiki front, My library (back-up in the rail), Account
+  (why sign in, in the rail) and the author page.
+- **Feliz lists, again:** `prop.classes [ if a then "x"; if b then "y" ]` on one
+  line parses as a nested sequence (the second `if` only runs when the first
+  is true): put each `if` on its own line. The header's active tab never
+  showed on desktop because of this.

@@ -239,6 +239,8 @@ let private sourcePane (model: Model) (dispatch: Msg -> unit) : ReactElement lis
                       let input = e.target :?> HTMLInputElement
                       let trimmed = System.Text.RegularExpressions.Regex.Replace(input.value.Trim(), "/+$", "")
                       dispatch (Source_(SetBaseUrl trimmed)))
+                  // Enter saves the address, as leaving the box does
+                  prop.onKeyDown (fun e -> if e.key = "Enter" then (e.target :?> HTMLInputElement).blur ())
               ]
               Html.div [
                   prop.className "srcinfo"

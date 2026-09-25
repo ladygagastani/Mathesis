@@ -538,7 +538,7 @@ let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
                     ]
             ]
         ]
-        deeperLink dispatch "alphabet-and-sounds" "How to say each letter: step 1 of the guide below →"
+        deeperLink dispatch "alphabet-and-sounds" "How to say each letter: step 1 of the guide in Study →"
     ]
 
 let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -557,24 +557,26 @@ let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     ]
             ]
         ]
-        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide →"
+        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide in Study →"
     ]
 
 /// The beginner's guide, at the foot of the page: its steps from the alphabet
 /// to a word study, and a way in. Never folds: it is the page's last word.
+/// The foot of the home page points to Study, where the guide and the
+/// practice lessons now live.
 let private startHereSection (dispatch: Msg -> unit) : ReactElement =
     let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
-    Shared.fixedSection "home-block start-here" "sh" [ Html.text "Start here: learn to read the Greek" ] [
+    Shared.fixedSection "home-block start-here" "sh" [ Html.text "New to Greek? Start in Study" ] [
         Html.p [
             prop.className "sh-lede"
             prop.text
-                "A short guide in eight steps, from the letters and their sounds to the life story of a word. You need no Greek to begin; steps 1 to 3 take about half an hour."
+                "A guide in eight steps, from the letters and their sounds to the life story of a word, and short exercises to practise with. You need no Greek to begin; steps 1 to 3 take about half an hour."
         ]
-        Views.Guide.path dispatch
         Html.div [
             prop.className "g-begin"
             prop.children [
-                Html.a [ prop.className "btn primary"; prop.href first; prop.text "Begin with the alphabet →"; prop.onClick (navigateTo dispatch first) ]
+                Html.a [ prop.className "btn primary"; prop.href "#study"; prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
+                Html.a [ prop.className "btn"; prop.href first; prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
             ]
         ]
     ]

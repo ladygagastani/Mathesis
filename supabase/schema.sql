@@ -96,7 +96,7 @@ create trigger touch_library before insert or update on public.libraries
 create table if not exists public.forum_threads (
   id           uuid primary key default gen_random_uuid(),
   category     text not null
-               check (category in ('square', 'passages', 'debate', 'learning', 'bugs')),
+               check (category in ('square', 'passages', 'debate', 'learning', 'bugs', 'suggestions')),
   title        text not null check (char_length(title) between 3 and 140),
   body         text not null check (char_length(body) between 1 and 8000),
   work         text not null default '' check (char_length(work) <= 40),
@@ -109,6 +109,12 @@ create table if not exists public.forum_threads (
   created_at   timestamptz not null default now(),
   last_post_at timestamptz not null default now()
 );
+
+-- Boards added after the table was first created: widen the check on a table
+-- that already exists (the "create table" above only applies to a new one).
+alter table public.forum_threads drop constraint if exists forum_threads_category_check;
+alter table public.forum_threads add constraint forum_threads_category_check
+  check (category in ('square', 'passages', 'debate', 'learning', 'bugs', 'suggestions'));
 
 create index if not exists forum_threads_board on public.forum_threads (category, last_post_at desc);
 create index if not exists forum_threads_passage on public.forum_threads (work, ref);

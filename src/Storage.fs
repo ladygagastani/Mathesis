@@ -203,6 +203,30 @@ let loadMeterOn () : bool = getJson "meter" Decode.bool false
 let saveMeterOn (v: bool) = setJson "meter" Encode.bool v
 
 // ---------------------------------------------------------------------------
+// Learn progress
+// ---------------------------------------------------------------------------
+
+let learnDefault: LearnProgress = { Onboarded = false; Pace = 1; Step = 0; AlphaDone = false }
+
+let loadLearn () : LearnProgress =
+    let decoder =
+        Decode.object (fun get ->
+            { Onboarded = get.Optional.Field "onboarded" Decode.bool |> Option.defaultValue false
+              Pace = get.Optional.Field "pace" Decode.int |> Option.defaultValue 1 |> max 0 |> min 2
+              Step = get.Optional.Field "step" Decode.int |> Option.defaultValue 0 |> max 0 |> min 6
+              AlphaDone = get.Optional.Field "alpha" Decode.bool |> Option.defaultValue false })
+    getJson "learn" decoder learnDefault
+
+let saveLearn (p: LearnProgress) =
+    setJson "learn" (fun (p: LearnProgress) ->
+        Encode.object [
+            "onboarded", Encode.bool p.Onboarded
+            "pace", Encode.int p.Pace
+            "step", Encode.int p.Step
+            "alpha", Encode.bool p.AlphaDone
+        ]) p
+
+// ---------------------------------------------------------------------------
 // library (favourites, bookmarks/marks, per-author notes)
 // ---------------------------------------------------------------------------
 

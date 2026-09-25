@@ -174,7 +174,7 @@ let private crumbs (dispatch: Msg -> unit) (parts: (string * string option) list
     Html.div [
         prop.className "wcrumbs"
         prop.children [
-            Html.a [ prop.href "#"; prop.text "Home"; prop.onClick (navigateTo dispatch "#") ]
+            Html.a [ prop.href "#study"; prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
             for label, hash in parts do
                 Html.text " › "
                 match hash with

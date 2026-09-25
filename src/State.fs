@@ -201,10 +201,20 @@ let private pageTitle (model: Model) (route: Route) : string =
     | WikiRoute WikiEditions -> "Editions & translations" + suffix
     | GuideRoute slug ->
         (match GuideData.tryFind slug with
-         | Some p when p.Slug <> "" -> p.Title + " — Start here"
-         | _ -> "Start here")
+         | Some p when p.Slug <> "" -> p.Title + " — Study"
+         | _ -> "Start here — Study")
         + suffix
     | ReaderRoute(id, _, _, _, _) -> (model.Catalog.WorkById.TryFind id |> Option.map (fun w -> w.Title) |> Option.defaultValue "") + suffix
+    | LearnRoute page ->
+        (match page with
+         | LearnWelcome | LearnPreface | LearnContents -> "Study"
+         | LearnLetters -> "The letters — Study"
+         | LearnAlphabet -> "Friends and False Friends — Study"
+         | LearnLesson | LearnDone -> "The First Declension — Study"
+         | LearnSounds -> "The Music of the Accent — Study"
+         | LearnIliad -> "The Wrath, Iliad 1.1–5 — Study"
+         | LearnMyth -> "Nobody: Odysseus in the Cyclops’ cave — Study")
+        + suffix
 
 let private leaveReaderEffect (title: string) : Cmd<Msg> =
     Cmd.ofEffect (fun _ ->
@@ -280,6 +290,23 @@ let private loadForRoute (model: Model) (route: Route) : Model * Cmd<Msg> =
     | LibraryRoute LibPlaces ->
         let m2 = { model with Reader = None }
         m2, Cmd.batch [ leaveReaderEffect (pageTitle m2 route); savedPlacesMapCmd m2 ]
+    // enterPage may show a different page from the one asked for; the URL is
+    // replaced rather than pushed, so Back doesn't bounce into the redirect.
+    | LearnRoute page ->
+        let shown, learn, cmd = LearnState.enterPage page model.Learn
+        let route2 = LearnRoute shown
+        let model2 =
+            { model with
+                Reader = None
+                Learn = learn
+                Route = route2
+                CurrentHash = if shown = page then model.CurrentHash else Router.learnHash shown }
+        model2,
+        Cmd.batch [
+            (if shown = page then Cmd.none else Cmd.ofEffect (fun _ -> Router.replaceState (Router.learnHash shown)))
+            leaveReaderEffect (pageTitle model2 route2)
+            cmd
+        ]
     | _ -> { model with Reader = None }, leaveReaderEffect (pageTitle model route)
 
 // ---------------------------------------------------------------------------
@@ -302,6 +329,7 @@ let init () : Model * Cmd<Msg> =
               Local = Map.empty
               NeedsReconnect = [] }
           Reader = None
+          Learn = LearnState.init (Storage.loadLearn ())
           SettingsOpen = false
           SourceMenuOpen = false
           Notes =
@@ -910,6 +938,10 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Forum_ fm -> Features.updateForum fm model
 
     // -- reader: opening / loading -----------------------------------------
+    | Learn_ m ->
+        let learn, cmd = LearnState.update m model.Learn
+        { model with Learn = learn }, cmd
+
     | Reader_(OpenWork(workId, grcUrnOpt, engUrnOpt, chunkOpt, segOpt)) ->
         match model.Catalog.WorkById.TryFind workId with
         | None -> model, Cmd.none
@@ -1502,6 +1534,8 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | WikiRoute(WikiArticles kind) -> Views.WikiPages.articleIndex model dispatch kind
     | WikiRoute WikiEditions -> Views.WikiPages.editions model dispatch
     | GuideRoute slug -> Views.Guide.render model dispatch slug
+    | LearnRoute LearnContents -> Views.Study.render model dispatch
+    | LearnRoute page -> Views.Learn.render model dispatch page
     | ReaderRoute _ ->
         match model.Reader with
         | Some rm -> Views.Reader.render model rm dispatch

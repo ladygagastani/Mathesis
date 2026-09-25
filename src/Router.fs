@@ -41,6 +41,20 @@ let parseHash (hash: string) : Route =
         | "forum" :: _ -> ForumRoute ForumHome
         | "library" :: _
         | "browse" :: _ -> Browse
+        | ("study" | "learn") :: rest ->
+            LearnRoute(
+                match rest with
+                | "welcome" :: _ -> LearnWelcome
+                | "preface" :: _ -> LearnPreface
+                | "letters" :: _ -> LearnLetters
+                | "alphabet" :: _ -> LearnAlphabet
+                | "declension" :: "done" :: _ -> LearnDone
+                | "declension" :: _ -> LearnLesson
+                | "sounds" :: _ -> LearnSounds
+                | "iliad" :: _ -> LearnIliad
+                | "myth" :: _ -> LearnMyth
+                | _ -> LearnContents
+            )
         | "author" :: id :: rest -> AuthorRoute(id, List.tryHead rest)
         | "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
         | "start" :: _ -> GuideRoute None
@@ -72,12 +86,28 @@ let parseHash (hash: string) : Route =
             ReaderRoute(id, grc, eng, chunk, seg)
         | [] -> Landing
 
+/// The hash of a Study page (the inverse of the "study" branch of `parseHash`;
+/// the section was first called Learn, and `#learn/…` links still parse).
+let learnHash (page: LearnPage) : string =
+    match page with
+    | LearnContents -> "#study"
+    | LearnWelcome -> "#study/welcome"
+    | LearnPreface -> "#study/preface"
+    | LearnLetters -> "#study/letters"
+    | LearnAlphabet -> "#study/alphabet"
+    | LearnLesson -> "#study/declension"
+    | LearnDone -> "#study/declension/done"
+    | LearnSounds -> "#study/sounds"
+    | LearnIliad -> "#study/iliad"
+    | LearnMyth -> "#study/myth"
+
 /// Inverse of `parseHash` — builds the hash fragment (including the leading
 /// '#') the app itself would navigate to for a given route.
 let toHash (route: Route) : string =
     let join (segs: string list) = "#" + (segs |> List.map encodeUri |> String.concat "/")
     match route with
     | Landing -> "#"
+    | LearnRoute page -> learnHash page
     | Browse -> join [ "library" ]
     | LibraryRoute LibMarks -> join [ "lib" ]
     | LibraryRoute LibWords -> join [ "lib"; "words" ]
@@ -130,10 +160,11 @@ let navKey (route: Route) : string =
     | LibraryRoute _
     | AccountRoute -> "lib"
     | ForumRoute _ -> "forum"
+    | LearnRoute _ -> "learn"
     | Browse
     | ReaderRoute _ -> "library"
-    | Landing
-    | GuideRoute _ -> "home"
+    | Landing -> "home"
+    | GuideRoute _ -> "learn"
 
 let isReader (route: Route) : bool =
     match route with

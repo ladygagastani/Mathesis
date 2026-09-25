@@ -43,8 +43,8 @@ let private whereSaved (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         e.preventDefault ()
                         dispatch (Navigate("#account", false)))
                 ]
-                Html.text " to keep it on every device, or use Back up at the bottom of the page. "
-            | None, _ -> Html.text "Everything is saved in this browser only, so use Back up at the bottom of the page to keep a copy. "
+                Html.text " to keep it on every device, or use “Back up, restore or clear” to keep a copy. "
+            | None, _ -> Html.text "Everything is saved in this browser only, so use “Back up, restore or clear” to keep a copy. "
         ]
     ]
 
@@ -375,6 +375,7 @@ let private WordRow (model: Model) (dispatch: Msg -> unit) (w: WordCard) =
                                 prop.placeholder "e.g. λόγος"
                                 prop.onChange setLemma
                                 prop.onBlur (fun _ -> commit ())
+                                Shared.onEnterSave commit
                             ]
                         ]
                     ]
@@ -386,6 +387,7 @@ let private WordRow (model: Model) (dispatch: Msg -> unit) (w: WordCard) =
                                 prop.placeholder "e.g. word, speech, reason"
                                 prop.onChange setGloss
                                 prop.onBlur (fun _ -> commit ())
+                                Shared.onEnterSave commit
                             ]
                         ]
                     ]
@@ -550,6 +552,8 @@ let private PlaceNote (dispatch: Msg -> unit) (p: SavedPlace) =
         prop.value text
         prop.onChange setText
         prop.onBlur (fun _ -> if text <> p.Note then dispatch (Library_(SetPlaceNote(p.Qid, text))))
+        // Enter saves (by leaving the box, which saves on blur)
+        Shared.onEnterSave (fun () -> if text <> p.Note then dispatch (Library_(SetPlaceNote(p.Qid, text))))
     ]
 
 let private placesSection (model: Model) (dispatch: Msg -> unit) : ReactElement list =
@@ -733,6 +737,10 @@ let private BackupSection (model: Model) (dispatch: Msg -> unit) =
                 prop.placeholder (if mode = IoImport then "Paste an export here, then press Load this" else "")
                 prop.value currentValue
                 prop.onChange (fun (v: string) -> if mode = IoImport then setImportText v)
+                Shared.onEnterSave (fun () ->
+                    if mode = IoImport && importText.Trim() <> "" then
+                        dispatch (Library_(ImportText importText))
+                        dispatch (Library_ ImportConfirmed))
             ]
             Html.div [
                 prop.id "libIoActions"
@@ -839,7 +847,13 @@ let render (model: Model) (dispatch: Msg -> unit) (tab: LibTab) : ReactElement =
             Html.h1 [ prop.className "ph"; prop.text "My library" ]
             whereSaved model dispatch
             tabs model dispatch tab
-            Html.div [ prop.className "lib-body"; prop.children body ]
-            BackupSection model dispatch
+            // The list, with back-up and restore in the right rail (below it on phones).
+            Html.div [
+                prop.className "lib-cols"
+                prop.children [
+                    Html.div [ prop.className "lib-body"; prop.children body ]
+                    Html.aside [ prop.className "lib-rail-io"; prop.children [ BackupSection model dispatch ] ]
+                ]
+            ]
         ]
     ]

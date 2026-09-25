@@ -32,17 +32,22 @@ let brand (dispatch: Msg -> unit) : ReactElement =
         prop.children [ Html.text "Μάθησις"; Html.small [ prop.text "Ancient Greek reader" ] ]
     ]
 
-/// On phones this row becomes the bottom tab bar, with Search in the middle
-/// and My library (which the header carries on wider screens) at the far
-/// right: Library · Wiki · Search · Forum · My library. `.tab-phone` items
-/// are hidden above the phone breakpoint.
+/// Top bar: Library · Study · Wiki · Forum. On phones this row becomes the
+/// bottom tab bar, with Search in the middle and My library (which the header
+/// carries on wider screens) at the far right: Library · Study · Search ·
+/// Wiki · My library. Forum moves to an icon in the phone header (`.tab-desk`
+/// hides it from the tab bar), so the bar keeps five tabs and a middle.
 let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let active = Router.navKey model.Route
     let tab (hash: string) (key: string) (iconName: string) (label: string) (title: string) (phoneOnly: bool) =
         Html.a [
             prop.href hash
             prop.custom ("data-nav", key)
-            prop.classes [ if phoneOnly then "tab-phone"; if active = key && not model.Search.Open then "active" ]
+            prop.classes [
+                if phoneOnly then "tab-phone"
+                if key = "forum" then "tab-desk"
+                if active = key && not model.Search.Open then "active"
+            ]
             if active = key then prop.custom ("aria-current", "page")
             if title <> "" then prop.title title
             prop.onClick (fun e ->
@@ -57,7 +62,7 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
         prop.ariaLabel "Sections"
         prop.children [
             tab "#library" "library" "texts" "Library" "Every text in the collection" false
-            tab "#wiki" "wiki" "wiki" "Wiki" "" false
+            tab "#study" "learn" "learn" "Study" "Start here: the beginner's guide and practice exercises" false
             Html.button [
                 prop.custom ("data-nav", "search")
                 prop.classes [ "tab-phone"; "tab-search"; if model.Search.Open then "active" ]
@@ -67,6 +72,7 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     dispatch (Search_(if model.Search.Open then CloseSearch else OpenSearch)))
                 prop.children [ Shared.icon "search"; Html.text "Search" ]
             ]
+            tab "#wiki" "wiki" "wiki" "Wiki" "" false
             tab "#forum" "forum" "forum" "Forum" "The town hall: discuss passages, debate, ask, report bugs" false
             tab "#lib" "lib" "library" "My library" "" true
         ]
@@ -106,6 +112,17 @@ let tools (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "tools"
         prop.children [
+            // Phones only: the Forum's place in the tab bar went to Study.
+            Html.a [
+                prop.className ("ib forum-ib" + (if Router.navKey route = "forum" then " active" else ""))
+                prop.href "#forum"
+                prop.title "Forum"
+                prop.ariaLabel "Forum"
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#forum", false)))
+                prop.children [ Shared.icon "forum" ]
+            ]
             accountButton model dispatch
             Html.a [
                 prop.className ("libbtn" + (if Router.navKey route = "lib" then " active" else ""))

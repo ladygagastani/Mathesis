@@ -235,8 +235,8 @@ let workArticles: Map<string, WorkArticle> =
     ]
 
 // ---------------------------------------------------------------------------
-// the wiki's introduction: the word μάθησις, what the philosophers made of
-// learning, and why an open reference and a living language matter
+// the Study page's introduction (the word μάθησις and what the philosophers
+// made of learning) and the wiki's (why an open reference matters)
 // ---------------------------------------------------------------------------
 
 /// A run of the introduction's prose. Greek runs get the Greek face and
@@ -272,15 +272,13 @@ type WikiIntro =
 let wikiIntro: WikiIntro =
     { Lead =
         [ Greek "Μάθησις"
-          Plain " (máthēsis) is the Greek word for learning: not the lesson itself but the act of taking it in. It is made from the verb "
+          Plain " (máthēsis) is the Greek word for learning: not the lesson on the page but the act of taking it in, the slow work of making something your own. It comes from the verb "
           Greek "μανθάνω"
-          Plain " (manthánō), \"I learn\", with the ending "
+          Plain " (manthánō), \"I learn\", and the ending "
           Greek "-σις"
-          Plain " (-sis), which turns an action into a noun, as "
+          Plain "\u00a0(\u2011sis) turns that action into a noun, as "
           Greek "ποίησις"
-          Plain " (poíēsis) is \"making\" and "
-          Greek "κίνησις"
-          Plain " (kínēsis) is \"motion\". This reader is named after it." ]
+          Plain " (poíēsis) is \"making\". This page is for the act itself: a guide that starts from the letters, and short exercises to practise what it teaches." ]
       Philosophy =
         [ Plain "The philosophers asked what learning is. In Plato's "
           Title "Meno"
@@ -301,7 +299,7 @@ let wikiIntro: WikiIntro =
           Passage("177", "tlg0085.tlg005", None, "177")
           Plain " sings of Zeus, who made it law that we learn by suffering: "
           Greek "πάθει μάθος"
-          Plain " (páthei máthos)." ]
+          Plain " (páthei máthos). Reading Greek asks for less suffering than Aeschylus had in mind: only a little, every day." ]
       WhyWiki =
         [ Plain "Greek literature did not survive by itself. It lasted because readers kept explaining it and copying it. Scholars at Alexandria edited Homer and wrote commentaries on him; the margins of Byzantine manuscripts carry notes, the "
           Greek "σχόλια"

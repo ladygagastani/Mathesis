@@ -27,6 +27,9 @@
     <Compile Include="Server.fs" />
     <Compile Include="Features.fs" />
     <Compile Include="Search.fs" />
+    <Compile Include="LearnData.fs" />
+    <Compile Include="LearnFx.fs" />
+    <Compile Include="LearnState.fs" />
     <Compile Include="Lenses/Greek.fs" />
     <Compile Include="Lenses/Prosody.fs" />
     <Compile Include="Lenses/Corpus.fs" />
@@ -39,6 +42,8 @@
     <Compile Include="Views/SettingsPane.fs" />
     <Compile Include="Views/Popover.fs" />
     <Compile Include="Views/Guide.fs" />
+    <Compile Include="Views/Learn.fs" />
+    <Compile Include="Views/Study.fs" />
     <Compile Include="Views/Home.fs" />
     <Compile Include="Views/Lens.fs" />
     <Compile Include="Views/Reader.fs" />

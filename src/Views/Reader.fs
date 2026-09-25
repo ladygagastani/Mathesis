@@ -726,7 +726,10 @@ let private markEditor (model: Model) (dispatch: Msg -> unit) (workId: string) (
                 prop.placeholder "Write a note about this passage."
                 prop.defaultValue note
                 prop.onChange (fun (v: string) -> dispatch (Library_(SetMarkNote(workId, segRef, v))))
+                // Saved as you type; Enter closes the editor like "Done".
+                Shared.onEnterSave (fun () -> dispatch (Library_ CloseMarkEditor))
             ]
+            Shared.enterHint "to finish"
             Html.div [
                 prop.className "mk-linked"
                 prop.children [
