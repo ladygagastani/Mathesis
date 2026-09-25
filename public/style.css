@@ -2019,7 +2019,7 @@ html.ui-compact .libbtn{border-radius:var(--r2)}
 /* Three voices on learning: Plato, Aristotle, Aeschylus. */
 .wh-quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:2rem 0 0}
 @media (max-width:1000px){ .wh-quotes{grid-template-columns:minmax(0,1fr)} }
-.wh-quote{margin:0;display:flex;flex-direction:column;gap:.7rem;padding:1rem 1.15rem 1.05rem;border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper)}
+.wh-quote{margin:0;display:flex;flex-direction:column;gap:.7rem;padding:1rem 1.15rem 1.05rem;border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper-2)}
 .wh-quote blockquote{margin:0;font-size:1.15rem;line-height:1.5;color:var(--ink)}
 .wh-quote figcaption{display:flex;flex-direction:column;gap:.4rem;margin-top:auto}
 .wh-en{font-family:var(--serif-eng);font-style:italic;font-size:.95rem;line-height:1.45;color:var(--ink-2)}
@@ -2118,3 +2118,47 @@ html.ui-compact .libbtn{border-radius:var(--r2)}
   .notes-ib .nb-label{display:none}
   .notes-ib{width:2.25rem;height:2.25rem;padding:0;justify-content:center}
 }
+
+/* ===========================================================================
+   Start here, on the home page (25 Sep 2026). The guide is a path of eight
+   steps (Views.Guide.path): shown at the foot of the home page and on the
+   guide's contents page; each step page carries a strip of step marks.
+   Step numbers are markers, so they take the ochre, like .howto .num.
+   =========================================================================== */
+.start-here .sh-lede{max-width:46rem;color:var(--ink-2);margin:.1rem 0 1rem}
+.gpath{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem 1.6rem;margin:1rem 0 .4rem;max-width:88rem}
+.gp-h{font-family:var(--sans);font-weight:600;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
+  margin:0;padding-bottom:.35rem;border-bottom:1px solid var(--rule-strong)}
+.gp-steps{list-style:none;margin:0;padding:0}
+.gp-step{display:grid;grid-template-columns:1.8rem minmax(0,1fr);gap:.75rem;align-items:start;padding:.65rem 0;
+  border-bottom:1px solid var(--rule-soft);color:var(--ink);text-decoration:none}
+.gp-step .num{width:1.8rem;height:1.8rem;display:grid;place-items:center;border:1px solid var(--ochre);border-radius:var(--r1);
+  color:var(--ochre);font-family:var(--serif);font-size:1rem;line-height:1}
+.gp-body{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.gp-t{font-weight:600;font-size:.98rem;line-height:1.3}
+.gp-s{font-size:.86rem;line-height:1.45;color:var(--ink-2)}
+.gp-step:hover .gp-t,.gp-step:focus-visible .gp-t{color:var(--accent)}
+.g-begin{margin:1rem 0 .4rem}
+@media (max-width:1000px){ .gpath{grid-template-columns:minmax(0,1fr);gap:1rem} }
+
+/* a step page: kicker, then one mark per step (the current one ink-filled) */
+.g-progress{display:flex;flex-wrap:wrap;gap:.3rem;margin:.35rem 0 1.2rem}
+.g-progress a{width:1.9rem;height:1.9rem;display:grid;place-items:center;border:1px solid var(--rule-strong);border-radius:var(--r2);
+  font-size:.8rem;color:var(--mute);text-decoration:none}
+.g-progress a.done{color:var(--ink-2);border-color:var(--ink-2)}
+.g-progress a.on{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+.g-progress a:hover{border-color:var(--ink)}
+
+/* the page's first paragraph says what the step teaches: set as a lede */
+.g-body>.ph+p{font-family:var(--serif-eng);font-size:1.12rem;line-height:1.55;color:var(--ink-2);margin:.2rem 0 1.4rem}
+/* "as in c(u)p": the example word in italics, the letters that make the sound underlined */
+.g-body em u{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.2em}
+/* a quote with no Greek in it is an instruction or tip (Markdown.Note) */
+.g-note{margin:1rem 0 1.3rem;padding:.75rem 1rem;max-width:46rem;border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper-2)}
+.g-note>:first-child{margin-top:0} .g-note>:last-child{margin-bottom:0}
+.g-note p{margin:.4rem 0} .g-note .g-list{margin:.4rem 0}
+.g-pager{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-top:2.2rem;max-width:46rem}
+.g-pager .btn{white-space:normal;text-align:left}
+/* guide tables take the width their content needs (a two-column table no
+   longer spreads across the page); long ones still wrap at the column */
+.g-table table{width:auto;min-width:min(100%,22rem)}

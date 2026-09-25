@@ -405,7 +405,6 @@ let private wikiCardSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
         Html.div [
             prop.className "mini-list"
             prop.children [
-                miniLink dispatch "#wiki/start" "Start here" "A beginner's guide to letters, sounds, dictionaries and words"
                 miniLink dispatch "#wiki/authors" "Authors" "Lives and timelines, by era and by genre"
                 miniLink dispatch "#wiki/eras" "Eras of Greek" (String.concat " · " eraNames)
                 miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" "How the texts survived, and the manuscripts that matter"
@@ -544,7 +543,7 @@ let private erasStripSection (model: Model) (dispatch: Msg -> unit) : ReactEleme
 // ---------------------------------------------------------------------------
 
 /// The home page's alphabet and tips are the short version of the "Start here"
-/// guide; each ends with a way into the long one.
+/// guide, which follows them at the foot of the page; each links to its step.
 let private deeperLink (dispatch: Msg -> unit) (slug: string) (label: string) : ReactElement =
     let h = GuideData.hashOf slug
     Html.p [
@@ -569,7 +568,7 @@ let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
                     ]
             ]
         ]
-        deeperLink dispatch "alphabet-and-sounds" "The alphabet and its sounds, in depth →"
+        deeperLink dispatch "alphabet-and-sounds" "How to say each letter: step 1 of the guide below →"
     ]
 
 let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -588,7 +587,26 @@ let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     ]
             ]
         ]
-        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation, in depth →"
+        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide →"
+    ]
+
+/// The beginner's guide, at the foot of the page: its steps from the alphabet
+/// to a word study, and a way in. Never folds: it is the page's last word.
+let private startHereSection (dispatch: Msg -> unit) : ReactElement =
+    let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
+    Shared.fixedSection "home-block start-here" "sh" [ Html.text "Start here: learn to read the Greek" ] [
+        Html.p [
+            prop.className "sh-lede"
+            prop.text
+                "A short guide in eight steps, from the letters and their sounds to the life story of a word. You need no Greek to begin; steps 1 to 3 take about half an hour."
+        ]
+        Views.Guide.path dispatch
+        Html.div [
+            prop.className "g-begin"
+            prop.children [
+                Html.a [ prop.className "btn primary"; prop.href first; prop.text "Begin with the alphabet →"; prop.onClick (navigateTo dispatch first) ]
+            ]
+        ]
     ]
 
 let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -791,10 +809,7 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
             @ (readingPathsSection model dispatch |> Option.toList)
             // 3. the shape of the whole collection, to scale.
             @ (erasStripSection model dispatch |> Option.toList)
-            // 4. the beginner lane, labelled rather than floating mid-page.
-            @ [ alphabetSection model dispatch
-                tipsSection model dispatch
-                Html.div [
+            @ [ Html.div [
                     prop.className "home-bottom"
                     prop.children [ howToSection model dispatch ]
                 ]
@@ -804,6 +819,11 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     prop.children [ wikiCardSection model dispatch ]
                 ]
                 offlineSection model dispatch
+                // 4. the beginner lane at the foot of the page: the alphabet and
+                // the marks at a glance, then the guide that teaches them.
+                alphabetSection model dispatch
+                tipsSection model dispatch
+                startHereSection dispatch
                 sourcesFooter dispatch ]
         )
     ]

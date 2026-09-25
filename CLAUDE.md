@@ -702,7 +702,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   3. the eras band (`Shared.erasBand`): width = years, height = works; rows on phones
      and in the wiki-home aside.
 - **Layout.** Home: continue → hero (+ Passage of the day) → find → paths → eras →
-  beginners → how it works → corpus → wiki → offline → sources. Wiki home is a ruled
+  how it works → corpus → wiki → offline → alphabet → tips → Start here → sources. Wiki home is a ruled
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
@@ -733,7 +733,7 @@ Token and class names did not change; values did, plus a final layer at the end 
 
 ## 14. "Start here" beginner's guide (added 2026-09-23)
 
-- **Source of truth:** Markdown in `content/start-here/00–09-*.md`, edited by the
+- **Source of truth:** Markdown in `content/start-here/00–08-*.md`, edited by the
   user as scholar-editor. Each file ends with `## For review (not for publication)`.
   Vite's `guide-markdown` loader (`vite.config.js`) serves `*.md?guide` imports as
   strings and **cuts everything from that heading down at build time**. Never render
@@ -741,13 +741,24 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Files:** `Markdown.fs` (pure parser for the subset used: headings, paragraphs,
   rules, quotes, tables, nested lists, `<details><summary>`, `**`/`*`/links/`\*`)
   and `GuideData.fs` (one `importDefault` per page; slug = file name minus number)
-  sit after `Content.fs`. `Views/Guide.fs` sits after `Views/WikiPages.fs`.
-- **Route:** `WikiRoute(WikiGuide of string option)`, hashes `#wiki/start` and
-  `#wiki/start/<slug>`. Entry points: first row of Wiki home, "Start here" in the
-  home wiki card, and "in depth →" links under the home alphabet and tips.
+  sit after `Content.fs`. `Views/Guide.fs` sits before `Views/Home.fs` (Home renders
+  `Guide.path`).
+- **Route:** `GuideRoute of string option`, hashes `#start` and `#start/<slug>`
+  (old `#wiki/start…` links still parse; `GuideData.tryFind` maps merged slugs).
+  The guide hangs off the home page (crumbs Home › Start here), not the wiki.
+  Entry point: the "Start here" block at the foot of the home page
+  (`Guide.path`: eight steps in three parts), plus the links under the home
+  alphabet and tips. Each step's description in the path is its page's first
+  paragraph, so keep that to one or two sentences.
+- **Steps:** 1 alphabet and sounds, 2 vowels and diphthongs, 3 breathings, accents,
+  punctuation (and sound change), 4 dictionary forms, 5 looking up a word,
+  6 reading a word study (stages of Greek), 7–8 word studies (8 ends with a
+  reading path). "step N" in running text auto-links.
 - **Link syntax in the Markdown:** `[label](read:<workId>:<ref>)` opens the reader
   (a verse line number resolves to the passage holding it); `[…](03-….md)` links
-  a guide page; "page N" in running text auto-links. Greek runs render as
+  a guide page; `<u>…</u>` underlines the sound-making letters of an example word
+  (`*c<u>u</u>p*`). A `>` quote whose first line is not Greek, `"` or `(` is a
+  note box (`Markdown.Note`, `.g-note`) and may hold lists. Greek runs render as
   `span.grc[lang=grc]` in the Greek face. Quote lines are classed by their first
   character: Greek → `.q-grc`, `"` → `.q-tr`, `(` → `.q-ref`.
 - Feliz's `prop.start` compiles to a throw; use `prop.custom("start", n)`.

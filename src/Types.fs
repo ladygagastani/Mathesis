@@ -168,8 +168,6 @@ type WikiRoute =
     | WikiEras    of string option
     | WikiArticles of ArticleKind
     | WikiEditions
-    /// The "Start here" guide: None = its contents page, Some slug = one page
-    | WikiGuide of slug: string option
 
 type Route =
     | Landing
@@ -178,6 +176,9 @@ type Route =
     | AboutRoute
     | AuthorRoute of id: string * section: string option
     | WikiRoute   of WikiRoute
+    /// The "Start here" guide, which hangs off the home page: None = its
+    /// contents page, Some slug = one page
+    | GuideRoute  of slug: string option
     | ReaderRoute of workId: string * grcSuffix: string * engSuffix: string
                      * chunk: string option * seg: string option
 

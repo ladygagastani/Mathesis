@@ -1,7 +1,7 @@
 /// The small Markdown subset the "Start here" pages are written in: headings,
 /// paragraphs, rules, block quotes, tables, (nested) lists and
 /// `<details><summary>…</summary> … </details>`, with **strong**, *emphasis*,
-/// [links](…) and `\*` escapes inline. Pure parsing only; Views.Guide renders it.
+/// <u>underline</u>, [links](…) and `\*` escapes inline. Pure parsing only; Views.Guide renders it.
 module Markdown
 
 open System.Text.RegularExpressions
@@ -10,6 +10,9 @@ type Inline =
     | Text of string
     | Strong of Inline list
     | Em of Inline list
+    /// `<u>…</u>`: the letters of an example word that make the sound
+    /// ("as in *c<u>u</u>p*")
+    | Under of Inline list
     | Link of href: string * Inline list
 
 type Block =
@@ -19,6 +22,9 @@ type Block =
     /// mark or a parenthesis starts a new visual line (translation, reference);
     /// anything else continues the line before it.
     | Quote of Inline list list
+    /// A block quote with no Greek, translation or reference in it: a tip or
+    /// instruction, whose lines are ordinary Markdown (paragraphs, lists)
+    | Note of Block list
     | Bullets of Block list list
     /// `start` is the first item's number, so a list split by a heading keeps counting
     | Numbered of start: int * Block list list
@@ -71,6 +77,11 @@ let rec parseInline (s: string) : Inline list =
             else
                 buf.Append(c) |> ignore
                 i <- i + 1
+        elif c = '<' && i + 3 <= s.Length && s.Substring(i, 3) = "<u>" && s.IndexOf("</u>", i + 3) > 0 then
+            let close = s.IndexOf("</u>", i + 3)
+            flush ()
+            out.Add(Under(parseInline (s.Substring(i + 3, close - i - 3))))
+            i <- close + 4
         elif c = '[' then
             let m = Regex.Match(s.Substring(i), @"^\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)\s]+)\)")
             if m.Success then
@@ -182,7 +193,18 @@ let rec parseBlocks (lines: string list) : Block list =
             while i < n && arr.[i].TrimStart().StartsWith ">" do
                 q.Add(Regex.Replace(arr.[i].TrimStart(), @"^>\s?", ""))
                 i <- i + 1
-            blocks.Add(Quote(quoteLines (List.ofSeq q)))
+            // a quote opens with Greek, a translation in quotation marks or a
+            // reference in brackets; anything else is a note
+            let opensQuote =
+                q
+                |> Seq.tryFind (fun l -> l.Trim() <> "")
+                |> Option.map (fun l -> l.TrimStart('*', ' '))
+                |> Option.exists (fun l ->
+                    l <> ""
+                    && (let c = l.[0]
+                        c = '"' || c = '“' || c = '(' || (c >= 'Ͱ' && c <= 'Ͽ') || (c >= 'ἀ' && c <= '῿')))
+            if opensQuote then blocks.Add(Quote(quoteLines (List.ofSeq q)))
+            else blocks.Add(Note(parseBlocks (List.ofSeq q)))
         elif line.TrimStart().StartsWith "|" then
             let rows = ResizeArray<string>()
             while i < n && arr.[i].TrimStart().StartsWith "|" do
@@ -210,6 +232,14 @@ let rec parseBlocks (lines: string list) : Block list =
                 i <- i + 1
             blocks.Add(Para(parseInline (String.concat " " para)))
     List.ofSeq blocks
+
+/// The text of some inlines with the markup dropped.
+let rec plainText (xs: Inline list) : string =
+    xs
+    |> List.map (function
+        | Text s -> s
+        | Strong ys | Em ys | Under ys | Link(_, ys) -> plainText ys)
+    |> String.concat ""
 
 let parse (text: string) : Block list =
     text.Replace("\r\n", "\n").Split('\n') |> List.ofArray |> parseBlocks

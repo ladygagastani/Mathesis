@@ -1,91 +1,80 @@
 # How dictionaries list words
 
-In English, *run*, *runs*, *ran* and *running* are close enough that you can guess the
-dictionary word. Greek words change their shape far more. One verb can have hundreds of
-forms, and some of them share hardly a letter with the word you must look up. This page
-explains how dictionaries choose the one form they list, so you know what to look for.
+The one form of each word that a dictionary lists, so you know what to look for.
 
-## A few terms first
+Greek words change shape far more than English ones. In English, *run*, *ran* and *running*
+are close enough to guess the dictionary word. A Greek verb can have hundreds of forms, and
+some share hardly a letter with the word you must look up.
 
-- **Inflection** is the changing of a word's ending, and sometimes its beginning or middle,
-  to show its job in the sentence. English does it a little (*he*/*him*, *walk*/*walked*).
-  Greek does it constantly.
-- The **stem** is the part of a word that carries its meaning. The **ending** is the part
-  that changes.
-- The **dictionary form** (or **headword**, or **lemma**) is the one form a dictionary uses
-  to list a word. Every other form has to be traced back to it.
+## Three terms first
 
-## Nouns: nominative, genitive, article
+- **Inflection** is the changing of a word's ending (and sometimes its beginning or middle)
+  to show its job in the sentence. English does it a little: *he*/*him*, *walk*/*walked*.
+- The **stem** carries the meaning; the **ending** changes.
+- The **dictionary form** (also **headword** or **lemma**) is the one form a dictionary
+  lists. Every other form has to be traced back to it.
 
-A Greek noun changes its ending according to its **case**, that is, its role in the
-sentence. Attic has five cases. Here is λόγος *logos* "word", with the article "the"
-(ὁ, τοῦ, …):
+## Nouns
+
+A noun changes its ending according to its **case**: its role in the sentence. Here is
+λόγος *logos* "word", with the article "the":
 
 | Case | Typical job | Form | Roughly |
 |---|---|---|---|
 | **nominative** | the subject | ὁ λόγος | the word (does something) |
-| **genitive** | "of", possession | τοῦ λόγου | of the word |
+| **genitive** | "of" | τοῦ λόγου | of the word |
 | **dative** | "to, for, with" | τῷ λόγῳ | to / for the word |
-| **accusative** | the direct object | τὸν λόγον | (someone hears) the word |
-| **vocative** | calling someone | λόγε | O word! |
+| **accusative** | the object | τὸν λόγον | (someone hears) the word |
+| **vocative** | calling out | λόγε | O word! |
 
-Nouns also have a **gender** (masculine, feminine or neuter) and a **number** (singular,
-plural, and in older Greek a "dual" for pairs). Gender is grammatical, not biological:
-λόγος is masculine, χώρα *khōra* "land" is feminine, σῶμα *sōma* "body" is neuter.
+Every noun also has a **gender**: masculine, feminine or neuter. It is grammatical, not
+biological: λόγος is masculine, χώρα "land" feminine, σῶμα "body" neuter.
 
-A dictionary lists a noun by three things: its **nominative singular**, its **genitive
-singular** (often just the ending), and its **article**, which shows the gender:
+**A dictionary lists a noun by three things:** the nominative, the genitive (often just its
+ending), and the article, which shows the gender.
 
-- λόγος, -ου, ὁ: "word"; masculine, because the article ὁ is masculine
-- χώρα, -ας, ἡ: "land"; feminine (ἡ)
-- σῶμα, -ατος, τό: "body"; neuter (τό)
-- ἀνήρ, ἀνδρός, ὁ: "man"
+- λόγος, -ου, ὁ "word" (ὁ: masculine)
+- χώρα, -ας, ἡ "land" (ἡ: feminine)
+- σῶμα, -ατος, τό "body" (τό: neuter)
+- ἀνήρ, ἀνδρός, ὁ "man"
 
-**Why the genitive matters.** For many nouns, the true stem appears only in the genitive.
-The nominative σῶμα hides a stem σωματ-, which you need for every other form (σώματι,
-σώματα…). If you meet ἀνδρός, you might never guess ἀνήρ. A dictionary that lists
-"ἀνήρ, ἀνδρός" shows you the connection. The big Liddell–Scott dictionary often leaves the
-genitive out when it is predictable ("λόγος, ὁ"). Learners' dictionaries usually print it
-in full.
+**Why the genitive matters.** It often shows the true stem, which the nominative hides.
+σῶμα has the stem σωματ-, seen in σώματι, σώματα. Meet ἀνδρός, and you might never guess
+ἀνήρ; the entry "ἀνήρ, ἀνδρός" makes the link for you.
 
-## Adjectives: the gender forms
+## Adjectives
 
-Adjectives change to match their noun in gender, case and number. So a dictionary gives the
-nominative singular in each gender: masculine, feminine, neuter.
+An adjective matches its noun, so the dictionary gives it in each gender: masculine,
+feminine, neuter.
 
-- ἀγαθός, -ή, -όν: "good" (ἀγαθός man, ἀγαθή woman, ἀγαθόν thing)
-- δίκαιος, -α, -ον: "just"
-- ἀληθής, -ές: "true". Only two forms, because masculine and feminine share one.
-- ἄδικος, -ον: "unjust". Many compound adjectives also have only two forms.
+- ἀγαθός, -ή, -όν "good" (ἀγαθός man, ἀγαθή woman, ἀγαθόν thing)
+- ἀληθής, -ές "true": only two forms, because masculine and feminine share one.
 
-## Verbs: "I …" in the present
+## Verbs
 
-English dictionaries list verbs under the infinitive (*to loosen*). Greek dictionaries use
-the **first person singular present indicative active**, that is, the plain "I do" form:
+Greek dictionaries list a verb under its plain "I do" form in the present:
 
-- λύω *lyō* "I loosen, set free" is listed as λύω, and means "loosen".
-- Verbs that have only middle or passive forms end in **-ομαι**: ἔρχομαι *erkhomai* "I
-  come, go", βούλομαι *boulomai* "I want".
-- **Contract verbs** are listed in their *uncontracted* form. In Attic, ὁρῶ "I see" and ποιῶ
-  "I make" are contractions of ὁράω and ποιέω, and **those** are the forms you look up.
+- λύω *lyō* "I loosen" is listed as λύω, and means "loosen".
+- Verbs with no active forms end in **-ομαι**: ἔρχομαι "I come, go", βούλομαι "I want".
+- **Contracted verbs** are listed in their long form. ὁρῶ "I see" and ποιῶ "I make" are
+  short for ὁράω and ποιέω, and **those** are what you look up.
 - A few very common verbs end in **-μι**: εἰμί "I am", δίδωμι "I give", τίθημι "I put".
 
 ## Principal parts
 
 A Greek verb is built on several stems, one for each group of tenses. The forms that show
-you those stems are the verb's **principal parts**. Dictionaries and grammars give six:
+them are its **principal parts**, and dictionaries give six:
 
 | | Part | For λύω | Meaning |
 |---|---|---|---|
 | 1 | present | λύω | I loosen |
 | 2 | future | λύσω | I shall loosen |
-| 3 | aorist active | ἔλυσα | I loosened (a simple past) |
-| 4 | perfect active | λέλυκα | I have loosened |
+| 3 | aorist | ἔλυσα | I loosened (a simple past) |
+| 4 | perfect | λέλυκα | I have loosened |
 | 5 | perfect middle/passive | λέλυμαι | I have been loosened |
 | 6 | aorist passive | ἐλύθην | I was loosened |
 
-λύω is the model verb of every grammar because it is regular: the stem λυ- is easy to see
-in every part. Many of the commonest verbs are not like this:
+λύω is regular: the stem λυ- shows in every part. Many of the commonest verbs are not:
 
 | Present | Future | Aorist | Perfect | Meaning |
 |---|---|---|---|---|
@@ -95,26 +84,32 @@ in every part. Many of the commonest verbs are not like this:
 | ἔρχομαι | εἶμι | ἦλθον | ἐλήλυθα | come, go |
 | λέγω | ἐρῶ | εἶπον | εἴρηκα | say |
 
-Why are they so irregular?
-- **Different roots glued together.** ὁράω, ὄψομαι and εἶδον come from three separate old
-  words for seeing, which merged into one verb. English does the same with *go* and *went*.
-- **Vowel changes inside the stem,** like English *sing*, *sang*, *sung*: πάσχω, ἔπαθον,
-  πέπονθα.
-- **Additions at the front.** Past tenses often add ἐ- (the **augment**: ἔ-λυσα). Perfects
-  usually repeat the first consonant (**reduplication**: λέ-λυκα). Both must be peeled off
-  before you look up.
-- **Prefixes.** Many verbs are compounds with a preposition in front, and the augment goes
-  *after* the prefix: ἀπ-έ-θανον "I died" comes from ἀπο-θνῄσκω.
+Why so irregular?
 
-**The practical upshot:** if a word will not come up in the dictionary, suspect an irregular
-verb. Try peeling off an ἐ- or a reduplication, look for a familiar prefix, or let a
-morphology tool do the work (page 5). Better still, learn the principal parts of the twenty
-or so commonest irregular verbs early. It saves hours.
+- **Different words glued together.** ὁράω, ὄψομαι and εἶδον come from three old words for
+  seeing, as English *go* and *went* come from two.
+- **Vowel changes inside the stem,** like *sing*, *sang*, *sung*: πάσχω, ἔπαθον, πέπονθα.
+- **Additions at the front.** Past tenses often add ἐ- (the **augment**: ἔ-λυσα). Perfects
+  usually repeat the first consonant (**reduplication**: λέ-λυκα).
+- **Prefixes.** Many verbs begin with a preposition, and the augment goes *after* it:
+  ἀπ-έ-θανον "I died" comes from ἀπο-θνῄσκω.
+
+> **In short: what to look up**
+>
+> - **A noun:** its nominative singular. Meet ἄνδρα, look up ἀνήρ "man".
+> - **An adjective:** its masculine nominative singular: ἀγαθός "good".
+> - **A verb:** its "I …" form in the present: λύω "I loosen", or ἔρχομαι "I come" for a verb
+>   in -ομαι. A short form like ὁρῶ "I see" is listed in full, as ὁράω.
+> - **Nothing comes up?** Suspect an irregular verb. Peel off an ἐ- or a repeated first
+>   consonant, look for a prefix, or let a tool find it (step 5).
+>
+> Learning the principal parts of the twenty or so commonest irregular verbs early saves hours.
 
 ---
 
 ## For review (not for publication)
+- **Shortened (25 Sep 2026).** Added the "In short" box at the end. Cut: number (singular, plural, dual); LSJ's habit of leaving out a predictable genitive; δίκαιος and ἄδικος from the adjectives; "first person singular present indicative active" (now "plain 'I do' form in the present"). "Verbs that have only middle or passive forms" is now "verbs with no active forms"; "contract verbs … uncontracted form" is now "contracted verbs … long form". Check that these plainer wordings are acceptable to you.
 - **The irregular verbs table.** It shows only the first four principal parts, to keep it readable. ὁράω's perfect is given in both its Attic spellings, ἑόρακα and ἑώρακα, and I checked it against LSJ's short entry on Logeion. φέρω's aorist also has a second form, ἤνεγκον, which I left out.
 - **ἔρχομαι.** Its Attic future is normally εἶμι, and ἐλεύσομαι is rare in Attic prose. The table gives εἶμι without explanation. Consider adding a footnote.
 - **The "three old words" claim.** That ὁράω/ὄψομαι/εἶδον draw on three roots is standard (*wer-*, *okʷ-*, *weid-*). I kept the page's wording non-technical.
-- **The dual** is mentioned only in passing, on purpose.
+- **Five cases.** The old page said "Attic has five cases"; the number was dropped as unneeded.

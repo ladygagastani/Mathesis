@@ -1,73 +1,50 @@
 # Start here
 
-*A beginner's guide to reading Ancient Greek in Μάθησις*
+A short guide to reading the Greek beside the translation, in eight steps: the letters and
+their sounds, then the dictionary, then the life stories of twelve common words.
 
-You do not need to know any Greek, Latin or grammar to use these pages. Every technical
-word is explained the first time it appears.
+You need no Greek, Latin or grammar. Every technical word is explained the first time it
+appears. Take the steps in order, since each builds on the one before. Steps 1 to 3 (about
+half an hour) let you sound out any Greek in the reader. Steps 4 and 5 teach you to look a
+word up. Steps 6 to 8 are for curiosity.
 
-**Where to begin.** To sound out the Greek beside the translation, read pages 2 and 3
-(about half an hour). To look words up, add pages 4 to 6. Pages 7 to 9 are for curiosity:
-the life stories of twelve common words.
+## Which Greek this guide teaches
 
-## Contents
+Greek has been written for about 3,400 years (step 6 tells that story). This guide teaches
+**Attic**, the Greek of Athens in the 5th and 4th centuries BCE, for three reasons:
 
-**Part I — Which Greek?**
-1. [Why Greek, and which Greek](01-which-greek.md): what the language is, its 3,400-year history, and where a beginner starts
+- **Most of the classics are in it:** Plato, Thucydides, Xenophon, the orators, and the
+  spoken parts of tragedy and comedy.
+- **Grammars and dictionaries are built on it.** Dictionaries list words in their Attic form.
+- **It opens the other doors.** Koine, the Greek of the New Testament, is Attic simplified, and
+  Homer and Herodotus are easiest to learn as variations on it.
 
-**Part II — Letters and sounds**
-2. [The alphabet and its sounds](02-alphabet-and-sounds.md): how to say each letter, vowel length and diphthongs
-3. [Breathings, accents and punctuation](03-breathings-accents-punctuation.md): the small marks over the letters, and how the sounds changed
+For the sounds, the guide uses the **reconstructed** pronunciation: our best estimate of how
+Athenians spoke in Plato's time. Step 3 ends with the two other pronunciations you will hear.
 
-**Part III — Dictionaries**
-4. [How dictionaries list words](04-how-dictionaries-list-words.md): dictionary forms and principal parts
-5. [Which dictionary for what](05-which-dictionary.md): the great lexicons and the online tools
-6. [A lookup, step by step](06-a-lookup-step-by-step.md): one real word from Plato, looked up together
+## How Greek is written in these pages
 
-**Part IV — Word studies across the eras**
-7. [How to read a word study](07-reading-a-word-study.md): the kinds of change a word goes through
-8. [Word studies I: people, home and world](08-word-studies-people-home-world.md): ἄνθρωπος, μήτηρ, πούς, οἶκος, ὕδωρ, θεός
-9. [Word studies II: mind, city and two verbs](09-word-studies-mind-city-verbs.md): ψυχή, λόγος, πόλις, καλός, ἔχω, εἰμί
+Each Greek word is also spelled in our alphabet, in *italics*, so you can see how it sounds:
+μήτηρ *mētēr* "mother". The line over ē and ō marks a long vowel. The table in step 1 gives
+the spelling for every letter.
 
-Pages 2, 3, 6 and 9 end with short exercises. The answers are folded away underneath.
+- Accents are left out of these spellings.
+- Familiar names keep their English form: Achilles and Plato, not *Akhilleus* and *Platōn*.
+- **Modern Greek** words are printed in modern spelling, which has a single accent mark,
+  and spelled as they sound today, with the stressed vowel marked: μητέρα *mitéra*.
 
-## Conventions used throughout
-
-**Transliteration.** Greek words are also written in the Latin alphabet, in *italics*, so you can
-see how they sound. The home page's alphabet table uses the same system:
-
-| Greek | Written as | Example |
-|---|---|---|
-| η, ω | ē, ō (the line on top marks a long vowel) | μήτηρ *mētēr* |
-| θ, φ, χ | th, ph, kh | ψυχή *psykhē* |
-| ξ, ψ | x, ps | ξένος *xenos* |
-| υ | y, except in the pairs au, eu, ēu, ou, ui | ὕδωρ *hydōr*, αὐτός *autos* |
-| γ before γ, κ, ξ, χ | n | ἄγγελος *angelos* |
-| rough breathing ( ῾ ) | h | ὁδός *hodos* |
-| ῥ at the start of a word | rh | ῥήτωρ *rhētōr* |
-| ᾳ, ῃ, ῳ | āi, ēi, ōi | ᾠδή *ōidē* |
-
-Accents are not shown in transliteration. Familiar names keep their usual English spelling
-(Achilles, Plato, Thucydides), not a letter-for-letter version (*Akhilleus*).
-
-**Modern Greek words** are written in their modern spelling, which has a single accent mark
-(μητέρα), and romanized as they sound today, with the stressed vowel marked: *mitéra*,
-*neró*. So ψυχή is *psykhē* in Ancient Greek and *psichí* in Modern Greek. The difference in
-spelling is the history of its sound.
-
-**Pronunciation.** These pages use the **reconstructed Classical Attic** pronunciation:
-our best estimate of how Athenians spoke in Plato's time. The end of page 2 compares it with
-the two other pronunciations you will hear.
-
-**Dates** follow the app's own eras (see the Wiki's *Eras* pages): Archaic (to 480 BCE), Classical
-(480–323 BCE), Hellenistic (323–31 BCE), Roman Imperial (31 BCE–330 CE), Late Antique
-(330–620), Byzantine (620–1453).
-
-**Quotations** come from the texts the app itself loads, and each links to its place in the reader.
+Every quotation links to its place in the reader. Steps 1, 2, 3, 5 and 8 end with short
+exercises; the answers are folded away underneath.
 
 ---
 
 ## For review (not for publication)
-- **Reader links** are written `[label](read:<workId>:<ref>)`. For verse the ref can be a line number (`1.58`), and the reader opens the passage that holds that line. Links to other guide pages are written as the file name (`[…](03-breathings-accents-punctuation.md)`), and "page N" in the running text links automatically.
+- **Restructure (25 Sep 2026).** The guide now has eight steps and lives on the home page (`#start`), no longer in the Wiki. Old `#wiki/start/…` links still work. The contents list is no longer written here: the app builds it from the pages, using each page's first paragraph as its description, so keep that paragraph to one or two sentences.
+- **What moved where.** Old page 1 (*Why Greek, and which Greek*): the case for Attic is now "Which Greek this guide teaches" above; the table of stages is in step 6; the reading path is the end of step 8. Old page 2 was split into step 1 (letters) and step 2 (vowels and diphthongs). Old pages 5 and 6 (dictionaries, a lookup) are merged into step 5. Old page 2's "Other pronunciations" is now at the end of step 3, beside the sound changes.
+- **Cross-references** are now written "step N" in the running text, and link automatically. Reader links are written `[label](read:<workId>:<ref>)`. For verse the ref can be a line number (`1.58`), and the reader opens the passage that holds that line. Links to other guide pages are written as the file name (`[…](03-breathings-accents-punctuation.md)`).
+- **Underlined sounds.** In the pronunciation tables, the letters of an example word that make the sound are written `<u>…</u>` inside the italics: `*c<u>u</u>p*`.
 - **Publishing.** Everything from "## For review (not for publication)" down is cut at build time (the `guide-markdown` loader in `vite.config.js`), so these notes never reach readers.
-- **Every Greek quotation** in pages 1–9 was checked word for word against the Perseus or First1K file the app loads (fetched from GitHub on 2026-09-23). Where the edition's spelling or accentuation differs from what I print, the page's review list says so.
-- **Exercise count.** The answers ("pages 2, 3, 6 and 9") match the brief: sections 2–4, with section 4 practised at the end of page 9.
+- **Every Greek quotation** in steps 1–8 was checked word for word against the Perseus or First1K file the app loads (fetched from GitHub on 2026-09-23). Where the edition's spelling or accentuation differs from what I print, the page's review list says so.
+- **Transliteration table.** The old conventions table was dropped; each rule now sits where it is taught: η ω → ē ō and θ φ χ → th ph kh (step 1's table), γ before γ κ ξ χ → n (step 1), υ → u in diphthongs and ᾳ ῃ ῳ → āi ēi ōi (step 2), rough breathing → h and initial ῥ → rh (step 3).
+- **Dates.** The list of the app's eras was dropped from this page; step 6 maps the stages of Greek to the app's eras.
+- **Ventris, Doric, Demotic (from old page 1).** Ventris announced the decipherment in 1952, and John Chadwick joined him soon after: decide whether Chadwick should be named. "c. 1400–1200 BCE" for Linear B is a round figure. Demotic's 1976 date is the usual one for the language law; confirm it if the page is ever cited formally. The Doric list was dropped along with the dialect details.

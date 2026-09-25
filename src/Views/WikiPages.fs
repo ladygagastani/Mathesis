@@ -267,16 +267,6 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         prop.children [
                             wcat
                                 dispatch
-                                "Ἀρχή"
-                                "#wiki/start"
-                                "Start here"
-                                "A beginner's guide: the alphabet and its sounds, using a Greek dictionary, and twelve words followed through three thousand years."
-                                [ GuideData.hashOf "which-greek", "Which Greek"
-                                  GuideData.hashOf "alphabet-and-sounds", "Letters and sounds"
-                                  GuideData.hashOf "how-dictionaries-list-words", "Dictionaries"
-                                  GuideData.hashOf "reading-a-word-study", "Word studies" ]
-                            wcat
-                                dispatch
                                 "Συγγραφεῖς"
                                 "#wiki/authors"
                                 "Authors"

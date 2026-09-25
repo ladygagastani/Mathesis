@@ -193,7 +193,7 @@ let private pageTitle (model: Model) (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> "Manuscripts & transmission" + suffix
     | WikiRoute(WikiArticles Variants) -> "Textual variants" + suffix
     | WikiRoute WikiEditions -> "Editions & translations" + suffix
-    | WikiRoute(WikiGuide slug) ->
+    | GuideRoute slug ->
         (match GuideData.tryFind slug with
          | Some p when p.Slug <> "" -> p.Title + " — Start here"
          | _ -> "Start here")
@@ -1380,7 +1380,7 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | WikiRoute(WikiEras(Some id)) -> Views.WikiPages.era model dispatch id
     | WikiRoute(WikiArticles kind) -> Views.WikiPages.articleIndex model dispatch kind
     | WikiRoute WikiEditions -> Views.WikiPages.editions model dispatch
-    | WikiRoute(WikiGuide slug) -> Views.Guide.render model dispatch slug
+    | GuideRoute slug -> Views.Guide.render model dispatch slug
     | ReaderRoute _ ->
         match model.Reader with
         | Some rm -> Views.Reader.render model rm dispatch

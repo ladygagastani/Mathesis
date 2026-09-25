@@ -28,6 +28,11 @@ let parseHash (hash: string) : Route =
         | "about" :: _ -> AboutRoute
         | "browse" :: _ -> Browse
         | "author" :: id :: rest -> AuthorRoute(id, List.tryHead rest)
+        | "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
+        | "start" :: _ -> GuideRoute None
+        // the guide used to live in the wiki; old links still work
+        | "wiki" :: "start" :: slug :: _ when slug <> "" -> GuideRoute(Some slug)
+        | "wiki" :: "start" :: _ -> GuideRoute None
         | "wiki" :: rest ->
             let wikiRoute =
                 match rest with
@@ -40,8 +45,6 @@ let parseHash (hash: string) : Route =
                 | "manuscripts" :: _ -> WikiArticles Manuscripts
                 | "variants" :: _ -> WikiArticles Variants
                 | "editions" :: _ -> WikiEditions
-                | "start" :: slug :: _ when slug <> "" -> WikiGuide(Some slug)
-                | "start" :: _ -> WikiGuide None
                 | "undated" :: _ -> WikiAuthors(Some(ByEra "undated")) // old links
                 | _ -> WikiHome
             WikiRoute wikiRoute
@@ -74,8 +77,8 @@ let toHash (route: Route) : string =
     | WikiRoute(WikiArticles Manuscripts) -> join [ "wiki"; "manuscripts" ]
     | WikiRoute(WikiArticles Variants) -> join [ "wiki"; "variants" ]
     | WikiRoute WikiEditions -> join [ "wiki"; "editions" ]
-    | WikiRoute(WikiGuide None) -> join [ "wiki"; "start" ]
-    | WikiRoute(WikiGuide(Some slug)) -> join [ "wiki"; "start"; slug ]
+    | GuideRoute None -> join [ "start" ]
+    | GuideRoute(Some slug) -> join [ "start"; slug ]
     | ReaderRoute(id, grc, eng, chunk, seg) ->
         // An empty edition slot means "no preference — pick the usual one", and
         // is distinct from the literal "none", which means "show Greek only".
@@ -103,6 +106,7 @@ let navKey (route: Route) : string =
     | AboutRoute -> "wiki"
     | LibraryRoute -> "lib"
     | Landing
+    | GuideRoute _
     | Browse
     | ReaderRoute _ -> "texts"
 
