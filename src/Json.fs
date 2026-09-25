@@ -30,10 +30,26 @@ let private decodeTextMeta : Decoder<TextMeta> =
           Kb = get.Required.Field "kb" Decode.int
           Refs = get.Required.Field "refs" (Decode.list Decode.string) })
 
+/// The catalogue gives some works only their Latin title. Where English
+/// readers know the work by an English one (and the rest of the site already
+/// uses it, as the Passage of the day does for the Meditations), use that.
+/// Titles scholars also use in English (Deipnosophistae) stay as they are.
+let private englishTitles =
+    Map [ "tlg0562.tlg001", "Meditations"
+          "tlg0004.tlg001", "Lives of the Eminent Philosophers"
+          "tlg0018.tlg001", "On the Creation of the World"
+          "tlg0057.tlg002", "On the Best Teaching"
+          "tlg0086.tlg014", "History of Animals"
+          "tlg0552.tlg001", "On the Sphere and Cylinder"
+          "tlg0627.tlg003", "Prognostic"
+          "tlg0641.tlg001", "Ephesian Tale"
+          "tlg1799.tlg001", "Elements" ]
+
 let private decodeWork (authorId: string) : Decoder<Work> =
     Decode.object (fun get ->
-        { Id = get.Required.Field "id" Decode.string
-          Title = get.Required.Field "title" Decode.string
+        let id = get.Required.Field "id" Decode.string
+        { Id = id
+          Title = englishTitles |> Map.tryFind id |> Option.defaultWith (fun () -> get.Required.Field "title" Decode.string)
           AuthorId = authorId
           Texts = get.Required.Field "texts" (Decode.list decodeTextMeta) })
 

@@ -369,15 +369,17 @@ let private wikiCardSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
         model.Meta.Eras
         |> List.filter (fun e -> model.Meta.Authors |> Map.exists (fun _ m -> m.Era = Some e.Id))
         |> List.map (fun e -> stripParenSuffix e.Name)
-    Shared.collapsibleSection dispatch model.Collapsed "home-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" None) [
+    let strip (s: string) = s.TrimEnd('.')
+    Shared.collapsibleSection dispatch model.Collapsed "home-card wiki-card" "wiki" "" (cardHeader dispatch "wiki" "Wiki" None) [
         Html.div [
             prop.className "mini-list"
             prop.children [
-                miniLink dispatch "#wiki/authors" "Authors" "Lives and timelines, by era and by genre"
+                miniLink dispatch "#wiki/authors" "Authors" (strip (WikiData.blurbAuthors model.Catalog.Authors.Length))
                 miniLink dispatch "#wiki/eras" "Eras of Greek" (String.concat " · " eraNames)
-                miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" "How the texts survived, and the manuscripts that matter"
-                miniLink dispatch "#wiki/variants" "Textual variants" "Added lines, disputed works and other puzzles"
-                miniLink dispatch "#wiki/editions" "Editions & translations" "The editions scholars use, and where these texts come from"
+                miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" (strip WikiData.blurbManuscripts)
+                miniLink dispatch "#wiki/variants" "Textual variants" (strip WikiData.blurbVariants)
+                miniLink dispatch "#wiki/editions" "Editions & translations" (strip WikiData.blurbEditions)
+                miniLink dispatch "#about" "About & acknowledgments" (strip WikiData.blurbAbout)
             ]
         ]
     ]
@@ -705,7 +707,7 @@ let private sourcesFooter (dispatch: Msg -> unit) : ReactElement =
         prop.children [
             Html.a [ prop.href "#about"; prop.text "About & acknowledgments"; prop.onClick (navigateTo dispatch "#about") ]
             Html.text
-                " · Texts from the Perseus Digital Library and Open Greek and Latin's First1KGreek, both CC BY-SA 4.0. Word lookups link to Logeion (University of Chicago) and the Perseus word study tool. Every passage has a Canonical Text Services (CTS) URN, a permanent citation you can see and copy by hovering over the passage."
+                " · Texts from the Perseus Digital Library and Open Greek and Latin's First1KGreek, both CC BY-SA 4.0. Word lookups link to Logeion (University of Chicago) and the Perseus word study tool. Every passage has a Canonical Text Services (CTS) URN, a permanent citation: tap or click a passage's number to copy it."
         ]
     ]
 

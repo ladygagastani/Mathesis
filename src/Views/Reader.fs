@@ -339,7 +339,7 @@ let private workHead (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : 
         prop.children [
             Html.h1 [
                 prop.children (
-                    [ Html.text w.Title ]
+                    [ Shared.titleText w.Title ]
                     @ (match rm.Grc.Label with
                        | l when l <> "" && l <> w.Title -> [ Html.span [ prop.className "grc"; prop.text l ] ]
                        | _ -> [])
@@ -854,7 +854,20 @@ let private segmentView (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit)
             Html.div [
                 prop.className "ref"
                 prop.children [
-                    Html.b [ prop.text (segLabel seg) ]
+                    // The number copies the citation too: the URN beside it
+                    // only shows on hover, which phones do not have.
+                    Html.b [
+                        prop.role "button"
+                        prop.tabIndex 0
+                        prop.title ("Copy the citation: " + urnText)
+                        prop.text (segLabel seg)
+                        prop.onClick (fun _ -> dispatch (Reader_(CopyUrn urnText)))
+                        prop.onKeyDown (fun e ->
+                            if e.key = "Enter" || e.key = " " then
+                                e.preventDefault ()
+                                e.stopPropagation ()
+                                dispatch (Reader_(CopyUrn urnText)))
+                    ]
                     Html.span [
                         prop.className "urn"
                         prop.title "Copy CTS URN"
@@ -1060,11 +1073,51 @@ let private chunkShape (rm: ReaderModel) : string =
         if sample.Length > 0 && verseCount * 2 > sample.Length then "verse" else "prose"
     | _ -> "prose"
 
+/// The width, in ems of the Greek face, of this text's longest verse lines,
+/// estimated from their length in characters (Gentium averages 0.43em a
+/// letter). The stylesheet shrinks verse to fit that width in the column,
+/// so a hexameter stays on one line on a phone instead of wrapping. The
+/// 99.8th percentile ignores a stray over-long line (an editor's note run
+/// into the verse), which may still wrap. Worked out once per text: the
+/// whole work is thousands of lines.
+let private verseWidths = System.Collections.Generic.Dictionary<string, float>()
+
+let private markerRx = System.Text.RegularExpressions.Regex("⟦[^⟧]*⟧")
+
+let private verseEm (rm: ReaderModel) (d: AlignedText) : float =
+    let key = rm.Grc.Urn + "|" + string d.Segments.Length
+    match verseWidths.TryGetValue key with
+    | true, v -> v
+    | _ ->
+        let lengths =
+            [| for s in d.Segments do
+                   for b in s.Grc do
+                       match b with
+                       | Verse(_, lines) ->
+                           for (_, t) in lines do
+                               let n = markerRx.Replace(t, "").Trim().Length
+                               if n > 0 then yield n
+                       | _ -> () |]
+            |> Array.sort
+        let at (q: float) = float lengths.[min (lengths.Length - 1) (int (float lengths.Length * q))]
+        // In a single metre (Homer, Hesiod) nearly every line is close to the
+        // longest, so fit them all. Where long lines are a different metre
+        // (lyric in tragedy, tetrameters in comedy), fitting them would shrink
+        // the whole play for them; they wrap instead.
+        let v = if lengths.Length = 0 then 0.0 else min (at 0.998) (at 0.95 * 1.12) * 0.43
+        verseWidths.[key] <- v
+        v
+
 let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactElement =
     let shape = chunkShape rm
+    let fit =
+        match rm.Phase, rm.Data with
+        | Ready, Some d -> verseEm rm d
+        | _ -> 0.0
     Html.div [
         prop.className ("reader" + (if rm.Lens.IsSome then " with-lens" else "") + (if rm.MeterOn && shape = "verse" then " meter-on" else ""))
         prop.custom ("data-shape", shape)
+        if fit > 0.0 then prop.style [ style.custom ("--verse-em", sprintf "%.2f" fit) ]
         prop.children (
             [ workHead model rm dispatch ]
             @ (statusPane model rm dispatch |> Option.toList)

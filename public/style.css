@@ -2530,3 +2530,129 @@ header.reading .acct-btn{width:auto;padding:.3rem .7rem}
   .library-page .genre-chips,.shelf-controls .genre-chips,.tag-chips{margin-left:-1rem;margin-right:-1rem}
 }
 @media (max-width:900px){ body:has(.hsearch.open){overflow:hidden} }
+
+/* ===========================================================================
+   Verse fits its column (27 Sep 2026)
+   A hexameter is about 22em of Greek; on a phone the column is 15em. Rather
+   than wrap every line, verse is set just small enough that the text's
+   longest lines (`--verse-em`, worked out per text in Reader.fs) fit the
+   column. `--text-scale` (the Text size setting as a ratio) scales the fit,
+   so a larger setting still makes the Greek larger, and lines then wrap
+   under the hanging indent as before. Never smaller than .84rem: below
+   that the accents stop being legible, and wrapping is the better loss.
+   Prose is untouched.
+   =========================================================================== */
+.col.grc{container-type:inline-size}
+.col.grc .line{
+  --hang:1.2;
+  text-indent:calc(var(--hang) * -1em);margin-left:calc(var(--hang) * 1em);
+  font-size:max(.84rem, min(1em, calc(100cqi / (var(--verse-em, 0) + var(--hang) + var(--extra, 0)) * var(--text-scale, 1))))}
+.reader.meter-on .col.grc .line{--extra:1.2}  /* room for the ▸ play button at the end */
+/* With room to spare, never shrink verse past a sixth: Pindar's long lines
+   wrap rather than setting a whole ode in small type. */
+@media (min-width:761px){
+  .col.grc .line{font-size:max(.84em, min(1em, calc(100cqi / (var(--verse-em, 0) + var(--hang) + var(--extra, 0)) * var(--text-scale, 1))))}
+}
+@media (max-width:600px){
+  /* On a phone every em of width is worth having: a narrower gutter for the
+     line numbers (they come every fifth line), a short hanging indent and a
+     slimmer page margin give the Greek back about 3em. The translation
+     steps down a little too, so the stacked columns stay in proportion. */
+  .reader{padding-left:.75rem;padding-right:.75rem}
+  .col{padding-left:1.75rem}
+  .col.eng{margin-left:1.75rem;font-size:calc(var(--fs) * .86)}
+  .col.grc .line{--hang:.5}
+  .col.grc .line .n{right:calc(100% + 1.5em)}
+}
+/* Stacked (Greek above, translation below its rule), the translation's own
+   line numbers landed on the rule. The Greek above already carries them. */
+@media (max-width:1000px){
+  main:not(.mode-eng) .col.eng .line .n{display:none}
+}
+
+/* ===========================================================================
+   audit fixes (27 Sep 2026)
+   =========================================================================== */
+/* The home search opener's 26rem flex-basis became its HEIGHT once the row
+   stacks into a column on phones (a 416px-tall "field"). */
+@media (max-width:760px){ .home-tools .search-open{flex:none;min-width:0} }
+/* The eras band's caption follows whichever drawing is showing: on phones and
+   in the wiki the rows only measure works, not years. */
+.eb-note-rows{display:none}
+@media (max-width:760px){ .eb-note-cols{display:none} .eb-note-rows{display:inline} }
+.wiki-eras .eb-note-cols{display:none} .wiki-eras .eb-note-rows{display:inline}
+/* A reading-path title that wraps keeps its number on the first line. */
+.path li{display:block}
+.path li::marker{content:none}
+.path ol{list-style:none;counter-reset:path}
+.path li{counter-increment:path;position:relative;padding-left:1.5rem;text-indent:0}
+.path li::before{content:counter(path) ".";position:absolute;left:0;top:.15rem;color:var(--mute);font-variant-numeric:tabular-nums}
+/* Home filter on phones: the three choices share the row the field above spans. */
+@media (max-width:760px){
+  .home-tools .segbtn{display:flex;width:100%}
+  .home-tools .segbtn button{flex:1 1 0}
+}
+/* a passage's number copies its citation */
+.seg .ref b[role="button"]{cursor:copy;border-radius:var(--r1)}
+.seg .ref b[role="button"]:hover{text-decoration:underline;text-underline-offset:.2em}
+/* titles the catalogue gives only in Greek */
+.t-grc{font-family:var(--serif);font-size:1.06em;letter-spacing:0}
+.shelf-count:empty{margin:0;padding:0;border:0;min-height:0}
+/* Wiki home: title and lead, then the contents, then the essay "On learning". */
+.wh-lead-block{padding:1.1rem 0 1.4rem;max-width:42rem}
+.wh-lead-block .grc{font-family:var(--serif);font-variant-ligatures:none}
+.wh-lead-block .wh-lead{margin:0}
+.wiki-home .wiki-hero{margin:2.6rem 0 0;padding:1.6rem 0 0;border-top:1px solid var(--rule);border-bottom:0}
+.wiki-home .wiki-hero > .sh{margin:0 0 .8rem}
+@media (max-width:760px){ .wh-lead-block{padding-top:.4rem} }
+/* Author page on phones: works, then the article, then the timeline and your
+   notes. (The rail is first in the DOM for wide screens; on a phone a long
+   timeline pushed the article three screens down.) */
+@media (max-width:760px){
+  .author-page .ap-cols{display:flex;flex-direction:column;gap:0}
+  .author-page .ap-rail{display:contents}
+  .author-page .ap-rail>#ap-works,.author-page .ap-rail>.ap-works{order:1}
+  .author-page .ap-main{order:2;margin-top:2rem}
+  .author-page .ap-rail>#ap-timeline,.author-page .ap-rail>.timeline{order:3}
+  .author-page .ap-rail>#ap-timeline{margin-top:2.2rem}
+  .author-page .ap-rail>.ap-notes{order:4;margin-top:2rem}
+}
+/* meta line: separators trail, so a wrapped line never starts with "·" */
+.ap-meta>*+*::before{content:none}
+.ap-meta>*:not(:last-child)::after{content:"·";color:var(--mute);margin-left:.5rem}
+.ap-main>.tr-note:last-child{margin:2rem 0 0;padding-top:.7rem;border-top:1px solid var(--rule-soft)}
+.ap-meta .chip{display:inline;gap:0}
+/* Home: the Wiki card spans the page like the cards around it, its links in
+   columns, instead of two-thirds of a row with nothing beside it. */
+.landing .home-top:has(> .wiki-card:only-child){grid-template-columns:minmax(0,1fr)}
+@media (min-width:761px){
+  .wiki-card .mini-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.3rem 1rem}
+  .wiki-card .mini span{white-space:normal}
+}
+/* the offline box: the steps keep the same measure as the sentence above them */
+.offline ol,.offline>p{max-width:46rem}
+/* The Notes button has a label, so the square-button width must not apply
+   (at 1400px its label spilled over "Sign in"). Labels drop to icons below
+   1180px, like the header's other labelled controls. */
+.h-right .ib.notes-ib{width:auto;height:2.25rem}
+@media (max-width:1180px){
+  .h-right .notes-ib .nb-label{display:none}
+  .h-right .ib.notes-ib{width:2.25rem;padding:0;justify-content:center}
+}
+/* One rule for running text across the site: a page's lead paragraph is set
+   in Source Serif, the body in the interface face (guide, author articles,
+   eras, About). The wiki home's essay was the one page in serif throughout. */
+.wiki-home .wh-text,.wiki-home .wh-why p{font-family:var(--sans);font-size:.9375rem;line-height:1.6;color:var(--ink-2)}
+.art-item .ar-dates{display:block;margin:.1rem 0 0;font-size:.8rem;color:var(--mute)}
+/* About's credit cards are flat tablets like every other card: the ochre
+   rail was the last "accent rail" left (ochre is for markers only). */
+.about .cred::before{content:none}
+.about .cred{padding-left:1rem}
+/* the phone tab bar is fixed to the screen edges: the desktop nudge moved it
+   4px right, clipping My library */
+@media (max-width:900px){ .h-left .topnav{margin-left:0} }
+.ap-meta{align-items:baseline}
+/* Scansion marks are positioned boxes inside the verse line and inherited its
+   negative (hanging) text-indent, which pushed every mark left of its
+   syllable. */
+.col.grc .syl::before,.col.grc .syl::after,.col.grc .line .n,.col.grc .line-play{text-indent:0}

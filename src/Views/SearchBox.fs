@@ -22,7 +22,7 @@ let private item (dispatch: Msg -> unit) (active: int) (i: int) (h: Search.Hit) 
         [ Html.span [
               prop.className "hs-main"
               prop.children [
-                  Html.span [ prop.className "hs-title"; prop.text h.Title ]
+                  Html.span [ prop.className "hs-title"; prop.children [ Shared.titleText h.Title ] ]
                   if h.Grc <> "" then Html.span [ prop.className "hs-grc grc"; prop.lang "grc"; prop.text h.Grc ]
               ]
           ]

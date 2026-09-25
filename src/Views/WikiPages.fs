@@ -22,13 +22,7 @@ let private fmtYear (y: int option) : string =
     | None -> ""
     | Some v -> if v < 0 then string (-v) + " BCE" else string v + " CE"
 
-let private fmtYearOrEllipsis (y: int option) : string =
-    match fmtYear y with
-    | "" -> "…"
-    | s -> s
-
-let private yearRangeText (e: Era) : string =
-    fmtYearOrEllipsis (if e.From = -9999 then None else Some e.From) + " – " + fmtYearOrEllipsis (if e.To = 9999 then None else Some e.To)
+let private yearRangeText (e: Era) : string = WikiData.eraSpan e
 
 let private emptyAuthorMeta: AuthorMeta =
     { Name = ""; Grc = None; Birth = None; Death = None; Floruit = None; Year = None; Era = None; Desc = None; Wiki = None; Q = None; Place = None; Occ = []; NWorks = 0; Core = None }
@@ -38,13 +32,7 @@ let private metaFor (meta: Meta) (authorId: string) : AuthorMeta =
 
 let private dateSpan (m: AuthorMeta) : string =
     if m.Birth.IsSome || m.Death.IsSome then
-        (match m.Birth with
-         | Some b -> "c. " + fmtYear (Some b)
-         | None -> "?")
-        + " – "
-        + (match m.Death with
-           | Some d -> fmtYear (Some d)
-           | None -> "?")
+        (if m.Birth.IsSome then "c. " else "") + WikiData.yearRange m.Birth m.Death
     elif m.Floruit.IsSome then
         "fl. " + fmtYear m.Floruit
     else
@@ -81,7 +69,7 @@ let private authorRow (dispatch: Msg -> unit) (showArticleTag: bool) (a: Author)
             Html.span [
                 prop.className "ar-desc"
                 prop.children (
-                    [ Html.text (m.Desc |> Option.defaultValue "") ]
+                    [ Html.text (m.Desc |> Option.map WikiData.cleanDesc |> Option.defaultValue "") ]
                     @ (if showArticleTag && m.Core.IsSome then [ Html.text " "; Html.span [ prop.className "tag"; prop.text "article" ] ] else [])
                 )
             ]
@@ -156,26 +144,40 @@ let private introRuns (dispatch: Msg -> unit) (runs: WikiData.IntroRun list) : R
 /// The wiki's own hero: the word the reader is named after, what the Greek
 /// philosophers made of learning, and why an open reference and a living
 /// language matter. Text in `WikiData.wikiIntro`.
+/// The wiki's title and one paragraph on the word; the contents follow at
+/// once, so a visitor who came to look something up need not scroll past
+/// the essay to find where to go.
+let private wikiLead (dispatch: Msg -> unit) : ReactElement =
+    let intro = WikiData.wikiIntro
+    Html.div [
+        prop.className "wh-lead-block"
+        prop.children [
+            Html.p [ prop.className "wh-kicker"; prop.text "Wiki" ]
+            Html.h1 [
+                prop.className "ph wh-title"
+                prop.children [
+                    Html.span [ prop.className "grc"; prop.lang "grc"; prop.text "μάθησις" ]
+                    Html.span [ prop.className "wh-gloss"; prop.text "máthēsis · learning" ]
+                ]
+            ]
+            Html.p [ prop.className "wh-lead"; prop.children (introRuns dispatch intro.Lead) ]
+        ]
+    ]
+
+/// Below the contents: what the Greeks said about learning, the word's
+/// family, and why a reader has a wiki at all.
 let private wikiHero (dispatch: Msg -> unit) : ReactElement =
     let intro = WikiData.wikiIntro
     Html.section [
         prop.className "wiki-hero"
         prop.children [
+            Html.h2 [ prop.className "sh"; prop.text "On learning" ]
             Html.div [
                 prop.className "wh-top"
                 prop.children [
                     Html.div [
                         prop.className "wh-main"
                         prop.children [
-                            Html.p [ prop.className "wh-kicker"; prop.text "Wiki" ]
-                            Html.h1 [
-                                prop.className "ph wh-title"
-                                prop.children [
-                                    Html.span [ prop.className "grc"; prop.lang "grc"; prop.text "μάθησις" ]
-                                    Html.span [ prop.className "wh-gloss"; prop.text "máthēsis · learning" ]
-                                ]
-                            ]
-                            Html.p [ prop.className "wh-lead"; prop.children (introRuns dispatch intro.Lead) ]
                             Html.p [ prop.className "wh-text"; prop.children (introRuns dispatch intro.Philosophy) ]
                         ]
                     ]
@@ -257,7 +259,7 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "page wiki-home"
         prop.children [
-            wikiHero dispatch
+            wikiLead dispatch
             Html.h2 [ prop.className "sh wh-contents"; prop.text "In this wiki" ]
             Html.div [
                 prop.className "wiki-home-cols"
@@ -270,7 +272,7 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                 "Συγγραφεῖς"
                                 "#wiki/authors"
                                 "Authors"
-                                (sprintf "Biographies and timelines for %d authors." nAuthors)
+                                (WikiData.blurbAuthors nAuthors)
                                 ((eras |> List.map (fun (e, _) -> "#wiki/authors/era/" + e.Id, stripParenSuffix e.Name))
                                  @ (genres |> List.map (fun (g, _) -> "#wiki/authors/genre/" + g.Id, g.Short)))
                             wcat
@@ -278,12 +280,12 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                 "Χρόνοι"
                                 "#wiki/eras"
                                 "Eras of Greek"
-                                "From Homeric epic to Byzantine Greek: the periods and their language."
+                                WikiData.blurbEras
                                 (eras |> List.map (fun (e, _) -> "#wiki/eras/" + e.Id, stripParenSuffix e.Name))
-                            wcat dispatch "Παράδοσις" "#wiki/manuscripts" "Manuscripts & transmission" (sprintf "How the texts reached us: papyri, codices and the key witnesses, with %d author articles." nCore) []
-                            wcat dispatch "Γραφαί" "#wiki/variants" "Textual variants" "Interpolations, athetized lines, disputed works and the main textual problems." []
-                            wcat dispatch "Ἐκδόσεις" "#wiki/editions" "Editions & translations" "The printed sources behind this collection and the standard critical editions." []
-                            wcat dispatch "Χάριτες" "#about" "About & acknowledgments" "The projects, scholars and licences this reader is built on." []
+                            wcat dispatch "Παράδοσις" "#wiki/manuscripts" "Manuscripts & transmission" (WikiData.blurbManuscripts + sprintf " %d authors have an article." nCore) []
+                            wcat dispatch "Γραφαί" "#wiki/variants" "Textual variants" WikiData.blurbVariants []
+                            wcat dispatch "Ἐκδόσεις" "#wiki/editions" "Editions & translations" WikiData.blurbEditions []
+                            wcat dispatch "Χάριτες" "#about" "About & acknowledgments" WikiData.blurbAbout []
                         ]
                     ]
                     Html.aside [
@@ -295,6 +297,7 @@ let home (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             ]
+            wikiHero dispatch
         ]
     ]
 
@@ -526,13 +529,13 @@ let articleIndex (model: Model) (dispatch: Msg -> unit) (kind: ArticleKind) : Re
                     for a, m, c in list do
                         let hash = "#author/" + a.Id + "/" + field
                         let text = match kind with Manuscripts -> c.Manuscripts | Variants -> c.Variants
-                        let excerpt = if text.Length > 220 then text.Substring(0, 220) else text
+                        let excerpt = WikiData.excerpt 220 text
                         Html.a [
                             prop.key a.Id
                             prop.className "art-item"
                             prop.href hash
                             prop.onClick (navigateTo dispatch hash)
-                            prop.children [ Html.b [ prop.text a.Name ]; Html.span [ prop.className "ar-dates"; prop.text (dateSpan m) ]; Html.p [ prop.text (excerpt + "…") ] ]
+                            prop.children [ Html.b [ prop.text a.Name ]; Html.span [ prop.className "ar-dates"; prop.text (dateSpan m) ]; Html.p [ prop.text excerpt ] ]
                         ]
                 ]
             ]
@@ -600,7 +603,7 @@ let editions (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                               prop.children (
                                                   [ Html.a [ prop.href hash; prop.text a.Name; prop.onClick (navigateTo dispatch hash) ]
                                                     Html.text ", "
-                                                    Html.b [ prop.text w.Title ]
+                                                    Html.b [ Shared.titleText w.Title ]
                                                     Html.text (" — " + (t.Desc |> Option.defaultValue t.Label)) ]
                                                   @ (if t.Lang <> "grc" then [ Html.span [ prop.className "tag"; prop.text t.Lang ] ] else [])
                                               )
@@ -841,20 +844,24 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                        let h = "#wiki/authors/genre/" + genreId
                                        Html.a [ prop.className "chip"; prop.href h; prop.text gn; prop.onClick (navigateTo dispatch h) ])
                                    |> Option.toList)
-                                @ (m.Occ |> List.truncate 3 |> List.map (fun o -> Html.span [ prop.className "chip soft"; prop.text o ]))
+                                @ (// "writer" and "author" say nothing once "poet" or "historian" is there
+                                   let specific = m.Occ |> List.filter (fun o -> o <> "writer" && o <> "author")
+                                   (if List.isEmpty specific then List.truncate 1 m.Occ else specific)
+                                   |> List.truncate 3
+                                   |> List.map (fun o -> Html.span [ prop.key o; prop.className "chip soft"; prop.text o ]))
                             )
                         ]
                         (match m.Desc with
-                         | Some d when d <> "" -> Html.p [ prop.className "ap-desc"; prop.text (string (System.Char.ToUpper d.[0]) + d.Substring(1) + ".") ]
+                         | Some d when WikiData.cleanDesc d <> "" -> Html.p [ prop.className "ap-desc"; prop.text (WikiData.cleanDesc d + ".") ]
                          | _ -> Html.none)
                         Html.p [
                             prop.className "ap-links"
                             prop.children (
                                 (m.Wiki |> Option.map (fun w -> Html.a [ prop.href w; prop.target "_blank"; prop.rel "noopener"; prop.text "Wikipedia ↗" ]) |> Option.toList)
                                 @ (m.Q
-                                   |> Option.map (fun q -> Html.a [ prop.href ("https://www.wikidata.org/wiki/" + q); prop.target "_blank"; prop.rel "noopener"; prop.text " Wikidata ↗" ])
+                                   |> Option.map (fun q -> Html.a [ prop.href ("https://www.wikidata.org/wiki/" + q); prop.target "_blank"; prop.rel "noopener"; prop.text "Wikidata ↗" ])
                                    |> Option.toList)
-                                @ [ Html.a [ prop.href "https://stephanus.tlg.uci.edu/"; prop.target "_blank"; prop.rel "noopener"; prop.text (" TLG " + authorId + " ↗") ] ]
+                                @ [ Html.a [ prop.href "https://stephanus.tlg.uci.edu/"; prop.target "_blank"; prop.rel "noopener"; prop.text ("TLG " + authorId + " ↗") ] ]
                             )
                         ]
                         Html.nav [
@@ -890,7 +897,7 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                                   prop.className "ap-work"
                                                   prop.onClick (fun _ -> dispatch (Reader_(OpenWork(w.Id, None, None, None, None))))
                                                   prop.children (
-                                                      [ Html.b [ prop.text w.Title ] ]
+                                                      [ Html.b [ Shared.titleText w.Title ] ]
                                                       @ (grc |> Option.map (fun g -> Html.span [ prop.className "grc"; prop.text g ]) |> Option.toList)
                                                       @ (if Catalog.hasTranslation w then [] else [ Html.span [ prop.className "tag"; prop.text "Greek only" ] ])
                                                       @ (if WikiData.workArticles.ContainsKey w.Id then [ Html.span [ prop.className "tag"; prop.text "article" ] ] else [])
@@ -920,8 +927,7 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                         Html.div [
                             prop.className "ap-main"
                             prop.children (
-                                [ ourTranslationNote "Translations quoted in these articles are our own. The reader shows each text with the published translation from Perseus or First1KGreek, which may read differently." ]
-                                @ (if List.isEmpty overview then
+                                (if List.isEmpty overview then
                                      []
                                  else
                                      [ Html.div [
@@ -969,7 +975,7 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                                          for w, t in editionsHere ->
                                                              Html.li [
                                                                  prop.children (
-                                                                     [ Html.b [ prop.text w.Title ]; Html.text (" — " + (t.Desc |> Option.defaultValue t.Label)) ]
+                                                                     [ Html.b [ Shared.titleText w.Title ]; Html.text (" — " + (t.Desc |> Option.defaultValue t.Label)) ]
                                                                      @ (if t.Lang <> "grc" then [ Html.span [ prop.className "tag"; prop.text t.Lang ] ] else [])
                                                                  )
                                                              ]
@@ -977,6 +983,11 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                                  ]
                                              ]
                                          ] ])
+                                // After the article, where a reader who wonders about a
+                                // quoted rendering will look, rather than ahead of it.
+                                @ (if m.Core.IsSome || not (List.isEmpty articles) then
+                                       [ ourTranslationNote "Translations quoted in these articles are our own. The reader shows each text with the published translation from Perseus or First1KGreek, which may read differently." ]
+                                   else [])
                             )
                         ]
                     ]

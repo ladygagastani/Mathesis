@@ -483,6 +483,9 @@ let private applySettingsEffect (s: Settings) : Cmd<Msg> =
         // an icon step aside — the same ones the narrow-window rules drop.
         toggleDocClass "ui-compact" (s.FontSize > Storage.baseFontSize * 1.16)
         setDocStyleProp "--lh" (string s.LineHeight)
+        // The same ratio as a plain number, for the one rule that cannot use
+        // rem: verse fitted to its column (`--verse-em`) grows with the setting.
+        setDocStyleProp "--text-scale" (sprintf "%.3f" (s.FontSize / Storage.baseFontSize))
         // `--body` drives the translation column only (`.col`; `.col.grc` always
         // overrides to Cardo). The serif setting gives it Source Serif 4 rather
         // than Cardo, so the two columns never share a face.

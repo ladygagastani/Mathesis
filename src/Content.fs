@@ -202,7 +202,7 @@ type Tip = { Grc: string; Label: string; Text: string }
 let tips: Tip list =
     [ { Grc = "ἁ ἀ"
         Label = "Breathings"
-        Text = "Every word that begins with a vowel carries a breathing mark. The rough breathing ( ῾ ) adds an h sound, so ἁ is \"ha\"; the smooth breathing ( ᾿ ) adds nothing. A word-initial ρ always takes the rough one, which is why ῥήτωρ comes into English as \"rhetor\"." }
+        Text = "Every word that begins with a vowel carries a breathing mark. The rough breathing ( ῾ ) adds an h sound, so ἁ is \"ha\"; the smooth breathing ( ᾿ ) adds nothing. A word-initial ρ always takes the rough one, which is why ῥήτωρ comes into English as \"rhetor\"." }
       { Grc = "ά ᾶ ὰ"
         Label = "Accents"
         Text = "The acute, circumflex and grave marked the rise and fall of the voice in ancient speech. Scholars at Alexandria began writing them down around 200 BCE. Today they are usually read as stress, and now and then they tell apart two words spelled alike." }
@@ -214,7 +214,7 @@ let tips: Tip list =
         Text = "σ inside a word, ς at the end of one: the same letter in two shapes." }
       { Grc = "; ·"
         Label = "Punctuation"
-        Text = "The Greek question mark looks like an English semicolon ( ; ), and a raised dot ( · ) does the work of a colon or semicolon." } ]
+        Text = "The Greek question mark looks like an English semicolon ( ; ), and a raised dot ( · ) does the work of a colon or semicolon." } ]
 
 // ---------------------------------------------------------------------------
 // passage of the day

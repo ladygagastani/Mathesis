@@ -135,6 +135,16 @@ let toast (toastState: (int * string) option) (dispatch: Msg -> unit) : ReactEle
 // favourites
 // ---------------------------------------------------------------------------
 
+/// A work's title as text, marked as Greek when the catalogue has only a
+/// Greek title for it (many of the grammarians' and Church Fathers' works),
+/// so it is set in the Greek face rather than the interface's sans.
+let isGreekScript (t: string) : bool =
+    t.Length > 0
+    && (let c = int t.[0] in (c >= 0x0370 && c <= 0x03FF) || (c >= 0x1F00 && c <= 0x1FFF))
+
+let titleText (t: string) : ReactElement =
+    if isGreekScript t then Html.span [ prop.className "t-grc"; prop.lang "grc"; prop.text t ] else Html.text t
+
 let favButton (lib: Library) (workId: string) (dispatch: Msg -> unit) : ReactElement =
     let on = LibraryData.isFav lib workId
     Html.button [
@@ -467,15 +477,19 @@ let erasBand (model: Model) (dispatch: Msg -> unit) : ReactElement =
                             ]
                     ]
                 ]
+                // The rows show only the works, so they get their own caption.
+                let counted =
+                    " the works in the library by its authors ("
+                    + string total
+                    + " in all"
+                    + (if undated > 0 then ", plus " + string undated + " by authors of uncertain date" else "")
+                    + ")."
                 Html.p [
                     prop.className "eb-note"
-                    prop.text (
-                        "Width is the length of each era; height, the works in the library by its authors ("
-                        + string total
-                        + " in all"
-                        + (if undated > 0 then ", plus " + string undated + " by authors of uncertain date" else "")
-                        + ")."
-                    )
+                    prop.children [
+                        Html.span [ prop.className "eb-note-cols"; prop.text ("Width is the length of each era; height," + counted) ]
+                        Html.span [ prop.className "eb-note-rows"; prop.text ("Each bar is" + counted) ]
+                    ]
                 ]
             ]
         ]

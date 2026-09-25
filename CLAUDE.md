@@ -900,3 +900,39 @@ Token and class names did not change; values did, plus a final layer at the end 
   left-aligned inside it.
 - The header text-source chip uses the Settings names: Online, This computer,
   Web address.
+
+
+---
+
+## 18. Verse fit, audit fixes and wiki copy-edit (added 2026-09-27)
+
+- **Verse fits its column.** `Views.Reader.verseEm` estimates, once per text,
+  how wide the long lines are in ems (characters × 0.43; the 99.8th
+  percentile, or 1.12 × the 95th where long lines are a different metre, so
+  tragedy's lyric and comedy's tetrameters wrap rather than shrinking the
+  whole play). The reader sets it as `--verse-em`; `.col.grc` is a size
+  container and `.line` takes `min(1em, 100cqi / (verse-em + hang + extra))`,
+  scaled by `--text-scale` (the Text size setting as a ratio, set in
+  `applySettingsEffect`). Floors: `.84rem` on phones, `.84em` above 760px.
+  Phones also get a narrower number gutter and a shorter hanging indent.
+  Scansion adds `--extra` for the ▸ play button at the line's *end*; never
+  change `--hang` for it (the line numbers sit in the hang).
+- **Anything positioned inside a verse line** needs `text-indent:0`: it
+  inherits the line's negative hanging indent (scansion marks did).
+- **Titles.** `Json.englishTitles` gives English titles where the catalogue
+  has only Latin ones readers don't use (Meditations, Elements…).
+  `Shared.titleText` sets titles the catalogue has only in Greek in the Greek
+  face (`.t-grc`, `lang="grc"`).
+- **Wiki.** Home: title and lead → contents → the essay "On learning". Author
+  page on phones: works → article → timeline → notes (CSS order; the rail
+  stays first in the DOM). Section blurbs live once in `WikiData.blurb*` and
+  feed both the wiki contents and the home Wiki card. Dates:
+  `WikiData.yearRange`/`eraSpan` ("480–323 BCE", "c. 800–480 BCE");
+  Wikidata descriptions go through `WikiData.cleanDesc`. Index cards use
+  `WikiData.excerpt` (whole sentences, never mid-word).
+- **Copy style for all wiki prose** (meta blob and WikiData): double quotes for
+  glosses, terms and nicknames ("the Graces"); British -ise spellings;
+  "encyclopaedia"; play titles as the catalogue names them (Oedipus
+  Tyrannus). A work article sits directly above its author's article, so it
+  must not repeat what the author article says (dialect, dating, Venetus A).
+- A passage's number copies its CTS citation (phones have no hover for the URN).

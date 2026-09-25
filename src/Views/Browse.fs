@@ -97,7 +97,7 @@ let private workRow (model: Model) (dispatch: Msg -> unit) (showAuthor: Author o
                     e.preventDefault ()
                     dispatch (Reader_(OpenWork(w.Id, None, None, None, None))))
                 prop.children [
-                    Html.span [ prop.className "sw-title"; prop.text w.Title ]
+                    Html.span [ prop.className "sw-title"; prop.children [ Shared.titleText w.Title ] ]
                     match grc with
                     | Some g -> Html.span [ prop.className "grc"; prop.lang "grc"; prop.text g ]
                     | None -> Html.none
@@ -372,10 +372,12 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "shelf-count"
                 prop.custom ("aria-live", "polite")
                 prop.children [
-                    Html.text (
-                        if nWorks = 0 then "Nothing matches."
-                        else sprintf "%s %s by %s %s" (nWorks.ToString("N0")) (if nWorks = 1 then "work" else "works") (nAuthors.ToString("N0")) (if nAuthors = 1 then "author" else "authors")
-                    )
+                    // Unfiltered, the count would repeat the sentence at the top.
+                    if filtering || nWorks = 0 then
+                        Html.text (
+                            if nWorks = 0 then "Nothing matches."
+                            else sprintf "%s %s by %s %s" (nWorks.ToString("N0")) (if nWorks = 1 then "work" else "works") (nAuthors.ToString("N0")) (if nAuthors = 1 then "author" else "authors")
+                        )
                     if filtering then
                         Html.button [
                             prop.className "linkbtn"
