@@ -1,7 +1,7 @@
 /// The Library (`#library`): the whole catalogue on one page, in alphabetical
 /// order by author or by title, or in time order by era; narrowed by search,
-/// letter, era, genre and whether a translation exists. The sidebar is the
-/// quick way to a text while reading; this is the place to look around.
+/// letter, era, genre and whether a translation exists. The header search is
+/// the quick way to a text; this is the place to look around.
 module Views.Browse
 
 open Feliz

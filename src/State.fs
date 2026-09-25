@@ -21,9 +21,6 @@ let private removeBodyClass (cls: string) : unit = jsNative
 [<Emit("window.scrollTo(0,0)")>]
 let private scrollToTop () : unit = jsNative
 
-[<Emit("document.getElementById($0)?.focus()")>]
-let private focusElementById (id: string) : unit = jsNative
-
 [<Emit("matchMedia('(prefers-color-scheme: dark)').matches")>]
 let private prefersDarkColorScheme () : bool = jsNative
 
@@ -305,9 +302,6 @@ let init () : Model * Cmd<Msg> =
               Local = Map.empty
               NeedsReconnect = [] }
           Reader = None
-          NavHidden = Storage.loadNavHidden ()
-          NavHiddenReader = Storage.loadNavHiddenReader ()
-          SideOpen = false
           SettingsOpen = false
           SourceMenuOpen = false
           Notes =
@@ -318,13 +312,8 @@ let init () : Model * Cmd<Msg> =
           EditingNote = None
           Popover = None
           Toast = None
-          JumpInput = ""
-          NavQuery = ""
-          OpenAuthors = Set.empty
-          ClosedAuthors = Set.empty
-          PartsOpen = true
+          Search = { Query = ""; Open = false; Active = 0; Scope = "all"; Recent = Storage.loadSearches () }
           Genre = None
-          HomeQuery = ""
           BrowseQuery = ""
           WikiQuery = ""
           Shelf = { Sort = ByAuthor; Letter = None; Era = None }
@@ -358,7 +347,6 @@ let init () : Model * Cmd<Msg> =
           OriginCache = Map.empty
           History = []
           CurrentHash = hash
-          DrawerDrag = None
           NextToken = 0 }
     Server.setSession model.Account.Session
     model,
@@ -672,6 +660,58 @@ let private rhythmNotes (scan: Lenses.Prosody.LineScan) : (float * float * float
             | Lenses.Prosody.Level -> units, lvl, lvl)
     | None -> [||]
 
+[<Emit("setTimeout(() => { const el = document.getElementById($0); if (el) { el.focus(); if ($1) el.select(); } }, 0)")>]
+let private focusSoon (id: string) (selectAll: bool) : unit = jsNative
+
+[<Emit("(document.activeElement && document.activeElement.id === $0) && document.activeElement.blur()")>]
+let private blurIf (id: string) : unit = jsNative
+
+[<Emit("window.open($0, '_blank', 'noopener')")>]
+let private openTab (url: string) : unit = jsNative
+
+/// What the search dropdown lists now: results, or with an empty box the
+/// suggestions (what you were reading, what you searched for).
+let private visibleHits (model: Model) : Search.Hit list =
+    if model.Search.Query.Trim() = "" then Search.suggestions model else Search.results model
+
+let private updateSearch (msg: SearchMsg) (model: Model) : Model * Cmd<Msg> =
+    let s = model.Search
+    let set (s2: SearchState) = { model with Search = s2 }
+    match msg with
+    | SetSearchQuery q ->
+        set { s with Query = q; Active = 0; Open = true; Scope = (if q.Trim() = "" then "all" else s.Scope) }, Cmd.none
+    | OpenSearch ->
+        set { s with Open = true },
+        Cmd.batch [
+            Cmd.ofEffect (fun _ -> focusSoon "hsq" true)
+            // one floating thing at a time
+            (if model.Popover.IsSome then Cmd.ofMsg ClosePopover else Cmd.none)
+        ]
+    | CloseSearch -> set { s with Open = false; Active = 0 }, Cmd.ofEffect (fun _ -> blurIf "hsq")
+    | MoveSearch d ->
+        let n = (visibleHits model).Length
+        let a = if n = 0 then 0 else ((s.Active + d) % n + n) % n
+        set { s with Active = a }, Cmd.none
+    | SetSearchScope id -> set { s with Scope = id; Active = 0 }, Cmd.ofEffect (fun _ -> focusSoon "hsq" false)
+    | ChooseActive ->
+        match visibleHits model |> List.tryItem s.Active with
+        | Some h ->
+            let run =
+                match h.External with
+                | Some url -> Cmd.ofEffect (fun _ -> openTab url)
+                | None -> Cmd.batch (h.Msgs |> List.map Cmd.ofMsg)
+            // a recent search refills the box rather than closing it
+            match h.Msgs with
+            | [ Search_(SetSearchQuery _) ] -> model, run
+            | _ -> model, Cmd.batch [ Cmd.ofMsg (Search_ Chose); run ]
+        | None -> model, Cmd.none
+    | Chose ->
+        let q = s.Query.Trim()
+        let recent = if q = "" then s.Recent else (q :: (s.Recent |> List.filter (fun x -> x <> q))) |> List.truncate 6
+        set { s with Query = ""; Open = false; Active = 0; Scope = "all"; Recent = recent },
+        Cmd.batch [ Cmd.ofEffect (fun _ -> Storage.saveSearches recent); Cmd.ofEffect (fun _ -> blurIf "hsq") ]
+    | ForgetSearches -> set { s with Recent = [] }, Cmd.ofEffect (fun _ -> Storage.saveSearches [])
+
 let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | Boot(Ok(catalog, meta)) ->
@@ -948,8 +988,6 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                         History = historyStack
                         CurrentHash = targetHash
                         Recent = recent
-                        OpenAuthors = Set.add w.AuthorId model.OpenAuthors
-                        SideOpen = false
                         NextToken = token }
                 model2,
                 Cmd.batch [
@@ -1144,16 +1182,15 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                 if ci < d.Chunks.Length - 1 then update (Reader_(ShowChunk(d.Chunks.[ci + 1].Ref, None, None))) model else model, Cmd.none
         | _ -> model, Cmd.none
 
-    | Reader_(SetJumpInput v) -> { model with JumpInput = v }, Cmd.none
-    | Reader_ GotoRefSubmitted ->
+    | Reader_(GotoRef raw) ->
         match model.Reader with
         | Some { Data = Some d } ->
-            let v = model.JumpInput.Trim()
+            let v = raw.Trim()
             if v = "" then
                 model, Cmd.none
             else
                 match gotoRefResolve d v with
-                | Some(chunkRef, segRefOpt) -> { model with JumpInput = "" }, Cmd.ofMsg (Reader_(ShowChunk(chunkRef, segRefOpt, None)))
+                | Some(chunkRef, segRefOpt) -> model, Cmd.ofMsg (Reader_(ShowChunk(chunkRef, segRefOpt, None)))
                 | None -> model, Cmd.ofMsg (ShowToast(sprintf "No passage “%s” in this text" v))
         | _ -> model, Cmd.none
 
@@ -1367,33 +1404,15 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         | _ -> model, Cmd.none
 
     // -- shell / chrome ------------------------------------------------
+    // -- the header search ------------------------------------------------------
+    | Search_ sm -> updateSearch sm model
+    | SetGenre g -> { model with Genre = g }, Cmd.none
     | SetFilter f ->
         // The results live in "Suggested starting points"; open it so the
         // filter visibly changes something even when the section was folded.
         let collapsed = Map.add "picks" true model.Collapsed
         { model with Filter = f; Collapsed = collapsed },
         Cmd.ofEffect (fun _ -> Storage.saveFilter f; Storage.saveCollapsed collapsed)
-    | SetNavQuery q -> { model with NavQuery = q }, Cmd.none
-    | SetGenre g -> { model with Genre = g }, Cmd.none
-    | ToggleAuthor id ->
-        let hasQuery = model.NavQuery.Trim() <> ""
-        if hasQuery then
-            let closed = if model.ClosedAuthors.Contains id then Set.remove id model.ClosedAuthors else Set.add id model.ClosedAuthors
-            { model with ClosedAuthors = closed }, Cmd.none
-        else
-            let opened = if model.OpenAuthors.Contains id then Set.remove id model.OpenAuthors else Set.add id model.OpenAuthors
-            { model with OpenAuthors = opened }, Cmd.none
-    | ToggleParts -> { model with PartsOpen = not model.PartsOpen }, Cmd.none
-    // Toggling updates only the state belonging to the kind of route you are on,
-    // so hiding the library to read doesn't also hide it on the home page.
-    | ToggleNavHidden when Router.isReader model.Route ->
-        let v = not model.NavHiddenReader
-        { model with NavHiddenReader = v }, Cmd.ofEffect (fun _ -> Storage.saveNavHiddenReader v)
-    | ToggleNavHidden ->
-        let v = not model.NavHidden
-        { model with NavHidden = v }, Cmd.ofEffect (fun _ -> Storage.saveNavHidden v)
-    | ToggleSide open_ -> { model with SideOpen = open_ }, Cmd.none
-    | SetHomeQuery q -> { model with HomeQuery = q }, Cmd.none
     | SetBrowseQuery q -> { model with BrowseQuery = q }, Cmd.none
     | SetWikiQuery q -> { model with WikiQuery = q }, Cmd.none
     | ToggleCollapsed key ->
@@ -1417,23 +1436,6 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         | Some(curId, _) when curId = id -> { model with Toast = None }, Cmd.none
         | _ -> model, Cmd.none
     | WikipediaSummary _ -> model, Cmd.none
-    | DrawerTouch(phase, x, _y) ->
-        match phase with
-        | "start" ->
-            let isOpenNow = model.SideOpen
-            let mode = if not isOpenNow && x < 32.0 then "open" elif isOpenNow then "close" else "none"
-            if mode = "none" then { model with DrawerDrag = None }, Cmd.none else { model with DrawerDrag = Some {| StartX = x; Dx = 0.0; Mode = mode; Width = 280.0 |} }, Cmd.none
-        | "move" ->
-            match model.DrawerDrag with
-            | Some d -> { model with DrawerDrag = Some {| d with Dx = x - d.StartX |} }, Cmd.none
-            | None -> model, Cmd.none
-        | "end" ->
-            match model.DrawerDrag with
-            | Some d ->
-                let shouldOpen = if d.Mode = "open" then d.Dx > d.Width * 0.3 else not (d.Dx < -d.Width * 0.25)
-                { model with DrawerDrag = None; SideOpen = shouldOpen }, Cmd.none
-            | None -> model, Cmd.none
-        | _ -> model, Cmd.none
 
     | ToggleNotesPanel -> { model with Notes = { model.Notes with Open = not model.Notes.Open } }, Cmd.none
     | NotesDrag("button", phase, x, y) ->
@@ -1455,16 +1457,13 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                 Popover = None
                 SettingsOpen = false
                 SourceMenuOpen = false
-                SideOpen = false
+                Search = { model.Search with Open = false }
                 Notes = { model.Notes with Open = false } },
             Cmd.none
         | "ArrowLeft", true -> update BackClicked model
         | "ArrowLeft", false -> update (Reader_ PrevUnit) model
         | "ArrowRight", _ -> update (Reader_ NextUnit) model
-        | "/", _ -> model, Cmd.ofEffect (fun _ -> focusElementById "q")
-        // Backslash collapses/restores the library without reaching for the
-        // mouse — the counterpart to "/" focusing its search box.
-        | "\\", _ -> update ToggleNavHidden model
+        | "/", _ -> update (Search_ OpenSearch) model
         | (" " | "Enter"), _ when model.Review |> Option.exists (fun r -> not r.Revealed) -> update (Library_ RevealCard) model
         | "1", _ when model.Review |> Option.exists (fun r -> r.Revealed) -> update (Library_(GradeCard false)) model
         | "2", _ when model.Review |> Option.exists (fun r -> r.Revealed) -> update (Library_(GradeCard true)) model
@@ -1521,12 +1520,8 @@ let view (model: Model) (dispatch: Msg -> unit) : Fable.React.ReactElement =
         Feliz.React.Fragment [
             Views.Header.render model dispatch
             Feliz.Html.div [
-                Feliz.prop.className (
-                    "shell"
-                    + (if Router.navHiddenOn model.Route model.NavHidden model.NavHiddenReader then " nav-hidden" else "")
-                )
+                Feliz.prop.className "shell"
                 Feliz.prop.children [
-                    Views.Nav.render model dispatch
                     Feliz.Html.main [ Feliz.prop.id "main"; Feliz.prop.className ("mode-" + modeClass); Feliz.prop.children [ mainContent model dispatch ] ]
                 ]
             ]
@@ -1534,5 +1529,4 @@ let view (model: Model) (dispatch: Msg -> unit) : Fable.React.ReactElement =
             Views.NotesPanel.render model dispatch
             Views.Popover.render model dispatch
             Views.Shared.toast model.Toast dispatch
-            Views.Shared.backdrop model.SideOpen dispatch
         ]

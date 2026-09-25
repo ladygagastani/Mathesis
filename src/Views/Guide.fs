@@ -296,9 +296,9 @@ let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactE
                     prop.className "pager g-pager"
                     prop.children [
                         (if idx > 1 then pagerLink (idx - 1) (sprintf "← Step %d: %s" (idx - 1) pages.[idx - 1].Title) "btn"
-                         else pagerLink 0 "← Contents" "btn")
+                         else pagerLink 0 "← Start here" "btn")
                         (if idx < nSteps then pagerLink (idx + 1) (sprintf "Step %d: %s →" (idx + 1) pages.[idx + 1].Title) "btn primary"
-                         else pagerLink 0 "Back to the contents" "btn")
+                         else pagerLink 0 "Back to Start here" "btn")
                     ]
                 ]
         ]

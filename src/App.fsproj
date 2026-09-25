@@ -26,6 +26,7 @@
     <Compile Include="GuideData.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Features.fs" />
+    <Compile Include="Search.fs" />
     <Compile Include="Lenses/Greek.fs" />
     <Compile Include="Lenses/Prosody.fs" />
     <Compile Include="Lenses/Corpus.fs" />
@@ -33,8 +34,8 @@
     <Compile Include="Lenses/Paleography.fs" />
     <Compile Include="Lenses/Widgets.fs" />
     <Compile Include="Views/Shared.fs" />
+    <Compile Include="Views/SearchBox.fs" />
     <Compile Include="Views/Header.fs" />
-    <Compile Include="Views/Nav.fs" />
     <Compile Include="Views/SettingsPane.fs" />
     <Compile Include="Views/Popover.fs" />
     <Compile Include="Views/Guide.fs" />

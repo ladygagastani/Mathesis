@@ -501,57 +501,69 @@ let private statusPane (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) 
 // page bar / cover note / column headings
 // ---------------------------------------------------------------------------
 
-/// Long parts are split into pages of PAGE_SIZE passages. A button per page
-/// (each labelled with the passage it starts at) ran to several rows above
-/// the text for a long book; one line (previous, a page picker, next) does
-/// the same job.
-let private pageBar (dispatch: Msg -> unit) (chunk: Chunk) (currentPage: int) : ReactElement option =
-    let npages = int (ceil (float chunk.Segments.Length / float PAGE_SIZE))
-    if npages <= 1 then
-        None
-    else
-        let go (i: int) = dispatch (Reader_(ShowChunk(chunk.Ref, None, Some i)))
-        Some(
-            Html.div [
-                prop.className "pages"
+/// One stepper: previous · a picker · next. Used for the parts of a work
+/// (books, speeches, odes) and for the pages of a long part.
+let private stepper (cls: string) (label: string) (noun: string) (options: (string * string) list) (current: int) (go: int -> unit) : ReactElement =
+    let n = options.Length
+    Html.div [
+        prop.className ("pages " + cls)
+        prop.role "group"
+        prop.ariaLabel label
+        prop.children [
+            Html.span [ prop.className "pg-label"; prop.text label ]
+            Html.button [
+                prop.className "pg-step"
+                prop.ariaLabel ("Previous " + noun)
+                prop.title ("Previous " + noun)
+                prop.disabled (current <= 0)
+                prop.text "‹"
+                prop.onClick (fun _ -> go (current - 1))
+            ]
+            Html.label [
+                prop.className "pg-pick"
                 prop.children [
-                    Html.button [
-                        prop.className "pg-step"
-                        prop.ariaLabel "Previous page"
-                        prop.title "Previous page"
-                        prop.disabled ((currentPage = 0))
-                        prop.text "‹"
-                        prop.onClick (fun _ -> go (currentPage - 1))
-                    ]
-                    Html.label [
-                        prop.className "pg-pick"
-                        prop.children [
-                            Html.span [ prop.text "Page" ]
-                            Html.select [
-                                prop.value (string currentPage)
-                                prop.onChange (fun (v: string) -> go (int v))
-                                prop.children [
-                                    for i in 0 .. npages - 1 ->
-                                        Html.option [
-                                            prop.key (string i)
-                                            prop.value (string i)
-                                            prop.text (sprintf "%d of %d, from %s" (i + 1) npages chunk.Segments.[i * PAGE_SIZE].Ref)
-                                        ]
-                                ]
-                            ]
-                        ]
-                    ]
-                    Html.button [
-                        prop.className "pg-step"
-                        prop.ariaLabel "Next page"
-                        prop.title "Next page"
-                        prop.disabled (currentPage >= npages - 1)
-                        prop.text "›"
-                        prop.onClick (fun _ -> go (currentPage + 1))
+                    Html.select [
+                        prop.ariaLabel label
+                        prop.value (string current)
+                        prop.onChange (fun (v: string) -> go (int v))
+                        prop.children [ for i, (_, text) in List.indexed options -> Html.option [ prop.key (string i); prop.value (string i); prop.text text ] ]
                     ]
                 ]
             ]
-        )
+            Html.button [
+                prop.className "pg-step"
+                prop.ariaLabel ("Next " + noun)
+                prop.title ("Next " + noun)
+                prop.disabled (current >= n - 1)
+                prop.text "›"
+                prop.onClick (fun _ -> go (current + 1))
+            ]
+        ]
+    ]
+
+/// Where you are in the work: which part (a book of the Iliad, a speech), and
+/// for a long part which page of it. Parts were reached from the sidebar
+/// before it was retired; this puts them above the text.
+let private readerNav (rm: ReaderModel) (dispatch: Msg -> unit) (d: AlignedText) (chunk: Chunk) (currentPage: int) : ReactElement option =
+    let unit =
+        match rm.Grc.Refs with
+        | first :: _ :: _ when first <> "" -> first.Substring(0, 1).ToUpperInvariant() + first.Substring 1
+        | _ -> "Part"
+    let parts =
+        if d.Chunks.Length <= 1 then None
+        else
+            let ci = d.Chunks |> List.tryFindIndex (fun c -> c.Ref = chunk.Ref) |> Option.defaultValue 0
+            let options = d.Chunks |> List.mapi (fun i c -> c.Ref, sprintf "%s of %d" c.Ref d.Chunks.Length)
+            Some(stepper "parts" unit (unit.ToLowerInvariant()) options ci (fun i -> dispatch (Reader_(ShowChunk(d.Chunks.[i].Ref, None, None)))))
+    let npages = int (ceil (float chunk.Segments.Length / float PAGE_SIZE))
+    let pages =
+        if npages <= 1 then None
+        else
+            let options = [ for i in 0 .. npages - 1 -> string i, sprintf "%d of %d, from %s" (i + 1) npages chunk.Segments.[i * PAGE_SIZE].Ref ]
+            Some(stepper "pages-of-part" "Page" "page" options currentPage (fun i -> dispatch (Reader_(ShowChunk(chunk.Ref, None, Some i)))))
+    match parts, pages with
+    | None, None -> None
+    | a, b -> Some(Html.div [ prop.className "reader-nav"; prop.children (Option.toList a @ Option.toList b) ])
 
 let private coverNote (coverage: Coverage option) : ReactElement option =
     match coverage with
@@ -1061,7 +1073,7 @@ let render (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) : ReactEleme
                    let chunk = d.Chunks |> List.tryFind (fun c -> Some c.Ref = rm.Chunk) |> Option.defaultValue d.Chunks.Head
                    let page = rm.Page
                    let pageSegs = chunk.Segments |> Array.skip (page * PAGE_SIZE) |> Array.truncate PAGE_SIZE
-                   (pageBar dispatch chunk page |> Option.toList)
+                   (readerNav rm dispatch d chunk page |> Option.toList)
                    @ (coverNote d.Coverage |> Option.toList)
                    @ [ lensBar rm (shape = "verse") dispatch ]
                    @ [ columnHead rm ]

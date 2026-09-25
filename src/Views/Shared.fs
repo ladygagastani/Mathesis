@@ -131,12 +131,6 @@ let toast (toastState: (int * string) option) (dispatch: Msg -> unit) : ReactEle
         ]
     ]
 
-let backdrop (show: bool) (dispatch: Msg -> unit) : ReactElement =
-    Html.div [
-        prop.className ("backdrop" + (if show then " show" else ""))
-        prop.onClick (fun _ -> dispatch (ToggleSide false))
-    ]
-
 // ---------------------------------------------------------------------------
 // favourites
 // ---------------------------------------------------------------------------
@@ -319,7 +313,7 @@ let workCard (catalog: Catalog) (dispatch: Msg -> unit) (work: Work) : ReactElem
     ]
 
 // ---------------------------------------------------------------------------
-// genre chips (sidebar catalogue + My library)
+// genre chips (the Library page + My library)
 // ---------------------------------------------------------------------------
 
 /// The genre a work belongs to, taken from its author (see `WikiData.genreOf`).

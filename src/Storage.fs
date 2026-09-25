@@ -148,16 +148,6 @@ let saveTheme (v: ThemePref) = setJson "theme" encodeThemePref v
 let loadFilter () : WorksFilter = getJson "filter" decodeWorksFilter FilterAll
 let saveFilter (v: WorksFilter) = setJson "filter" encodeWorksFilter v
 
-let loadNavHidden () : bool = getJson "navHidden" Decode.bool false
-let saveNavHidden (v: bool) = setJson "navHidden" Encode.bool v
-
-/// The reader keeps its own sidebar state, defaulting to collapsed: an 18rem
-/// tree of 1,800 works beside a poem is a distraction, and reading is the one
-/// place where the chrome should get out of the way. Once the reader opens it
-/// there, that choice sticks and this returns false from then on.
-let loadNavHiddenReader () : bool = getJson "navHiddenReader" Decode.bool true
-let saveNavHiddenReader (v: bool) = setJson "navHiddenReader" Encode.bool v
-
 let loadSourceMode () : SourceMode = getJson "src" decodeSourceMode SourceGitHub
 let saveSourceMode (v: SourceMode) = setJson "src" encodeSourceMode v
 
@@ -445,3 +435,7 @@ let saveSession (s: Session option) =
     match s with
     | Some v -> setJson "session" encodeSession v
     | None -> (try localStorage.removeItem (prefixed "session") with _ -> ())
+
+/// Searches a result was chosen for, newest first (the search box's "Recent").
+let loadSearches () : string list = getJson "searches" (Decode.list Decode.string) []
+let saveSearches (v: string list) = setJson "searches" (fun (xs: string list) -> Encode.list (List.map Encode.string xs)) v

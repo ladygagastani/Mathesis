@@ -420,6 +420,15 @@ type ForumState =
       Reply   : string
       Posting : bool }
 
+/// The header search. `Scope` narrows the results: "all", "texts",
+/// "authors", "mine" (My library) or "guide" (the guide and the wiki).
+type SearchState =
+    { Query  : string
+      Open   : bool
+      Active : int                  // the highlighted result, for the arrow keys
+      Scope  : string
+      Recent : string list }        // searches you chose a result for, newest first
+
 // ---------------------------------------------------------------------------
 // 3.5 Boot + shell + Model
 // ---------------------------------------------------------------------------
@@ -462,32 +471,20 @@ type Model =
       Reader   : ReaderModel option
 
       // shell / chrome
-      // The desktop sidebar remembers two states, not one: reading is a focus
-      // mode, so the reader collapses it by default, while the browsing pages
-      // keep it open. Toggling on a reader route updates only NavHiddenReader.
-      // Use `Router.navHiddenOn` to pick the one that applies to a route.
-      NavHidden       : bool              // desktop sidebar collapsed, browsing pages
-      NavHiddenReader : bool              // ... and on a reader route
-      SideOpen     : bool                 // phone drawer open
       SettingsOpen : bool
       SourceMenuOpen : bool               // the header chip's own text-source menu
       Notes        : NotesPanel           // draggable notes panel, shown while reading
       EditingNote  : string option        // mark id whose note is open for editing in the panel / My library
       Popover      : PopoverKind option
       Toast        : (int * string) option    // (id, message) — id lets Cmd cancel
-      JumpInput    : string
 
-      // sidebar
-      NavQuery     : string
-      OpenAuthors  : Set<string>          // expanded when no query
-      ClosedAuthors: Set<string>          // collapsed while a query is active ("!"+id in JS)
-      PartsOpen    : bool
-      /// Genre chip (a `WikiData` genre id, or "other"), shared by the sidebar
-      /// catalogue and My library. Session-only: deliberately not persisted.
+      // search (the header box)
+      Search       : SearchState
+      /// Genre chip (a `WikiData` genre id, or "other"), shared by the Library
+      /// page and My library. Session-only: deliberately not persisted.
       Genre        : string option
 
       // search boxes
-      HomeQuery    : string
       BrowseQuery  : string
       WikiQuery    : string
       Shelf        : ShelfState
@@ -507,7 +504,6 @@ type Model =
       OriginCache : Map<string, TextOrigin>      // ... and where each came from
       History   : string list             // in-app back stack of hashes
       CurrentHash : string
-      DrawerDrag  : {| StartX: float; Dx: float; Mode: string; Width: float |} option
       NextToken   : int }
 
 // ---------------------------------------------------------------------------
@@ -614,6 +610,18 @@ type ForumMsg =
     | DeleteThread of threadId: string
     | ForumDone of Result<string, string>
 
+type SearchMsg =
+    | SetSearchQuery of string
+    | OpenSearch
+    | CloseSearch
+    | MoveSearch of delta: int
+    | SetSearchScope of string
+    /// Enter: run the highlighted result
+    | ChooseActive
+    /// A result was chosen (by click or Enter): remember the query, close
+    | Chose
+    | ForgetSearches
+
 type ReaderMsg =
     | OpenWork of workId: string * grcUrn: string option * engUrn: string option
                   * chunk: string option * seg: string option
@@ -627,8 +635,8 @@ type ReaderMsg =
     | ShowChunk of chunkRef: string * seg: string option * page: int option
     | PrevUnit
     | NextUnit
-    | GotoRefSubmitted
-    | SetJumpInput of string
+    /// Go to a passage reference in the open text (from the search box)
+    | GotoRef of string
     | CopyUrn of string
     | WordClicked of word: string * rect: obj * seg: string option
     | ScrolledTo of segRef: string option
@@ -666,14 +674,9 @@ type Msg =
     | Shelf_ of ShelfMsg
     | Account_ of AccountMsg
     | Forum_ of ForumMsg
+    | Search_ of SearchMsg
     | SetFilter of WorksFilter
-    | SetNavQuery of string
     | SetGenre of string option
-    | ToggleAuthor of authorId: string
-    | ToggleParts
-    | ToggleNavHidden
-    | ToggleSide of bool
-    | SetHomeQuery of string
     | SetBrowseQuery of string
     | SetWikiQuery of string
     | ToggleCollapsed of key: string
@@ -686,7 +689,6 @@ type Msg =
     | ShowToastFor of message: string * lingerMs: int
     | HideToast of int
     | WikipediaSummary of authorId: string * extract: string
-    | DrawerTouch of phase: string * x: float * y: float
     | ToggleNotesPanel
     /// Dragging the notes panel ("panel") or its floating button ("button").
     /// "move" carries the new top-left the view worked out from the pointer;

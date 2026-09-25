@@ -2407,6 +2407,126 @@ header.reading .acct-btn,html.ui-compact .acct-btn{padding:.3rem;width:2.25rem;j
 .acct-row input{flex:1 1 14rem;width:auto}
 .acct-sync{font-weight:500}
 .acct-sync.err{color:var(--danger)}
-/* On the Library page the sidebar stays shut (the page is the catalogue);
-   its toggle has nothing to do there above phone width. */
-@media (min-width:901px){ #navToggle.nav-none{visibility:hidden} }
+
+/* ===========================================================================
+   Header search (27 Sep 2026). The sidebar ("Contents") is retired: the
+   header is left (back, brand, sections) · centred search · right (source,
+   notes, account, My library, text settings, theme), the two sides equal so
+   the search sits in the true centre. On phones the search is the middle tab
+   of the bottom bar and opens as a full-screen sheet.
+   =========================================================================== */
+.shell{grid-template-columns:minmax(0,1fr)}
+.shell .reader{max-width:104rem}
+header{display:grid;grid-template-columns:minmax(0,1fr) minmax(15rem,34rem) minmax(0,1fr);align-items:center;
+  gap:clamp(.5rem,1.2vw,1.25rem);padding:0 clamp(.5rem,1.2vw,1.25rem)}
+.h-left{display:flex;align-items:center;gap:clamp(.3rem,.7vw,.8rem);min-width:0}
+.h-right{display:flex;align-items:center;justify-content:flex-end;gap:.35rem;min-width:0}
+.h-right .tools{gap:.3rem}
+.h-right .acct-btn,.h-right .libbtn{margin-right:0}
+.h-left .topnav{margin-left:.25rem}
+@media (max-width:1280px){ .brand small{display:none} }
+
+.hsearch{position:relative;min-width:0}
+.hs-bar{position:relative;display:flex;align-items:center;gap:.5rem}
+.hs-bar input{flex:1;min-width:0;height:2.25rem;box-sizing:border-box;padding:0 2.2rem 0 2.1rem;
+  border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink);font:inherit;font-size:.9rem;
+  background:var(--paper-2) url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23857E73%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2210.5%22 cy=%2210.5%22 r=%226%22/%3E%3Cpath d=%22M15 15l5.5 5.5%22/%3E%3C/svg%3E") no-repeat .65rem center/16px 16px}
+.hs-bar input::placeholder{color:var(--mute);opacity:1}
+.hs-bar input:hover{border-color:var(--ink-2)}
+.hs-bar input:focus{outline:2px solid var(--accent);outline-offset:1px;background-color:var(--paper)}
+.hs-bar input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.hs-key{position:absolute;right:.55rem;top:50%;transform:translateY(-50%);pointer-events:none}
+.hsearch kbd,.hs-keys kbd{display:inline-block;min-width:1.2rem;padding:0 .3rem;border:1px solid var(--rule-strong);border-radius:var(--r1);
+  font:500 .72rem/1.35 var(--sans);color:var(--ink-2);background:var(--paper);text-align:center}
+.hs-cancel{display:none;flex:none;padding:.4rem .2rem;color:var(--accent);font:inherit;font-size:.95rem;background:none;border:0}
+.hs-drop{position:absolute;z-index:60;top:calc(100% + .4rem);left:50%;transform:translateX(-50%);width:max(100%,min(36rem,calc(100vw - 2rem)));
+  max-height:min(72vh,38rem);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;
+  background:var(--paper);border:1px solid var(--rule-strong);border-radius:var(--r3);box-shadow:var(--shadow);padding:.35rem 0 0}
+.hs-scopes{display:flex;flex-wrap:wrap;gap:.3rem;padding:.35rem .8rem .55rem;border-bottom:1px solid var(--rule-soft)}
+.hs-scopes .chip{font-size:.78rem}
+.hs-scopes .chip:disabled{opacity:.4;cursor:default}
+.hs-list{list-style:none;margin:0;padding:.2rem 0}
+.hs-group{padding:.6rem .9rem .2rem;font:600 .68rem/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.hs-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:.6rem;padding:.42rem .9rem;
+  color:var(--ink);text-decoration:none;cursor:pointer}
+.hs-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .5rem;min-width:0}
+.hs-title{font-weight:600;font-size:.92rem}
+.hs-grc{font-family:var(--serif);font-size:1rem;color:var(--ink-2)}
+.hs-sub{grid-column:1;font-size:.8rem;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-ext{grid-column:2;grid-row:1/3;color:var(--mute)}
+.hs-item.on{background:var(--paper-2)}
+.hs-item.on .hs-title{color:var(--accent)}
+.hs-none{margin:0;padding:.9rem;font-size:.9rem;color:var(--ink-2)}
+.hs-tips{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;padding:.6rem .9rem .7rem;border-top:1px solid var(--rule-soft)}
+.hs-tips-h{margin:0 .2rem 0 0;font:600 .68rem/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.hs-try{display:inline-flex;align-items:baseline;gap:.35rem;padding:.2rem .5rem;border:1px solid var(--rule-strong);border-radius:var(--r2);
+  background:var(--paper);color:var(--ink);font-size:.8rem;cursor:pointer}
+.hs-try b{font-weight:600} .hs-try span{color:var(--mute)}
+.hs-try:hover{border-color:var(--ink)}
+.hs-forget{margin:0 .9rem .5rem;font-size:.8rem}
+.hs-keys{margin:0;padding:.45rem .9rem;border-top:1px solid var(--rule-soft);font-size:.74rem;color:var(--mute);background:var(--paper-2);
+  position:sticky;bottom:0}
+.hs-keys kbd{margin-right:.15rem}
+
+/* the reader: which part, which page */
+.reader-nav{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1.6rem;padding:.1rem 0 .7rem}
+.reader-nav .pages{padding:0}
+.reader-nav .pg-pick>span{font-size:.8rem;color:var(--mute)}
+
+@media (max-width:900px){
+  header{grid-template-columns:minmax(0,1fr) auto;gap:.5rem}
+  body.reading .brand{display:inline}
+  .hsearch{position:static}
+  .hsearch:not(.open){display:none}
+  .hsearch.open{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--paper);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+  .hsearch.open .hs-bar{padding:.6rem 1rem;border-bottom:1px solid var(--rule)}
+  .hsearch.open .hs-bar input{height:2.6rem;font-size:1rem}
+  .hs-cancel{display:inline-block}
+  .hs-key,.hs-keys{display:none}
+  .hs-drop{position:static;transform:none;width:auto;flex:1;max-height:none;border:0;border-radius:0;box-shadow:none;padding-top:.2rem}
+  .hs-item{padding:.6rem 1rem}
+  .hs-group,.hs-scopes,.hs-tips{padding-left:1rem;padding-right:1rem}
+  .hs-scopes{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .hs-scopes .chip{flex:none}
+  .reader-nav{gap:.4rem 1rem}
+}
+/* the sides keep their content and share what is left, so the search sits in
+   the true centre when there is room and never covers the section links */
+header{grid-template-columns:minmax(max-content,1fr) minmax(11rem,34rem) minmax(max-content,1fr)}
+@media (max-width:1500px){ .brand small{display:none} }
+@media (min-width:901px) and (max-width:1180px){
+  .libbtn span,.src-chip span{display:none}
+  .libbtn{padding:.3rem;width:2.25rem;justify-content:center}
+  .src-chip{padding:.3rem;width:2.25rem;justify-content:center}
+}
+@media (max-width:900px){ header{grid-template-columns:minmax(0,1fr) auto} }
+/* the home page's way into the header search: looks like the field it opens */
+.home-tools .search-open{flex:0 1 26rem;min-width:12rem;margin:0;text-align:left;color:var(--mute);cursor:text;font:inherit;font-size:.92rem}
+.home-tools .search-open:hover{border-color:var(--ink-2);color:var(--ink-2)}
+.home-tools{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem}
+
+/* --- consistency pass (27 Sep 2026) -------------------------------------- */
+/* one page width everywhere, so the left edge doesn't move between pages */
+.landing{--home-w:76rem}
+.page.shelf,.page.forum,.page.account{max-width:82rem}
+.account>*{max-width:40rem}
+/* every header control is the same bordered square (or labelled rectangle) */
+.h-right .ib,.h-right .src-chip,.h-right .notes-ib{min-height:2.25rem;box-sizing:border-box;border:1px solid var(--rule-strong);border-radius:var(--r2);color:var(--ink)}
+.h-right .ib{width:2.25rem;height:2.25rem}
+.h-right .ib:hover,.h-right .src-chip:hover{background:var(--paper-2);border-color:var(--ink-2)}
+#btnSettings[aria-expanded="true"],.settings-open #btnSettings{background:var(--solid);border-color:var(--solid);color:var(--on-solid)}
+header.reading .acct-btn .acct-label{display:inline}
+header.reading .acct-btn{width:auto;padding:.3rem .7rem}
+@media (max-width:1280px){ header.reading .acct-btn .acct-label{display:none} header.reading .acct-btn{width:2.25rem;padding:.3rem} }
+/* the reader's part and page steppers: label, ‹, menu, › */
+.reader-nav .pg-label{font-size:.8rem;color:var(--mute);margin-right:.1rem}
+/* home: the search opener and the filter share one height */
+.home-tools .search-open,.home-tools .segbtn button{min-height:2.5rem}
+/* My library's list uses the width of its own toolbar */
+.library-page .lib-work,.library-page .lib-body>.lib-empty{max-width:52rem}
+@media (max-width:760px){
+  /* chip rows run edge to edge on phones: the bleed must match the page gutter */
+  .library-page .genre-chips,.shelf-controls .genre-chips,.tag-chips{margin-left:-1rem;margin-right:-1rem}
+}
+@media (max-width:900px){ body:has(.hsearch.open){overflow:hidden} }

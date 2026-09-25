@@ -133,6 +133,12 @@ let icons: Map<string, Icon> =
             IPath "M10.1 18.5a1.9 1.9 0 0 1 3.8 0"
             IPath "M2.5 20.5h19"
         ]
+        // A plain magnifier (search stays a plain glyph, like back).
+        "search",
+        icon [
+            ICircle(10.5, 10.5, 6.0)
+            IPath "M15 15l5.5 5.5"
+        ]
         // A reader: head and shoulders, as on a grave stele.
         "account",
         icon [

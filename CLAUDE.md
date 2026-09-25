@@ -657,7 +657,7 @@ Rules: Leaflet and OpenSeadragon are loaded only when their lens opens
 ## 12. Genre chips, work articles, centred reader (added 2026-09-23)
 
 - **Genre filter.** `Model.Genre : string option` + `Msg.SetGenre`. One value shared by
-  the sidebar catalogue (`Views.Nav`) and My library (`Views.LibraryPage`), rendered by
+  the Library page (`Views.Browse`) and My library (`Views.LibraryPage`), rendered by
   `Views.Shared.genreChips`. Session-only by design: no `localStorage` key.
 - **Genres.** `WikiData.genreOf` decides from the Wikidata description first, then
   occupations, then the name, taking the *earliest* keyword match (list order is not a
@@ -706,9 +706,9 @@ Token and class names did not change; values did, plus a final layer at the end 
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
-  notes, back-up. Phone tab bar (≤900px): Library · Contents · Wiki · Forum ·
-  My library (`.tab-phone` items); the header's `#navToggle` and `.libbtn` hide
-  there. (Superseded in part by §16: My library is now tabbed.)
+  notes, back-up. Phone tab bar (≤900px): Library · Wiki · Search · Forum ·
+  My library (`.tab-phone` items; Search in the middle); the header's `.libbtn`
+  hides there. (Superseded in part by §16–17.)
 - **Design language** (the "Design language" layer at the end of `style.css`):
   primary actions and *every* selected state use `--solid` / `--on-solid` (ink by
   day, clay by night), never the link blue; blue is only links, references and
@@ -824,9 +824,7 @@ Token and class names did not change; values did, plus a final layer at the end 
 ## 16. Library, My library tabs, accounts and forum (added 2026-09-26)
 
 - **Names.** Top bar: *Library* (the catalogue, `Browse` route, `#library`;
-  `#browse` still parses), *Wiki*, *Forum*. The sidebar is *Contents* (the
-  phone tab already said so); it stays shut on the Library page
-  (`Router.navHiddenOn`), which is the catalogue already.
+  `#browse` still parses), *Wiki*, *Forum*. (The sidebar was removed in §17.)
 - **Library page** (`Views/Browse.fs`): sort Author A–Z / Title A–Z / By era
   (`Model.Shelf`, `ShelfMsg`), letter bar (letters filed with accents
   stripped), era select, translation filter (`Model.Filter`) and genre chips
@@ -866,3 +864,39 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Testing without a real project:** `node scripts/mock-supabase.mjs` serves
   the endpoints the app uses (code 123456; mod@example.com moderates); build
   with the two `VITE_` variables pointing at `http://localhost:54321`.
+
+
+---
+
+## 17. Header search; the sidebar retired (added 2026-09-27)
+
+- **No sidebar.** `Views/Nav.fs`, the Contents toggle, the phone drawer and its
+  touch handling, and their Model fields/Msgs are gone. Finding a text is the
+  header search; browsing is the Library page; moving between parts of a work
+  is the reader's own part picker (`Reader.readerNav`: part stepper and, for
+  long parts, the page stepper — label · ‹ · menu · ›).
+- **Header** is a three-column grid: `.h-left` (back, brand, sections) ·
+  `.hsearch` · `.h-right` (text source, notes, account, My library, Αα, theme).
+  Side columns are `minmax(max-content,1fr)`, so the search sits in the true
+  centre when there is room and never covers the links. Every `.h-right`
+  control is the same bordered `--r2` box; labels drop to icons below 1180px.
+  The old header crumbs and "Passage… Go" box are gone: the search does both.
+- **Search** (`Search.fs`, pure; `Views/SearchBox.fs`, the ARIA combobox).
+  Accent-, breathing-, case- and final-sigma-insensitive; every query word must
+  match. Groups: Go to (passage refs: "Iliad 1.33", "Il. 1.33", "Apology 17a",
+  "tlg0012.tlg001 1.1", a bare "1.33" while reading) · Texts · Authors · My
+  library (bookmarks, words, places; "#tag") · Guide & wiki · Look up (a Greek
+  word → Logeion/Perseus/Wiktionary). Scope chips narrow it. An author's name
+  puts Authors first; texts rank by match, the author's own works, well-known
+  works (`Content.browse`/`paths`/`passages`), then having a translation.
+  Empty box: continue reading, recent searches (`anag:searches`), examples.
+  Keys: `/` opens, ↑ ↓ move, Enter opens, Esc closes. A hit carries the Msgs
+  that open it; `State.updateSearch` runs the highlighted one on Enter.
+- **Phones:** the box is hidden until the middle tab opens it as a full-screen
+  sheet (`.hsearch.open`), with Cancel. The home page's "Find something to
+  read" field is a button that opens the same search.
+- **One page width:** `.page` and `.landing` share `max-width:82rem`, so the
+  left edge doesn't move between pages; narrow content (guide, account) stays
+  left-aligned inside it.
+- The header text-source chip uses the Settings names: Online, This computer,
+  Web address.

@@ -140,16 +140,6 @@ let isReader (route: Route) : bool =
     | ReaderRoute _ -> true
     | _ -> false
 
-/// Picks which of the two remembered sidebar states applies to a route. The
-/// reader has its own so that collapsing the library while reading doesn't also
-/// collapse it on the home and wiki pages, where it is the main way around.
-let navHiddenOn (route: Route) (browsingPref: bool) (readerPref: bool) : bool =
-    match route with
-    | ReaderRoute _ -> readerPref
-    // the Library page is the whole catalogue already; the sidebar would repeat it
-    | Browse -> true
-    | _ -> browsingPref
-
 // ---------------------------------------------------------------------------
 // minimal DOM history interop — the in-app back/forward stack itself lives in
 // the Elmish Model (History/CurrentHash), driven from State.fs

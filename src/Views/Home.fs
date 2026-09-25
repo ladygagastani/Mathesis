@@ -300,62 +300,30 @@ let private homeFilterBtn (model: Model) (dispatch: Msg -> unit) (value: WorksFi
         prop.onClick (fun _ -> dispatch (SetFilter value))
     ]
 
+/// The filter for the picks below, and a way into the header search (the
+/// one search in the app) at the place a first-time visitor looks for it.
 let private homeToolsAndResults (model: Model) (dispatch: Msg -> unit) : ReactElement list =
-    let results = Catalog.searchWorks model.Catalog model.Filter model.HomeQuery
-    let hasQuery = model.HomeQuery.Trim() <> ""
     [ Html.div [
           prop.className "home-tools"
           prop.children [
-              Html.span [ prop.className "lbl"; prop.text "Show" ]
+              Html.button [
+                  prop.className "search search-open"
+                  prop.type' "button"
+                  prop.onClick (fun e ->
+                      e.stopPropagation ()
+                      dispatch (Search_ OpenSearch))
+                  prop.text (sprintf "Search %s works, authors and passages" (toLocaleString model.Catalog.WorkById.Count))
+              ]
               Html.div [
-                  prop.className "filter"
+                  prop.className "segbtn"
                   prop.role "group"
-                  prop.ariaLabel "Filter the library"
+                  prop.ariaLabel "Show"
                   prop.children [
                       homeFilterBtn model dispatch FilterAll "all" "All"
                       homeFilterBtn model dispatch FilterTranslated "trans" "With translation"
                       homeFilterBtn model dispatch FilterGreekOnly "grc" "Greek only"
                   ]
               ]
-              Html.input [
-                  prop.className "search"
-                  prop.id "homeQ"
-                  prop.placeholder "Search by author or title"
-                  prop.autoComplete "off"
-                  prop.value model.HomeQuery
-                  prop.onChange (fun (v: string) -> dispatch (SetHomeQuery v))
-              ]
-          ]
-      ]
-      Html.div [
-          prop.className "home-results"
-          prop.id "homeResults"
-          prop.children [
-              if hasQuery && List.isEmpty results then
-                  Html.div [ prop.className "quiet"; prop.text "Nothing matches that. Try an author's name, a title, or part of either." ]
-              for a, w in results do
-                  let grcTitle = Catalog.titleGrc w
-                  Html.button [
-                      prop.key w.Id
-                      prop.className "hr"
-                      prop.onClick (openWork dispatch w.Id None None)
-                      prop.children [
-                          Html.span [
-                              prop.children [
-                                  Html.b [ prop.text w.Title ]
-                                  match grcTitle with
-                                  | Some g when g <> w.Title -> Html.span [ prop.className "grc"; prop.text g ]
-                                  | _ -> Html.none
-                              ]
-                          ]
-                          Html.span [
-                              prop.className "who"
-                              prop.text (a.Name + (if Catalog.hasTranslation w then "" else " · Greek only"))
-                          ]
-                      ]
-                  ]
-              if results.Length >= 40 then
-                  Html.div [ prop.className "quiet"; prop.text "Showing the 40 best matches. Keep typing to narrow them down." ]
           ]
       ] ]
 
@@ -620,7 +588,7 @@ let private howToSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         Html.span [ prop.className "num"; prop.text "1" ]
                         Html.b [ prop.text "Choose a text" ]
                         Html.span [
-                            prop.text "Open the library (☰) or search below. Where there's a translation you'll see it beside the Greek; otherwise the Greek has the page to itself."
+                            prop.text "Open the Library, or search from the box at the top of every page. Where there's a translation you'll see it beside the Greek; otherwise the Greek has the page to itself."
                         ]
                     ]
                 ]
