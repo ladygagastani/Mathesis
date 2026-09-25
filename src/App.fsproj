@@ -24,6 +24,9 @@
     <Compile Include="Content.fs" />
     <Compile Include="Markdown.fs" />
     <Compile Include="GuideData.fs" />
+    <Compile Include="LearnData.fs" />
+    <Compile Include="LearnFx.fs" />
+    <Compile Include="LearnState.fs" />
     <Compile Include="Lenses/Greek.fs" />
     <Compile Include="Lenses/Prosody.fs" />
     <Compile Include="Lenses/Corpus.fs" />
@@ -41,6 +44,7 @@
     <Compile Include="Views/LibraryPage.fs" />
     <Compile Include="Views/WikiPages.fs" />
     <Compile Include="Views/Guide.fs" />
+    <Compile Include="Views/Learn.fs" />
     <Compile Include="Views/About.fs" />
     <Compile Include="Views/Browse.fs" />
     <Compile Include="Views/NotesPanel.fs" />

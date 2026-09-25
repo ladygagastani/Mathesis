@@ -199,6 +199,16 @@ let private pageTitle (model: Model) (route: Route) : string =
          | _ -> "Start here")
         + suffix
     | ReaderRoute(id, _, _, _, _) -> (model.Catalog.WorkById.TryFind id |> Option.map (fun w -> w.Title) |> Option.defaultValue "") + suffix
+    | LearnRoute page ->
+        (match page with
+         | LearnWelcome | LearnPreface | LearnContents -> "Learn"
+         | LearnLetters -> "The letters — Learn"
+         | LearnAlphabet -> "Friends and False Friends — Learn"
+         | LearnLesson | LearnDone -> "The First Declension — Learn"
+         | LearnSounds -> "The Music of the Accent — Learn"
+         | LearnIliad -> "The Wrath, Iliad 1.1–5 — Learn"
+         | LearnMyth -> "Nobody: Odysseus in the Cyclops’ cave — Learn")
+        + suffix
 
 let private leaveReaderEffect (title: string) : Cmd<Msg> =
     Cmd.ofEffect (fun _ ->
@@ -218,6 +228,23 @@ let private loadForRoute (model: Model) (route: Route) : Model * Cmd<Msg> =
         | None ->
             let model2 = { model with Route = Landing; Reader = None; CurrentHash = "#" }
             model2, leaveReaderEffect (pageTitle model2 Landing)
+    // A first visit to #learn is redirected to the welcome page; the URL is
+    // replaced rather than pushed, so Back doesn't bounce into the redirect.
+    | LearnRoute page ->
+        let shown, learn, cmd = LearnState.enterPage page model.Learn
+        let route2 = LearnRoute shown
+        let model2 =
+            { model with
+                Reader = None
+                Learn = learn
+                Route = route2
+                CurrentHash = if shown = page then model.CurrentHash else Router.learnHash shown }
+        model2,
+        Cmd.batch [
+            (if shown = page then Cmd.none else Cmd.ofEffect (fun _ -> Router.replaceState (Router.learnHash shown)))
+            leaveReaderEffect (pageTitle model2 route2)
+            cmd
+        ]
     | _ -> { model with Reader = None }, leaveReaderEffect (pageTitle model route)
 
 // ---------------------------------------------------------------------------
@@ -240,6 +267,7 @@ let init () : Model * Cmd<Msg> =
               Local = Map.empty
               NeedsReconnect = [] }
           Reader = None
+          Learn = LearnState.init (Storage.loadLearn ())
           NavHidden = Storage.loadNavHidden ()
           NavHiddenReader = Storage.loadNavHiddenReader ()
           SideOpen = false
@@ -753,6 +781,10 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Library_ ClearLibraryConfirmed -> saveLib model { Favs = []; Marks = []; AuthorNotes = Map.empty }
 
     // -- reader: opening / loading -----------------------------------------
+    | Learn_ m ->
+        let learn, cmd = LearnState.update m model.Learn
+        { model with Learn = learn }, cmd
+
     | Reader_(OpenWork(workId, grcUrnOpt, engUrnOpt, chunkOpt, segOpt)) ->
         match model.Catalog.WorkById.TryFind workId with
         | None -> model, Cmd.none
@@ -1381,6 +1413,7 @@ let private mainContent (model: Model) (dispatch: Msg -> unit) : Fable.React.Rea
     | WikiRoute(WikiArticles kind) -> Views.WikiPages.articleIndex model dispatch kind
     | WikiRoute WikiEditions -> Views.WikiPages.editions model dispatch
     | WikiRoute(WikiGuide slug) -> Views.Guide.render model dispatch slug
+    | LearnRoute page -> Views.Learn.render model dispatch page
     | ReaderRoute _ ->
         match model.Reader with
         | Some rm -> Views.Reader.render model rm dispatch

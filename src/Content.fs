@@ -116,6 +116,18 @@ let icons: Map<string, Icon> =
             IFill "M11.1 13.2h1.8L12 15z"
             IPath "M9.6 17.6l1.2.8 1.2-.8 1.2.8 1.2-.8"
         ]
+        // Plain glyphs, like back: closing a lesson and playing a sound must be
+        // understood at once.
+        "close", icon [ IPath "M18 6L6 18M6 6l12 12" ]
+        "play", icon [ IFill "M8 5v14l11-7z" ]
+        // An open codex with an alpha on its first leaf: the lessons (Learn).
+        "learn",
+        icon [
+            IPath "M3 5.6c3-1 6-1 9 .9 3-1.9 6-1.9 9-.9v13.1c-3-1-6-1-9 .9-3-1.9-6-1.9-9-.9z"
+            IPath "M12 6.5v13.1"
+            IPath "M5.4 15l2.2-5.8 2.2 5.8M6.2 13.1h2.8"
+            IPath "M14.4 10h4.2M14.4 12.6h4.2M14.4 15.2h3"
+        ]
         // A wax tablet (deltos) and stylus: notes.
         "notes",
         icon [

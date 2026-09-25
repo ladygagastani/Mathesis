@@ -171,6 +171,21 @@ type WikiRoute =
     /// The "Start here" guide: None = its contents page, Some slug = one page
     | WikiGuide of slug: string option
 
+/// The Learn section's pages (`#learn/…`). Leaves *within* a lesson are not
+/// pages: they live on `LearnModel`, so the browser's back button leaves the
+/// lesson instead of un-turning one leaf at a time.
+type LearnPage =
+    | LearnWelcome          // #learn/welcome   first visit only
+    | LearnPreface          // #learn/preface   choose a pace
+    | LearnContents         // #learn
+    | LearnLetters          // #learn/letters   the alphabet at a glance, with sound
+    | LearnAlphabet         // #learn/alphabet  Book I, Lesson 1 (5 leaves)
+    | LearnLesson           // #learn/declension  Book II, Lesson 3 (6 leaves)
+    | LearnDone             // #learn/declension/done
+    | LearnSounds           // #learn/sounds    pitch accent
+    | LearnIliad            // #learn/iliad     Iliad 1.1–5 with glosses
+    | LearnMyth             // #learn/myth      Odysseus and the Cyclops (3 leaves)
+
 type Route =
     | Landing
     | Browse
@@ -180,6 +195,7 @@ type Route =
     | WikiRoute   of WikiRoute
     | ReaderRoute of workId: string * grcSuffix: string * engSuffix: string
                      * chunk: string option * seg: string option
+    | LearnRoute  of LearnPage
 
 // ---------------------------------------------------------------------------
 // 3.4 Reader state & async wrappers
@@ -271,6 +287,98 @@ type ReaderModel =
       Manifest  : ManifestState }
 
 // ---------------------------------------------------------------------------
+// Learn — the beginner's lessons (#learn), ported from the "Arche" design
+// ---------------------------------------------------------------------------
+
+/// What survives a reload (`anag:learn`). Everything else on `LearnModel` is
+/// the state of an exercise in progress and starts fresh each visit.
+type LearnProgress =
+    { Onboarded : bool
+      Pace      : int              // 0 a line, 1 a page, 2 a book (per day)
+      Step      : int              // Book II lesson leaf, 0..5; 6 = finished
+      AlphaDone : bool }           // Book I, Lesson 1 read to the end
+
+type LearnModel =
+    { Progress : LearnProgress
+      // Book II, Lesson 3 — the first declension
+      Queue    : int list          // flashcards still to show; "Again" re-queues one
+      QueuePos : int
+      Flipped  : bool
+      MatchG   : int option        // selected Greek word in the match grid
+      MatchE   : int option        // ... and English meaning
+      Matched  : Set<int>          // Greek indices paired off
+      MatchWrong : (int * int) option
+      WrongSeq : int               // guards the timer that clears MatchWrong
+      Mc       : int option        // multiple-choice pick
+      Line     : string list       // tile ids on the composing line, in order
+      Built    : bool option       // result of "Check the line"
+      Cells    : Map<string, string>   // paradigm slot ("gs", "dp"…) → chosen ending
+      Active   : string option     // the slot the next ending goes into
+      TableChecked : bool
+      // Letters, Iliad, myth
+      Letter   : int
+      Gloss    : (int * int) option    // (line, word) in the Iliad passage
+      ShowTrans: bool
+      MythLeaf : int
+      MythPick : int option
+      // Book I, Lesson 1 — the alphabet
+      AStep    : int
+      WriteIdx : int
+      Written  : bool
+      FfIdx    : int
+      FfPick   : int option
+      DcWord   : int
+      DcShown  : int list
+      NameShown: bool
+      // Sounds
+      Playing  : (int * int) option    // (accent example, syllable) sounding now
+      PlayToken: int
+      ExWord   : int
+      ExPick   : int option
+      ExPlayed : bool }
+
+type LearnMsg =
+    | SetPace of int
+    | FinishOnboarding of hash: string
+    | StartLesson
+    | LeafTo of int
+    | Flip
+    | NextCard of again: bool
+    | TapMatch of greek: bool * index: int
+    | ClearMatchWrong of seq_: int
+    | PickMc of int
+    | TapTile of id: string * fromBank: bool
+    | MoveTile of id: string * toLine: bool * index: int
+    | CheckLine
+    | TapCell of slot: string
+    | TapChip of ending: string
+    | CheckTable
+    | FinishLesson
+    | PickLetter of int
+    | Listen
+    | PickGloss of line: int * word: int
+    | ToggleTrans
+    | MythTo of int
+    | PickMyth of int
+    | AlphaTo of int
+    | PickWriteLetter of int
+    | Inked
+    | ClearInk
+    | WatchLetter
+    | PickFf of int
+    | NextFf
+    | ShowDcLetter of int
+    | NextDcWord
+    | ShowName
+    | ToBookTwo
+    | PlayAccent of int
+    | Playhead of token: int * at: (int * int) option
+    | PlayExercise
+    | PickExercise of int
+    | AnotherSound
+    | SetExercise of int
+
+// ---------------------------------------------------------------------------
 // 3.5 Boot + shell + Model
 // ---------------------------------------------------------------------------
 
@@ -309,6 +417,7 @@ type Model =
       Library  : Library
       Source   : SourceState
       Reader   : ReaderModel option
+      Learn    : LearnModel
 
       // shell / chrome
       // The desktop sidebar remembers two states, not one: reading is a focus
@@ -443,6 +552,7 @@ type Msg =
     | Source_ of SourceMsg
     | Library_ of LibraryMsg
     | Reader_ of ReaderMsg
+    | Learn_ of LearnMsg
     | SetFilter of WorksFilter
     | SetNavQuery of string
     | SetGenre of string option

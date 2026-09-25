@@ -27,6 +27,20 @@ let parseHash (hash: string) : Route =
         | "lib" :: _ -> LibraryRoute
         | "about" :: _ -> AboutRoute
         | "browse" :: _ -> Browse
+        | "learn" :: rest ->
+            LearnRoute(
+                match rest with
+                | "welcome" :: _ -> LearnWelcome
+                | "preface" :: _ -> LearnPreface
+                | "letters" :: _ -> LearnLetters
+                | "alphabet" :: _ -> LearnAlphabet
+                | "declension" :: "done" :: _ -> LearnDone
+                | "declension" :: _ -> LearnLesson
+                | "sounds" :: _ -> LearnSounds
+                | "iliad" :: _ -> LearnIliad
+                | "myth" :: _ -> LearnMyth
+                | _ -> LearnContents
+            )
         | "author" :: id :: rest -> AuthorRoute(id, List.tryHead rest)
         | "wiki" :: rest ->
             let wikiRoute =
@@ -55,12 +69,27 @@ let parseHash (hash: string) : Route =
             ReaderRoute(id, grc, eng, chunk, seg)
         | [] -> Landing
 
+/// The hash of a Learn page (the inverse of the "learn" branch of `parseHash`).
+let learnHash (page: LearnPage) : string =
+    match page with
+    | LearnContents -> "#learn"
+    | LearnWelcome -> "#learn/welcome"
+    | LearnPreface -> "#learn/preface"
+    | LearnLetters -> "#learn/letters"
+    | LearnAlphabet -> "#learn/alphabet"
+    | LearnLesson -> "#learn/declension"
+    | LearnDone -> "#learn/declension/done"
+    | LearnSounds -> "#learn/sounds"
+    | LearnIliad -> "#learn/iliad"
+    | LearnMyth -> "#learn/myth"
+
 /// Inverse of `parseHash` — builds the hash fragment (including the leading
 /// '#') the app itself would navigate to for a given route.
 let toHash (route: Route) : string =
     let join (segs: string list) = "#" + (segs |> List.map encodeUri |> String.concat "/")
     match route with
     | Landing -> "#"
+    | LearnRoute page -> learnHash page
     | Browse -> join [ "browse" ]
     | LibraryRoute -> join [ "lib" ]
     | AboutRoute -> join [ "about" ]
@@ -102,6 +131,7 @@ let navKey (route: Route) : string =
     | AuthorRoute _
     | AboutRoute -> "wiki"
     | LibraryRoute -> "lib"
+    | LearnRoute _ -> "learn"
     | Landing
     | Browse
     | ReaderRoute _ -> "texts"

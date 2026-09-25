@@ -60,7 +60,7 @@ let brand (dispatch: Msg -> unit) : ReactElement =
 /// On phones this row becomes the bottom tab bar, and gains two tabs that the
 /// header carries on wider screens (the library drawer and My library), so the
 /// two things reached for most sit under the thumb rather than at the top of
-/// the screen. Order on phones: Texts · Contents · Wiki · My library (far right). `.tab-phone` hides them above the phone breakpoint.
+/// the screen. Order on phones: Texts · Contents · Learn · Wiki · My library (far right). `.tab-phone` hides them above the phone breakpoint.
 let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
     let route = model.Route
     let active = Router.navKey route
@@ -88,6 +88,18 @@ let topNav (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     e.stopPropagation ()
                     dispatch (ToggleSide(not model.SideOpen)))
                 prop.children [ Shared.icon "contents"; Html.text "Contents" ]
+            ]
+            Html.a [
+                prop.href "#learn"
+                prop.custom ("data-nav", "learn")
+                prop.classes [ if active = "learn" then "active" ]
+                prop.onClick (fun e ->
+                    e.preventDefault ()
+                    dispatch (Navigate("#learn", false)))
+                prop.children [
+                    Shared.icon "learn"
+                    Html.text "Learn"
+                ]
             ]
             Html.a [
                 prop.href "#wiki"

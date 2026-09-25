@@ -805,3 +805,47 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Notes button** is `Header.notesButton` (`.notes-ib`) at every width: labelled
   "Notes" above 1100px, icon only below. The floating `.notes-fab` covered the
   ends of lines and is hidden with CSS (its code is still in NotesPanel.fs).
+
+---
+
+## 16. Learn — beginner's lessons (added 2026-09-25)
+
+Ported from the "Arche" design (Claude Design handoff, `Arche Prototype v2`),
+restyled in the Stoichedon design language: no papyrus texture, torn edges or
+hand-drawn corners. The design's page turn and ink-in reveal are kept.
+
+- **Routes:** `Route.LearnRoute of LearnPage`; hashes `#learn` (contents),
+  `/welcome`, `/preface`, `/letters`, `/alphabet` (Book I, Lesson 1, 5 leaves),
+  `/declension` (Book II, Lesson 3, 6 leaves), `/declension/done`, `/sounds`,
+  `/iliad`, `/myth` (3 leaves). `Router.learnHash` is the inverse. Leaves inside
+  a lesson are model state, not routes, so Back leaves the lesson. A first visit
+  to `#learn` is redirected (replaceState) to `#learn/welcome` until onboarded.
+  Header tab "Learn" (`navKey` "learn", icon `learn`); phone tab bar order is
+  Texts · Contents · Learn · Wiki · My library.
+- **Files:** `LearnData.fs` (all lesson content: edit wording there),
+  `LearnFx.fs` (DOM/audio effects), `LearnState.fs` (`init`, `enterPage`,
+  `update`; State routes `Learn_` messages and calls `enterPage` from
+  `loadForRoute`), `Views/Learn.fs`. Types: `LearnPage`, `LearnProgress`,
+  `LearnModel`, `LearnMsg`; `Model.Learn`.
+- **Persistence:** `anag:learn` = `{onboarded, pace, step, alpha}`. Exercise
+  state (cards, pairs, tiles, paradigm cells…) is session-only by design.
+- **Page turn:** the view calls `LearnFx.snapshot()` in the click handler, only
+  for messages that turn a leaf (`turning` / `pageLink` in the view); the update
+  returns `LearnFx.turn`. A snapshot that nobody turns removes itself after
+  1.5 s, so never snapshot for a message that doesn't turn. `[data-ink]` marks
+  what blurs in when a leaf opens; `[data-reveal=name]` blocks do the same when
+  an answer appears. Both are skipped under prefers-reduced-motion.
+- **LearnFx** keeps its JavaScript in one object bound once with `emitJsExpr`
+  (an `[<Emit>]` would be pasted into every call site: it made the file 183 kB).
+  Pitch tones share `window.__anagAudio` with the meter lens, so one sound
+  plays at a time. Speech uses the device's `el-GR` voice (modern Greek).
+- **CSS:** "Learn" layer at the end of `style.css`, classes `lx-*`. One new token,
+  `--ok` (olive), for right answers; wrong is `--danger`. Answer buttons share
+  `.lx-opt` + `sel/ok/bad/dim/done`.
+- **Views:** in a Feliz list, don't mix `for … ->` with other items. An explicit
+  yield turns off implicit yields and the other items are silently dropped
+  (FS0020). Use `for … do`.
+- **Bundle:** `vite.config.js` puts the Learn modules in their own `learn` chunk.
+- **Left out of the design on purpose:** the myth's placeholder plate (no image
+  yet), the placeholder "Day twelve · 214 words" stats, and the design's own dark
+  toggle (the header's theme button covers it).

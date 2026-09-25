@@ -570,6 +570,10 @@ let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
             ]
         ]
         deeperLink dispatch "alphabet-and-sounds" "The alphabet and its sounds, in depth →"
+        Html.p [
+            prop.className "deeper"
+            prop.children [ Html.a [ prop.href "#learn"; prop.text "Or learn it lesson by lesson: trace the letters, hear the accent →"; prop.onClick (navigateTo dispatch "#learn") ] ]
+        ]
     ]
 
 let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
