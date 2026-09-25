@@ -12,7 +12,7 @@ let private navigateTo (dispatch: Msg -> unit) (hash: string) (e: Browser.Types.
     dispatch (Navigate(hash, false))
 
 let private link (dispatch: Msg -> unit) (cls: string) (hash: string) (children: ReactElement list) : ReactElement =
-    Html.a [ prop.className cls; prop.href hash; prop.onClick (navigateTo dispatch hash); prop.children children ]
+    Html.a [ prop.className cls; prop.href (Router.href hash); prop.onClick (navigateTo dispatch hash); prop.children children ]
 
 /// One row of the index, in the style of the wiki's contents.
 let private row (dispatch: Msg -> unit) (p: LifeData.LifePage) : ReactElement =
@@ -126,7 +126,7 @@ let private rail (model: Model) (dispatch: Msg -> unit) (p: LifeData.LifePage) :
                                     if q.Slug = p.Slug then
                                         Html.span [ prop.key q.Slug; prop.className "on"; prop.custom ("aria-current", "page"); prop.text q.Title ]
                                     else
-                                        Html.a [ prop.key q.Slug; prop.href h; prop.text q.Title; prop.onClick (navigateTo dispatch h) ]
+                                        Html.a [ prop.key q.Slug; prop.href (Router.href h); prop.text q.Title; prop.onClick (navigateTo dispatch h) ]
                             ]
                         ]
                 ]

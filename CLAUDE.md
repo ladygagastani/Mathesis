@@ -1029,7 +1029,7 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
 
 ---
 
-## 18. Wiki: Everyday life (added 2026-09-25)
+## 20. Wiki: Everyday life (added 2026-09-25)
 
 - **Articles** are Markdown in `content/life/NN-slug.md`, like the Start here guide:
   the first paragraph is the summary (index + search), `---` after it, `##`
@@ -1053,3 +1053,51 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   is book.chapter.section). Re-check links after any Aligner/Segmenter change.
   Legend, dispute and later invention are said in the text, not only in the
   review notes.
+
+
+---
+
+## 21. Real addresses, page files, share previews (added 2026-09-25)
+
+- **Addresses.** Online the browser shows paths, not hashes:
+  `/Mathesis/wiki/life/food/`, `/Mathesis/author/tlg0012/`, and for the reader
+  `/Mathesis/<workId>/?grc=…&eng=…&part=…&at=…` (only the slots that are set).
+  Inside the app nothing changed: routes are still hash strings
+  (`Router.toHash`, `Navigate("#…")`, `Model.CurrentHash`, `History`), and
+  `Router` converts at the edge: `url`/`href` (hash → address; `prop.href`
+  always goes through `Router.href`, which leaves external links and in-page
+  anchors like `#ap-…` alone), `pushState`/`replaceState`, `currentHash`
+  (address → hash). The site root is `Router.basePath`, worked out from the
+  module's own URL (`new URL('../', import.meta.url)`), so the same build
+  works at `/Mathesis/` (GitHub Pages) and `/` (Vercel).
+- **Hash mode** is kept for `file:` (dist/index.html opened from disk) and for
+  builds with `VITE_ROUTING=hash` (the private review page uses it). Old `#…`
+  links still open the right page, and the address bar is then rewritten to
+  the path (`Router.arrivedByHash`). The emailed sign-in link returns to the
+  site root with `#access_token=…`, which `currentHash` passes through.
+- **Page files** (`scripts/site-pages.mjs`, run by vite's `site-pages`
+  plugin after every build): a small `index.html` for every page the app
+  knows (home, library, study, guide steps, wiki pages, eras, the Everyday
+  life articles, every author and every work: about 2,240), each with its own
+  title, description, canonical URL and Open Graph/Twitter tags; the
+  catalogue and metadata moved to `dist/data/catalog.txt` and `meta.json`
+  (`Catalog.decodeEmbedded` fetches them when the page has no inline copy;
+  the front page keeps its inline copy so it works from disk); `sitemap.xml`
+  and `robots.txt`; and `404.html`, which sends any other address (forum
+  threads, passages) to the front page as `?/<address>`. The front page's
+  first script stores that in `window.__anagPath` for `Router.currentHash`
+  (it must not rewrite the address before the relative asset URLs load).
+  `404.html` assumes GitHub Pages' project folder (one path segment) on
+  `*.github.io` and the root anywhere else: revisit it for a custom domain.
+- **Site address** for canonical/share links: `VITE_SITE_URL` (default
+  `https://ladygagastani.github.io/Mathesis/`).
+- **Share image:** `public/og-card.png` (1200×630), drawn from
+  `scripts/og-card.html` (fonts: Gentium Book Plus, Inter).
+- **Titles:** reader pages are "Work — Author — Μάθησις" in both the page file
+  and the app (`State.pageTitle`). English titles for works the catalogue
+  names in Latin live in `Json.englishTitles`; the catalogue's own title is
+  kept in `Json.formerTitles` so search still finds it.
+- **Sign-in email limit:** Supabase's own sender allows only a few emails an
+  hour. `Server.sendCode` turns its 429 into a plain message; the fix is an
+  email sender (supabase/README.md, "2b"). The mock server answers
+  `ratelimit@example.com` with that 429.

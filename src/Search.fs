@@ -83,7 +83,9 @@ let private entries (catalog: Catalog) : Entry array =
                       Work = w
                       Title = fold w.Title
                       Name = fold a.Name
-                      Hay = fold (String.concat " " [ w.Title; grcTitle; a.Name; a.Grc |> Option.defaultValue ""; w.Id ]) }))
+                      Hay =
+                        let former = match Json.formerTitles.TryGetValue w.Id with | true, t -> t | _ -> ""
+                        fold (String.concat " " [ w.Title; former; grcTitle; a.Name; a.Grc |> Option.defaultValue ""; w.Id ]) }))
             |> Array.ofList
         indexedCount <- catalog.WorkById.Count
     index

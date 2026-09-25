@@ -187,7 +187,7 @@ let excerpt (limit: int) (text: string) : string =
 /// home page's Wiki card so the two never describe a section differently.
 let blurbAuthors (n: int) : string = sprintf "Lives and timelines of %d authors, by era and by genre." n
 let blurbEras: string = "From Homeric epic to Byzantine Greek: the periods and their language."
-let blurbLife: string = "How people lived, the good and the grim: households, food and wine, gods and oracles, music, medicine, games, plague and war."
+let blurbLife: string = "How people lived, the good and the grim: households, work and money, food and wine, gods and oracles, music and theatre, medicine, games, plague and war."
 
 /// Articles linked under the Everyday life row of the wiki's contents.
 let lifeShortcuts: string list = [ "food"; "wine-and-the-symposium"; "medicine"; "mysteries-and-oracles"; "music"; "strange-but-true" ]

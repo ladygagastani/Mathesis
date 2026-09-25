@@ -44,7 +44,7 @@ Wine, cheese and barley in one cup: the bronze grater has turned up in warriors'
 
 ## Fish, sauce and insects
 
-Fresh fish was the luxury Athenians talked about most. Comic poets mock men who haunt the fish stalls, and the fishmongers who wet their stock to make it look fresh. A Sicilian Greek, Archestratus, wrote a whole poem on where to buy the best fish in the Mediterranean and how (simply) to cook it; its fragments survive in [Athenaeus](author:tlg0008)' vast banquet of quotations, *The Learned Banqueters*.
+Fresh fish was the luxury Athenians talked about most. Comic poets mock men who haunt the fish stalls, and the fishmongers who wet their stock to make it look fresh. A Sicilian Greek, Archestratus, wrote a whole poem on where to buy the best fish in the Mediterranean and how (simply) to cook it; its fragments survive in [Athenaeus](author:tlg0008)' vast banquet of quotations, the *Deipnosophistae* or *Learned Banqueters*.
 
 The Greeks also made γάρος, a sauce of fish fermented in salt: the ancestor of the Roman *garum*, and a cousin of the fish sauce of Southeast Asia. Athenaeus notes that the word is masculine, and quotes a line of Aeschylus as proof:
 

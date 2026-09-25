@@ -57,13 +57,13 @@ let private cardHeader (dispatch: Msg -> unit) (iconName: string) (label: string
       ]
       match moreLink with
       | Some(hash, linkLabel) ->
-          Html.a [ prop.className "more"; prop.href hash; prop.text linkLabel; prop.onClick (navigateTo dispatch hash) ]
+          Html.a [ prop.className "more"; prop.href (Router.href hash); prop.text linkLabel; prop.onClick (navigateTo dispatch hash) ]
       | None -> Html.none ]
 
 let private miniLink (dispatch: Msg -> unit) (hash: string) (label: string) (desc: string) : ReactElement =
     Html.a [
         prop.className "mini"
-        prop.href hash
+        prop.href (Router.href hash)
         prop.onClick (navigateTo dispatch hash)
         prop.children [ Html.b [ prop.text label ]; Html.span [ prop.text desc ] ]
     ]
@@ -215,7 +215,7 @@ let private heroSection (catalog: Catalog) (startTarget: (string * string option
                             | None -> ()
                             Html.a [
                                 prop.className "btn ghost"
-                                prop.href "#browse"
+                                prop.href (Router.href "#browse")
                                 prop.text ("Browse " + toLocaleString catalog.WorkById.Count + " works")
                                 prop.onClick (navigateTo dispatch "#browse")
                             ]
@@ -376,6 +376,7 @@ let private wikiCardSection (model: Model) (dispatch: Msg -> unit) : ReactElemen
             prop.children [
                 miniLink dispatch "#wiki/authors" "Authors" (strip (WikiData.blurbAuthors model.Catalog.Authors.Length))
                 miniLink dispatch "#wiki/eras" "Eras of Greek" (String.concat " · " eraNames)
+                miniLink dispatch "#wiki/life" "Everyday life" (strip WikiData.blurbLife)
                 miniLink dispatch "#wiki/manuscripts" "Manuscripts & transmission" (strip WikiData.blurbManuscripts)
                 miniLink dispatch "#wiki/variants" "Textual variants" (strip WikiData.blurbVariants)
                 miniLink dispatch "#wiki/editions" "Editions & translations" (strip WikiData.blurbEditions)
@@ -518,7 +519,7 @@ let private deeperLink (dispatch: Msg -> unit) (slug: string) (label: string) : 
     let h = GuideData.hashOf slug
     Html.p [
         prop.className "deeper"
-        prop.children [ Html.a [ prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ] ]
+        prop.children [ Html.a [ prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ] ]
     ]
 
 let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -575,8 +576,8 @@ let private startHereSection (dispatch: Msg -> unit) : ReactElement =
         Html.div [
             prop.className "g-begin"
             prop.children [
-                Html.a [ prop.className "btn primary"; prop.href "#study"; prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
-                Html.a [ prop.className "btn"; prop.href first; prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
+                Html.a [ prop.className "btn primary"; prop.href (Router.href "#study"); prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
+                Html.a [ prop.className "btn"; prop.href (Router.href first); prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
             ]
         ]
     ]
@@ -707,7 +708,7 @@ let private sourcesFooter (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "sources"
         prop.children [
-            Html.a [ prop.href "#about"; prop.text "About & acknowledgments"; prop.onClick (navigateTo dispatch "#about") ]
+            Html.a [ prop.href (Router.href "#about"); prop.text "About & acknowledgments"; prop.onClick (navigateTo dispatch "#about") ]
             Html.text
                 " · Texts from the Perseus Digital Library and Open Greek and Latin's First1KGreek, both CC BY-SA 4.0. Word lookups link to Logeion (University of Chicago) and the Perseus word study tool. Every passage has a Canonical Text Services (CTS) URN, a permanent citation: tap or click a passage's number to copy it."
         ]

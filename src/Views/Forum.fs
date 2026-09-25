@@ -28,7 +28,7 @@ let private go (dispatch: Msg -> unit) (hash: string) (e: Browser.Types.MouseEve
     dispatch (Navigate(hash, false))
 
 let private link (dispatch: Msg -> unit) (cls: string) (hash: string) (children: ReactElement list) =
-    Html.a [ prop.className cls; prop.href hash; prop.onClick (go dispatch hash); prop.children children ]
+    Html.a [ prop.className cls; prop.href (Router.href hash); prop.onClick (go dispatch hash); prop.children children ]
 
 /// "just now", "5 minutes ago", "3 hours ago", "yesterday", then the date.
 let private ago (ts: float) : string =
@@ -98,7 +98,7 @@ let private notConfigured (dispatch: Msg -> unit) (model: Model) : ReactElement 
             Html.p [
                 Html.text "Found a bug in the meantime? "
                 Html.a [
-                    prop.href (githubIssueUrl model.CurrentHash)
+                    prop.href (Router.href (githubIssueUrl model.CurrentHash))
                     prop.target "_blank"
                     prop.rel "noopener"
                     prop.text "Report it on GitHub ↗"
@@ -591,7 +591,7 @@ let private newThread (model: Model) (dispatch: Msg -> unit) (cat: string) : Rea
                           prop.className "quiet f-gh"
                           prop.children [
                               Html.text "Prefer GitHub? "
-                              Html.a [ prop.href (githubIssueUrl d.FromHash); prop.target "_blank"; prop.rel "noopener"; prop.text "Open an issue there instead ↗" ]
+                              Html.a [ prop.href (Router.href (githubIssueUrl d.FromHash)); prop.target "_blank"; prop.rel "noopener"; prop.text "Open an issue there instead ↗" ]
                           ]
                       ]
               ]

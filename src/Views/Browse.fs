@@ -92,7 +92,7 @@ let private workRow (model: Model) (dispatch: Msg -> unit) (showAuthor: Author o
         prop.children [
             Html.a [
                 prop.className "sw-open"
-                prop.href hash
+                prop.href (Router.href hash)
                 prop.onClick (fun e ->
                     e.preventDefault ()
                     dispatch (Reader_(OpenWork(w.Id, None, None, None, None))))
@@ -134,7 +134,7 @@ let private authorBlock (model: Model) (dispatch: Msg -> unit) (a: Author, ws: W
                 prop.children [
                     Html.a [
                         prop.className "sa-name"
-                        prop.href hash
+                        prop.href (Router.href hash)
                         prop.title ("About " + a.Name)
                         prop.onClick (navigateTo dispatch hash)
                         prop.text a.Name

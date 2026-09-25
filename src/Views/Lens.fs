@@ -41,7 +41,7 @@ let private passageLink (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit)
     let workId = Greek.workOfUrn urn
     Html.a [
         prop.className "xref"
-        prop.href "#"
+        prop.href (Router.href (Router.toHash (ReaderRoute(workId, urnSuffix urn, "", None, Some segRef))))
         prop.text text
         prop.onClick (fun e ->
             e.preventDefault ()
@@ -131,7 +131,7 @@ let private echoes (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) (seg
                               prop.children [
                                   Html.text "← "
                                   Html.a [
-                                      prop.className "xref"; prop.href "#"
+                                      prop.className "xref"; prop.href (Router.href (Router.toHash (ReaderRoute(b.Work, "", "", None, Some b.Ref))))
                                       prop.text (title + " " + (if b.Label <> "" then b.Label else b.Ref))
                                       prop.onClick (fun e ->
                                           e.preventDefault ()
@@ -581,7 +581,7 @@ let private manuscript (model: Model) (rm: ReaderModel) (dispatch: Msg -> unit) 
                               Html.button [ prop.className "btn small"; prop.disabled (i >= canvases.Length - 1); prop.text "Next →"; prop.onClick (fun _ -> dispatch (Reader_(ManifestPage(i + 1)))) ]
                           ]
                       ]
-                      Html.a [ prop.className "ln-quiet"; prop.href url; prop.target "_blank"; prop.rel "noopener"; prop.text "IIIF manifest ↗" ]
+                      Html.a [ prop.className "ln-quiet"; prop.href (Router.href url); prop.target "_blank"; prop.rel "noopener"; prop.text "IIIF manifest ↗" ]
                   ]
               ]
       ] ]

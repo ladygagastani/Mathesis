@@ -134,15 +134,21 @@ let private needSession () : Result<Session, string> =
 // sign-in by emailed code
 // ---------------------------------------------------------------------------
 
-[<Emit("location.origin + location.pathname")>]
-let private siteUrl (): string = jsNative
+/// Where the emailed sign-in link returns to: the site's front page.
+let private siteUrl () : string = Router.siteRoot ()
 
 /// Sends the one-time code (and a sign-in link) to `email`, creating the
 /// account on first use.
 let sendCode (email: string) : JS.Promise<Result<unit, string>> =
     request (baseUrl + "/auth/v1/otp?redirect_to=" + enc (siteUrl ())) "POST" [ "Content-Type", "application/json" ]
         (Some(createObj [ "email" ==> email; "create_user" ==> true ]))
-    |> Promise.map (fun r -> if r.Ok then Ok() else Error(errorText r))
+    |> Promise.map (fun r ->
+        if r.Ok then Ok()
+        // Supabase caps how many emails an hour it sends (very few until the
+        // project has its own email sender: see supabase/README.md)
+        elif r.Status = 429 || (errorText r).ToLower().Contains "rate limit" then
+            Error "Too many sign-in emails have been sent in the last hour, so this one wasn't. Please try again later. If an earlier email reached you, its code still works."
+        else Error(errorText r))
     |> Promise.catch (fun e -> Error(networkError e))
 
 let verifyCode (email: string) (code: string) : JS.Promise<Result<Session, string>> =

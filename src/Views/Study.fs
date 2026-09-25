@@ -15,7 +15,7 @@ let private navigateTo (dispatch: Msg -> unit) (hash: string) (e: Browser.Types.
 /// passage (and that part, for works read part by part).
 let private passageLink (dispatch: Msg -> unit) (cls: string) (label: string) (workId: string) (chunk: string option) (ref: string) : ReactElement =
     let hash = Router.toHash (ReaderRoute(workId, "", "", chunk, Some ref))
-    Html.a [ prop.className cls; prop.href hash; prop.title "Read it in context"; prop.text label; prop.onClick (navigateTo dispatch hash) ]
+    Html.a [ prop.className cls; prop.href (Router.href hash); prop.title "Read it in context"; prop.text label; prop.onClick (navigateTo dispatch hash) ]
 
 let private runs (dispatch: Msg -> unit) (xs: WikiData.IntroRun list) : ReactElement list =
     xs
@@ -97,7 +97,7 @@ let private startHere (dispatch: Msg -> unit) : ReactElement =
             Html.div [
                 prop.className "g-begin"
                 prop.children [
-                    Html.a [ prop.className "btn primary"; prop.href first; prop.text "Begin with the alphabet →"; prop.onClick (navigateTo dispatch first) ]
+                    Html.a [ prop.className "btn primary"; prop.href (Router.href first); prop.text "Begin with the alphabet →"; prop.onClick (navigateTo dispatch first) ]
                 ]
             ]
         ]

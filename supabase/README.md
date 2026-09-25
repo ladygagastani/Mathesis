@@ -34,10 +34,53 @@ It takes about fifteen minutes, once.
 3. **Authentication → URL Configuration**: set **Site URL** to the address
    people use (for example `https://ladygagastani.github.io/Mathesis/`) and
    add every other address under **Redirect URLs** (for example
-   `https://mathesis-zeta.vercel.app/` and `http://localhost:5173/`).
-4. Supabase's built-in email service sends only a few emails an hour. Before
-   opening the site to many people, connect your own email sender under
-   **Project Settings → Authentication → SMTP**.
+   `https://mathesis-zeta.vercel.app/` and `http://localhost:5173/`). The
+   sign-in link always returns to the site's front page, whichever page the
+   reader signed in from, so these root addresses are all that's needed.
+4. Supabase's built-in email service sends only a few emails an hour, and
+   only for trying things out. Before opening the site to the public, connect
+   your own email sender: see **2b** below.
+
+## 2b. Connect an email sender (before launch)
+
+Every sign-in sends an email with a code. Supabase's own sender stops after a
+few an hour, so on a busy day people would ask for a code and never get it
+(the site then says so and asks them to try later). An email service fixes
+that. It takes about half an hour, once, and the free plans are plenty.
+
+**You need a domain name** (an address like `mathesis.org`, about £10 a year
+from any domain seller), because email services only send for a domain you
+own; they won't send "from" a Gmail address. The site itself can stay on
+GitHub Pages.
+
+The steps below use **Resend** (free: 3,000 emails a month, 100 a day). Brevo,
+Postmark, Amazon SES and Mailgun work the same way: each gives you the same
+five settings.
+
+1. Sign up at resend.com. Under **Domains → Add domain**, enter your domain.
+   Resend shows three or four DNS records; add them in your domain seller's
+   DNS settings exactly as shown, then press **Verify** (it can take up to an
+   hour).
+2. Under **API Keys → Create API key**, create a key with "Sending access".
+   Copy it: it is shown once.
+3. In Supabase, **Project Settings → Authentication → SMTP Settings**, turn on
+   **Enable Custom SMTP** and fill in:
+
+   | Field | Value |
+   |---|---|
+   | Sender email | e.g. `hello@yourdomain.org` (any address at your domain) |
+   | Sender name | `Μάθησις` |
+   | Host | `smtp.resend.com` |
+   | Port | `465` |
+   | Username | `resend` |
+   | Password | the API key from step 2 |
+
+   Save.
+4. **Authentication → Rate Limits**: raise **Rate limit for sending emails**
+   (for example to 100 an hour). Supabase keeps it low until a custom sender
+   is set.
+5. Test: sign out on the site, sign in with your own email, and check the code
+   arrives (look in spam the first time, and mark it "not spam").
 
 ## 3. Give the site the project's address and public key
 

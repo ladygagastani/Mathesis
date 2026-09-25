@@ -62,6 +62,19 @@ let private signInForm (acc: AccountState) (dispatch: Msg -> unit) : ReactElemen
                       prop.text (if acc.Busy then "Sending…" else "Email me a sign-in code")
                   ]
                   Html.p [ prop.className "quiet"; prop.text "New here? The same button creates your account." ]
+                  // for a code from an earlier email (say, when no new email can be sent)
+                  if acc.EmailInput.Trim().Contains "@" then
+                      Html.p [
+                          prop.className "quiet"
+                          prop.children [
+                              Html.button [
+                                  prop.type' "button"
+                                  prop.className "linkbtn"
+                                  prop.text "I already have a code"
+                                  prop.onClick (fun _ -> dispatch (Account_(CodeSentOk(acc.EmailInput.Trim()))))
+                              ]
+                          ]
+                      ]
               ]
           ] ]
     | CodeSent _

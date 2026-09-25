@@ -58,7 +58,7 @@ let private authorRow (dispatch: Msg -> unit) (showArticleTag: bool) (a: Author)
     Html.a [
         prop.key a.Id
         prop.className "author-row"
-        prop.href hash
+        prop.href (Router.href hash)
         prop.onClick (navigateTo dispatch hash)
         prop.children [
             Html.span [
@@ -92,7 +92,7 @@ let private wcat (dispatch: Msg -> unit) (greek: string) (hash: string) (title: 
             [ Html.span [ prop.className "wcat-grc"; prop.lang "grc"; prop.ariaHidden true; prop.text greek ]
               Html.a [
                   prop.className "wcat-main"
-                  prop.href hash
+                  prop.href (Router.href hash)
                   prop.onClick (navigateTo dispatch hash)
                   prop.children [
                       Html.b [ prop.text title ]
@@ -104,7 +104,7 @@ let private wcat (dispatch: Msg -> unit) (greek: string) (hash: string) (title: 
                else
                    [ Html.div [
                          prop.className "sub"
-                         prop.children [ for h, l in subLinks -> Html.a [ prop.key h; prop.href h; prop.text l; prop.onClick (navigateTo dispatch h) ] ]
+                         prop.children [ for h, l in subLinks -> Html.a [ prop.key h; prop.href (Router.href h); prop.text l; prop.onClick (navigateTo dispatch h) ] ]
                      ] ])
         )
     ]
@@ -155,7 +155,7 @@ let private featured (model: Model) (dispatch: Msg -> unit) : ReactElement =
             | Some art ->
                 Html.a [
                     prop.className "wf-card"
-                    prop.href articleHash
+                    prop.href (Router.href articleHash)
                     prop.onClick (navigateTo dispatch articleHash)
                     prop.children [
                         Html.span [ prop.className "wh-kicker"; prop.text "Featured article" ]
@@ -168,7 +168,7 @@ let private featured (model: Model) (dispatch: Msg -> unit) : ReactElement =
             | None -> Html.none
             Html.a [
                 prop.className "wf-card wf-study"
-                prop.href "#study"
+                prop.href (Router.href "#study")
                 prop.onClick (navigateTo dispatch "#study")
                 prop.children [
                     Html.span [ prop.className "wh-kicker"; prop.text "Still learning the letters?" ]
@@ -254,7 +254,7 @@ let private subcatChips (dispatch: Msg -> unit) (label: string) (items: (string 
                         Html.a [
                             prop.key id
                             prop.className ("chip" + (if isCurrent then " on" else ""))
-                            prop.href hash
+                            prop.href (Router.href hash)
                             prop.title (if isCurrent then "Show all authors" else "")
                             prop.onClick (navigateTo dispatch hash)
                             prop.children [ Html.text (stripParenSuffix name + " "); Html.span [ prop.text (string n) ] ]
@@ -337,7 +337,7 @@ let authorsIndex (model: Model) (dispatch: Msg -> unit) (scope: AuthorScope opti
                               prop.onChange (fun (v: string) -> dispatch (SetWikiQuery v))
                           ] ]
                         @ (if scope.IsSome then
-                               [ Html.a [ prop.className "btn"; prop.href "#wiki/authors"; prop.text "All authors"; prop.onClick (navigateTo dispatch "#wiki/authors") ] ]
+                               [ Html.a [ prop.className "btn"; prop.href (Router.href "#wiki/authors"); prop.text "All authors"; prop.onClick (navigateTo dispatch "#wiki/authors") ] ]
                            else
                                [])
                     )
@@ -385,7 +385,7 @@ let eras (model: Model) (dispatch: Msg -> unit) : ReactElement =
                         Html.a [
                             prop.key e.Id
                             prop.className "era-item"
-                            prop.href hash
+                            prop.href (Router.href hash)
                             prop.custom ("data-letter", WikiData.eraLetter.TryFind e.Id |> Option.defaultValue "")
                             prop.onClick (navigateTo dispatch hash)
                             prop.children [
@@ -433,12 +433,12 @@ let era (model: Model) (dispatch: Msg -> unit) (eraId: string) : ReactElement =
                         (match prev with
                          | Some p ->
                              let h = "#wiki/eras/" + p.Id
-                             Html.a [ prop.className "btn"; prop.href h; prop.text ("← " + p.Name); prop.onClick (navigateTo dispatch h) ]
+                             Html.a [ prop.className "btn"; prop.href (Router.href h); prop.text ("← " + p.Name); prop.onClick (navigateTo dispatch h) ]
                          | None -> Html.span [])
                         (match next with
                          | Some n ->
                              let h = "#wiki/eras/" + n.Id
-                             Html.a [ prop.className "btn"; prop.href h; prop.text (n.Name + " →"); prop.onClick (navigateTo dispatch h) ]
+                             Html.a [ prop.className "btn"; prop.href (Router.href h); prop.text (n.Name + " →"); prop.onClick (navigateTo dispatch h) ]
                          | None -> Html.span [])
                     ]
                 ]
@@ -476,7 +476,7 @@ let articleIndex (model: Model) (dispatch: Msg -> unit) (kind: ArticleKind) : Re
                         Html.a [
                             prop.key a.Id
                             prop.className "art-item"
-                            prop.href hash
+                            prop.href (Router.href hash)
                             prop.onClick (navigateTo dispatch hash)
                             prop.children [ Html.b [ prop.text a.Name ]; Html.span [ prop.className "ar-dates"; prop.text (dateSpan m) ]; Html.p [ prop.text excerpt ] ]
                         ]
@@ -519,7 +519,7 @@ let editions (model: Model) (dispatch: Msg -> unit) : ReactElement =
                           Html.a [
                               prop.key a.Id
                               prop.className "art-item"
-                              prop.href hash
+                              prop.href (Router.href hash)
                               prop.onClick (navigateTo dispatch hash)
                               prop.children [ Html.b [ prop.text a.Name ]; Html.p [ prop.text (List.tryHead c.Editions |> Option.defaultValue "") ] ]
                           ]
@@ -544,7 +544,7 @@ let editions (model: Model) (dispatch: Msg -> unit) : ReactElement =
                                           let hash = "#author/" + a.Id
                                           Html.li [
                                               prop.children (
-                                                  [ Html.a [ prop.href hash; prop.text a.Name; prop.onClick (navigateTo dispatch hash) ]
+                                                  [ Html.a [ prop.href (Router.href hash); prop.text a.Name; prop.onClick (navigateTo dispatch hash) ]
                                                     Html.text ", "
                                                     Html.b [ Shared.titleText w.Title ]
                                                     Html.text (" — " + (t.Desc |> Option.defaultValue t.Label)) ]
@@ -614,7 +614,7 @@ let private setTimeoutMs (f: unit -> unit) (ms: int) : unit = jsNative
 /// + scrollIntoView, since these hrefs share the `#` prefix with routes).
 let private apNavLink (targetId: string) (label: string) : ReactElement =
     Html.a [
-        prop.href ("#" + targetId)
+        prop.href (Router.href ("#" + targetId))
         prop.text label
         prop.onClick (fun (e: Browser.Types.MouseEvent) ->
             e.preventDefault ()
@@ -784,12 +784,12 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                 @ (era
                                    |> Option.map (fun e ->
                                        let h = "#wiki/authors/era/" + e.Id
-                                       Html.a [ prop.className "chip"; prop.href h; prop.text e.Name; prop.onClick (navigateTo dispatch h) ])
+                                       Html.a [ prop.className "chip"; prop.href (Router.href h); prop.text e.Name; prop.onClick (navigateTo dispatch h) ])
                                    |> Option.toList)
                                 @ (genreName
                                    |> Option.map (fun gn ->
                                        let h = "#wiki/authors/genre/" + genreId
-                                       Html.a [ prop.className "chip"; prop.href h; prop.text gn; prop.onClick (navigateTo dispatch h) ])
+                                       Html.a [ prop.className "chip"; prop.href (Router.href h); prop.text gn; prop.onClick (navigateTo dispatch h) ])
                                    |> Option.toList)
                                 @ (// "writer" and "author" say nothing once "poet" or "historian" is there
                                    let specific = m.Occ |> List.filter (fun o -> o <> "writer" && o <> "author")
@@ -804,7 +804,7 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                         Html.p [
                             prop.className "ap-links"
                             prop.children (
-                                (m.Wiki |> Option.map (fun w -> Html.a [ prop.href w; prop.target "_blank"; prop.rel "noopener"; prop.text "Wikipedia ↗" ]) |> Option.toList)
+                                (m.Wiki |> Option.map (fun w -> Html.a [ prop.href (Router.href w); prop.target "_blank"; prop.rel "noopener"; prop.text "Wikipedia ↗" ]) |> Option.toList)
                                 @ (m.Q
                                    |> Option.map (fun q -> Html.a [ prop.href ("https://www.wikidata.org/wiki/" + q); prop.target "_blank"; prop.rel "noopener"; prop.text "Wikidata ↗" ])
                                    |> Option.toList)
@@ -898,7 +898,7 @@ let AuthorPage (model: Model) (dispatch: Msg -> unit) (authorId: string) (sectio
                                              prop.children [
                                                  Html.text "There is no article on this author's manuscripts yet. The major authors have one (see "
                                                  Html.a [
-                                                     prop.href "#wiki/manuscripts"
+                                                     prop.href (Router.href "#wiki/manuscripts")
                                                      prop.text "Manuscripts & transmission"
                                                      prop.onClick (navigateTo dispatch "#wiki/manuscripts")
                                                  ]

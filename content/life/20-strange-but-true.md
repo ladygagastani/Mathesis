@@ -12,7 +12,9 @@ Most lawgivers try to stop civil war. Solon, according to [Aristotle](author:tlg
 > "Seeing that the city was often in civil strife, and that some citizens were content out of apathy to let things take their course, he made a special law for them: whoever did not take up arms with one side or the other when the city was divided should lose his rights and have no share in the city."
 > ([Aristotle, *Constitution of the Athenians* 8.5](read:tlg0086.tlg003:8.5))
 
-**Attested?** Aristotle and Plutarch both report it. Some modern historians doubt that Solon made such a law, and how it could have been enforced is anyone's guess. Its point seems to be that the silent majority should not leave the city to the extremists.
+**Attested?** Aristotle and Plutarch both report Solon's law. Some modern historians doubt that Solon made such a law, and how it could have been enforced is anyone's guess. Its point seems to be that the silent majority should not leave the city to the extremists.
+
+Athens had a stranger device still for dealing with its politicians: once a year it could vote a leading citizen into exile for ten years without accusing him of anything, each voter scratching a name on a potsherd. How ostracism worked, and the famous story of the voter who could not write, is told in [Exposure, exile and punishment](19-exposure-exile-punishment.md).
 
 ## Diogenes, the dog
 

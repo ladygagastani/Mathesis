@@ -47,7 +47,7 @@ let private textRuns (dispatch: Msg -> unit) (key: string) (s: string) : ReactEl
         let k = key + "p" + string i
         if isRef then
             match GuideData.hashOfStep (int (stepRef.Match t).Groups.[1].Value) with
-            | Some h -> [ Html.a [ prop.key k; prop.href h; prop.text t; prop.onClick (navigateTo dispatch h) ] ]
+            | Some h -> [ Html.a [ prop.key k; prop.href (Router.href h); prop.text t; prop.onClick (navigateTo dispatch h) ] ]
             | None -> [ Html.text t ]
         else
             greekText k t)
@@ -84,7 +84,7 @@ let rec private inlines (dispatch: Msg -> unit) (key: string) (xs: Inline list) 
         | Link(href, ys) ->
             let h, external = resolveHref href
             [ Html.a (
-                  [ prop.key k; prop.href h; prop.children (inlines dispatch k ys) ]
+                  [ prop.key k; prop.href (Router.href h); prop.children (inlines dispatch k ys) ]
                   @ (if external then [ prop.target "_blank"; prop.rel "noopener" ]
                      else [ prop.onClick (navigateTo dispatch h) ])
               ) ])
@@ -186,11 +186,11 @@ let private crumbs (dispatch: Msg -> unit) (parts: (string * string option) list
     Html.div [
         prop.className "wcrumbs"
         prop.children [
-            Html.a [ prop.href "#study"; prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
+            Html.a [ prop.href (Router.href "#study"); prop.text "Study"; prop.onClick (navigateTo dispatch "#study") ]
             for label, hash in parts do
                 Html.text " › "
                 match hash with
-                | Some h -> Html.a [ prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+                | Some h -> Html.a [ prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ]
                 | None -> Html.span [ prop.text label ]
         ]
     ]
@@ -217,7 +217,7 @@ let path (dispatch: Msg -> unit) : ReactElement =
                                         prop.children [
                                             Html.a [
                                                 prop.className "gp-step"
-                                                prop.href h
+                                                prop.href (Router.href h)
                                                 prop.onClick (navigateTo dispatch h)
                                                 prop.children [
                                                     Html.span [ prop.className "num"; prop.text (string i) ]
@@ -249,7 +249,7 @@ let private progress (dispatch: Msg -> unit) (idx: int) : ReactElement =
                 let h = GuideData.hashOf p.Slug
                 Html.a [
                     prop.key p.Slug
-                    prop.href h
+                    prop.href (Router.href h)
                     prop.title (sprintf "Step %d: %s" i p.Title)
                     prop.className (if i = idx then "on" elif i < idx then "done" else "")
                     if i = idx then prop.custom ("aria-current", "step")
@@ -270,7 +270,7 @@ let render (model: Model) (dispatch: Msg -> unit) (slug: string option) : ReactE
     let body = Markdown.parse p.Markdown
     let pagerLink (i: int) (label: string) (cls: string) =
         let h = GuideData.hashOf pages.[i].Slug
-        Html.a [ prop.className cls; prop.href h; prop.text label; prop.onClick (navigateTo dispatch h) ]
+        Html.a [ prop.className cls; prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ]
     Html.div [
         prop.className "page guide"
         prop.children [

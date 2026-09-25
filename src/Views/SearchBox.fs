@@ -43,7 +43,7 @@ let private item (dispatch: Msg -> unit) (active: int) (i: int) (h: Search.Hit) 
             | Some url ->
                 Html.a (
                     common
-                    @ [ prop.href url
+                    @ [ prop.href (Router.href url)
                         prop.target "_blank"
                         prop.rel "noopener"
                         prop.tabIndex -1
@@ -58,7 +58,7 @@ let private item (dispatch: Msg -> unit) (active: int) (i: int) (h: Search.Hit) 
                         | _ -> None)
                 Html.a (
                     common
-                    @ [ prop.href (href |> Option.defaultValue "#")
+                    @ [ prop.href (Router.href (href |> Option.defaultValue "#"))
                         prop.tabIndex -1
                         prop.onClick (fun e ->
                             e.preventDefault ()

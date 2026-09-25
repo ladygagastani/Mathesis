@@ -33,7 +33,7 @@ let private navTo (page: LearnPage) : Msg = Navigate(Router.learnHash page, fals
 let private pageLink (dispatch: Dispatch) (page: LearnPage) (className: string) (children: ReactElement list) =
     Html.a [
         prop.className className
-        prop.href (Router.learnHash page)
+        prop.href (Router.href (Router.learnHash page))
         prop.onClick (fun e ->
             e.preventDefault ()
             LearnFx.snapshot ()
@@ -128,7 +128,7 @@ let private tabs (dispatch: Dispatch) (current: LearnPage) =
             for text, page in [ "Overview", LearnContents; "Letters", LearnLetters; "Sounds", LearnSounds; "Iliad", LearnIliad; "Myth", LearnMyth ] do
                 Html.a [
                     prop.key text
-                    prop.href (Router.learnHash page)
+                    prop.href (Router.href (Router.learnHash page))
                     prop.classes [ if page = current then "on" ]
                     if page = current then prop.custom ("aria-current", "page")
                     prop.onClick (fun e ->
@@ -148,7 +148,7 @@ let private lessonBar (dispatch: Dispatch) (closeTo: LearnPage) (n: int) (total:
         prop.children [
             Html.a [
                 prop.className "ib"
-                prop.href (Router.learnHash closeTo)
+                prop.href (Router.href (Router.learnHash closeTo))
                 prop.custom ("aria-label", "Close the lesson")
                 prop.onClick (fun e ->
                     e.preventDefault ()
@@ -1115,7 +1115,7 @@ let private iliad (lm: LearnModel) (dispatch: Dispatch) =
             prop.children [
                 Html.a [
                     prop.className "link-btn"
-                    prop.href iliadWorkHash
+                    prop.href (Router.href iliadWorkHash)
                     prop.onClick (fun e ->
                         e.preventDefault ()
                         dispatch (Navigate(iliadWorkHash, false)))

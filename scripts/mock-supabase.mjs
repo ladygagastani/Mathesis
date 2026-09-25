@@ -58,6 +58,8 @@ http.createServer(async (req, res) => {
   log.push(req.method + ' ' + url.pathname + url.search);
   const p = url.pathname;
   if (p === '/__log') return send(res, 200, { log, threads, posts, libraries, profiles });
+  // Supabase's answer when too many emails were sent: try it with this address
+  if (p === '/auth/v1/otp' && json.email === 'ratelimit@example.com') return send(res, 429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' });
   if (p === '/auth/v1/otp') { if (!users[json.email]) users[json.email] = { id: randomUUID(), email: json.email }; if (json.email === ADMIN_EMAIL) profiles[users[json.email].id] = { id: users[json.email].id, display_name: 'Moderator', is_admin: true }; return send(res, 200, {}); }
   if (p === '/auth/v1/verify') {
     const u = users[json.email];

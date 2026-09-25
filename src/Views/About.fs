@@ -10,7 +10,7 @@ let private cred (heading: ReactElement) (bodyParas: ReactElement list) (licence
     ]
 
 let private extLink (href: string) (text: string) : ReactElement =
-    Html.a [ prop.href href; prop.target "_blank"; prop.rel "noopener"; prop.text text ]
+    Html.a [ prop.href (Router.href href); prop.target "_blank"; prop.rel "noopener"; prop.text text ]
 
 let render (model: Model) : ReactElement =
     let nAuthors = model.Catalog.Authors.Length

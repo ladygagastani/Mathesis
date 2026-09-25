@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { generateSitePages } from './scripts/site-pages.mjs'
 
 // style.css is served straight out of public/, so unlike the JS bundle it never
 // gets a hashed filename and its URL never changes. A host or browser that
@@ -33,8 +35,24 @@ const guideMarkdown = () => ({
   }
 })
 
+// After the build: one small page per address, the data files they share, a
+// 404 page that hands unknown addresses to the app, a sitemap and robots.txt
+// (scripts/site-pages.mjs explains).
+const sitePages = () => {
+  let outDir = 'dist'
+  return {
+    name: 'site-pages',
+    apply: 'build',
+    configResolved (config) { outDir = resolve(config.root, config.build.outDir) },
+    closeBundle () {
+      const n = generateSitePages(outDir, process.cwd())
+      console.log(`site-pages: ${n} pages`)
+    }
+  }
+}
+
 export default defineConfig(({ command }) => ({
-  plugins: [stampStylesheetVersion(), guideMarkdown()],
+  plugins: [stampStylesheetVersion(), guideMarkdown(), sitePages()],
   root: '.',
   publicDir: 'public',
   // Relative asset paths so the built dist/index.html also works when opened

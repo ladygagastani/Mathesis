@@ -43,10 +43,12 @@ let private page (file: string) (group: string) (greek: string) (text: string) :
       Authors = firstOf @"\]\(author:(tlg\d+)\)" text
       Markdown = text }
 
-// importDefault needs a literal path, hence one line per file.
+// importDefault needs a literal path, hence one line per file. The list order,
+// not the file number, is the reading order (21 and 22 were added later).
 let pages: LifePage list =
     [ page "01-the-household.md" "Home and family" "Οἶκος" (importDefault "../content/life/01-the-household.md?guide")
       page "02-slavery.md" "Home and family" "Δουλεία" (importDefault "../content/life/02-slavery.md?guide")
+      page "21-work-and-money.md" "Home and family" "Ἔργα" (importDefault "../content/life/21-work-and-money.md?guide")
       page "03-womens-lives.md" "Home and family" "Γυναῖκες" (importDefault "../content/life/03-womens-lives.md?guide")
       page "04-childhood-and-school.md" "Home and family" "Παῖδες" (importDefault "../content/life/04-childhood-and-school.md?guide")
       page "05-love-and-marriage.md" "Home and family" "Γάμος" (importDefault "../content/life/05-love-and-marriage.md?guide")
@@ -59,6 +61,7 @@ let pages: LifePage list =
       page "12-gods-at-home.md" "Gods, music and play" "Θυσία" (importDefault "../content/life/12-gods-at-home.md?guide")
       page "13-mysteries-and-oracles.md" "Gods, music and play" "Μυστήρια" (importDefault "../content/life/13-mysteries-and-oracles.md?guide")
       page "14-music.md" "Gods, music and play" "Μουσική" (importDefault "../content/life/14-music.md?guide")
+      page "22-at-the-theatre.md" "Gods, music and play" "Θέατρον" (importDefault "../content/life/22-at-the-theatre.md?guide")
       page "15-games-pets-and-jokes.md" "Gods, music and play" "Παιδιά" (importDefault "../content/life/15-games-pets-and-jokes.md?guide")
       page "16-magic-and-superstition.md" "Gods, music and play" "Κατάδεσμοι" (importDefault "../content/life/16-magic-and-superstition.md?guide")
       page "17-time-and-travel.md" "Gods, music and play" "Ὁδός" (importDefault "../content/life/17-time-and-travel.md?guide")

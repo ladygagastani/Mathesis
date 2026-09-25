@@ -167,7 +167,7 @@ let updateAccount (msg: AccountMsg) (model: Model) : Model * Cmd<Msg> =
             Cmd.OfPromise.perform Server.sendCode email (function
                 | Ok() -> Account_(CodeSentOk email)
                 | Error e -> Account_(AuthFailed e))
-    | CodeSentOk email -> setAccount model (fun a -> { a with Busy = false; Stage = CodeSent email; CodeInput = "" }), Cmd.none
+    | CodeSentOk email -> setAccount model (fun a -> { a with Busy = false; Stage = CodeSent email; CodeInput = ""; Error = None }), Cmd.none
     | VerifyCode ->
         match acc.Stage with
         | CodeSent email ->

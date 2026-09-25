@@ -209,7 +209,13 @@ let private pageTitle (model: Model) (route: Route) : string =
          | Some p when p.Slug <> "" -> p.Title + " — Study"
          | _ -> "Start here — Study")
         + suffix
-    | ReaderRoute(id, _, _, _, _) -> (model.Catalog.WorkById.TryFind id |> Option.map (fun w -> w.Title) |> Option.defaultValue "") + suffix
+    | ReaderRoute(id, _, _, _, _) ->
+        // "Iliad — Homer — Μάθησις", as the page's own file names it for search engines
+        (match model.Catalog.WorkById.TryFind id, model.Catalog.AuthorOfWork.TryFind id with
+         | Some w, Some a -> w.Title + " — " + a.Name
+         | Some w, None -> w.Title
+         | None, _ -> "")
+        + suffix
     | LearnRoute page ->
         (match page with
          | LearnWelcome | LearnPreface | LearnContents -> "Study"
@@ -385,6 +391,8 @@ let init () : Model * Cmd<Msg> =
     model,
     Cmd.batch [
         Cmd.OfPromise.either Catalog.decodeEmbedded () (Ok >> Boot) (fun e -> Boot(Error e.Message))
+        // an old "#wiki/…" link: show the page's real address instead
+        Cmd.ofEffect (fun _ -> if Router.arrivedByHash () then Router.replaceState hash)
         Cmd.OfPromise.perform Sources.reconnectRemembered () (fun names -> Source_(RememberedFound names))
         // a renewed or ended session (renewal happens inside Server) comes back as a message
         Cmd.ofEffect (fun dispatch -> Server.onSessionChange <- (fun s -> dispatch (Account_(SessionRefreshed s))))
@@ -1034,7 +1042,7 @@ let rec updateCore (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                     Cmd.ofEffect (fun _ ->
                         if targetHash <> model.CurrentHash then
                             if arrivedFromElsewhere then Router.pushState targetHash else Router.replaceState targetHash
-                        setDocumentTitle (w.Title + " — Μάθησις")
+                        setDocumentTitle (pageTitle model2 (ReaderRoute(w.Id, "", "", None, None)))
                         addBodyClass "reading"
                         Storage.saveRecent recent)
                     loadTextCmd token model.Source.Mode model.Source.BaseUrl model.TextCache model.OriginCache grc
