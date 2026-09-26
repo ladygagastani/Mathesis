@@ -600,7 +600,6 @@ let collapsedByDefault (key: string) : bool =
     | "wiki"
     | "paths"
     | "eras"
-    | "alphabet"
     | "tips"
     | "corpus" -> true
     | _ -> false

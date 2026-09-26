@@ -510,36 +510,16 @@ let private erasStripSection (model: Model) (dispatch: Msg -> unit) : ReactEleme
         )
 
 // ---------------------------------------------------------------------------
-// alphabet / tips / how-it-works (static content)
+// tips / how-it-works (static content)
 // ---------------------------------------------------------------------------
 
-/// The home page's alphabet and tips are the short version of the "Start here"
-/// guide, which follows them at the foot of the page; each links to its step.
+/// The home page's tips are the short version of the "Start here" guide,
+/// which is now reached through Study; the tip card links to its step.
 let private deeperLink (dispatch: Msg -> unit) (slug: string) (label: string) : ReactElement =
     let h = GuideData.hashOf slug
     Html.p [
         prop.className "deeper"
         prop.children [ Html.a [ prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ] ]
-    ]
-
-let private alphabetSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    Shared.collapsibleSection dispatch model.Collapsed "home-block beginners" "alphabet" "sh" [ Html.text "New to Greek? The alphabet at a glance" ] [
-        Html.div [
-            prop.className "alpha"
-            prop.children [
-                for row in Content.alphabet ->
-                    Html.div [
-                        prop.key row.Name
-                        prop.className "al"
-                        prop.children [
-                            Html.span [ prop.className "grc"; prop.text (row.Upper + " " + row.Lower) ]
-                            Html.b [ prop.text row.Name ]
-                            Html.span [ prop.className "t"; prop.text row.Translit ]
-                        ]
-                    ]
-            ]
-        ]
-        deeperLink dispatch "alphabet-and-sounds" "How to say each letter: step 1 of the guide in Study →"
     ]
 
 let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
@@ -792,9 +772,9 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     prop.children [ wikiCardSection model dispatch ]
                 ]
                 offlineSection model dispatch
-                // 4. the beginner lane at the foot of the page: the alphabet and
-                // the marks at a glance, then the guide that teaches them.
-                alphabetSection model dispatch
+                // 4. the beginner lane at the foot of the page: the marks at a
+                // glance (the alphabet at a glance now lives in Study), then
+                // the guide that teaches them.
                 tipsSection model dispatch
                 startHereSection dispatch
                 sourcesFooter dispatch ]
