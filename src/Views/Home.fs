@@ -510,53 +510,34 @@ let private erasStripSection (model: Model) (dispatch: Msg -> unit) : ReactEleme
         )
 
 // ---------------------------------------------------------------------------
-// tips / how-it-works (static content)
+// the newcomer band / how-it-works (static content)
 // ---------------------------------------------------------------------------
 
-/// The home page's tips are the short version of the "Start here" guide,
-/// which is now reached through Study; the tip card links to its step.
-let private deeperLink (dispatch: Msg -> unit) (slug: string) (label: string) : ReactElement =
-    let h = GuideData.hashOf slug
-    Html.p [
-        prop.className "deeper"
-        prop.children [ Html.a [ prop.href (Router.href h); prop.text label; prop.onClick (navigateTo dispatch h) ] ]
-    ]
-
-let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
-    Shared.collapsibleSection dispatch model.Collapsed "home-block beginners" "tips" "sh" [ Html.text "Reading Greek: five things to know" ] [
-        Html.div [
-            prop.className "tips"
-            prop.children [
-                for t in Content.tips ->
-                    Html.div [
-                        prop.key t.Label
-                        prop.children [
-                            Html.span [ prop.className "grc"; prop.text t.Grc ]
-                            Html.b [ prop.text t.Label ]
-                            Html.span [ prop.text t.Text ]
-                        ]
-                    ]
-            ]
-        ]
-        deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide in Study →"
-    ]
-
-/// The foot of the home page points to Study, where the guide, the alphabet
-/// at a glance and the practice lessons live. Never folds: it is the page's
-/// last word.
-let private startHereSection (dispatch: Msg -> unit) : ReactElement =
+/// "New to Greek?": the first thing on the page, a compact band pointing to
+/// Study, where the guide, the alphabet at a glance, the five things to know
+/// and the practice lessons live. Never folds.
+let private newcomerSection (dispatch: Msg -> unit) : ReactElement =
     let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
-    Shared.fixedSection "home-block start-here" "sh" [ Html.text "New to Greek? Start in Study" ] [
-        Html.p [
-            prop.className "sh-lede"
-            prop.text
-                "A guide in eight steps, from the letters and their sounds to the life story of a word, and short exercises to practise with. You need no Greek to begin; steps 1 to 3 take about half an hour."
-        ]
-        Html.div [
-            prop.className "g-begin"
-            prop.children [
-                Html.a [ prop.className "btn primary"; prop.href (Router.href "#study"); prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
-                Html.a [ prop.className "btn"; prop.href (Router.href first); prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
+    Html.section [
+        prop.className "home-block newcomer"
+        prop.ariaLabel "New to Greek?"
+        prop.children [
+            Html.div [
+                prop.className "nc-text"
+                prop.children [
+                    Html.h2 [ prop.className "sh"; prop.text "New to Greek? Start in Study" ]
+                    Html.p [
+                        prop.text
+                            "A guide in eight steps, from the letters and their sounds to the life story of a word, with the alphabet at a glance and short exercises. You need no Greek to begin."
+                    ]
+                ]
+            ]
+            Html.div [
+                prop.className "g-begin"
+                prop.children [
+                    Html.a [ prop.className "btn primary"; prop.href (Router.href "#study"); prop.text "Go to Study →"; prop.onClick (navigateTo dispatch "#study") ]
+                    Html.a [ prop.className "btn"; prop.href (Router.href first); prop.text "Begin with the alphabet"; prop.onClick (navigateTo dispatch first) ]
+                ]
             ]
         ]
     ]
@@ -744,9 +725,11 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "landing"
         prop.children (
-            // Returning readers never scroll past a pitch: the rail comes first
-            // when there is one, and simply is not there when there is not.
-            continueReadingSection model dispatch
+            // 0. newcomers first: a compact band pointing to Study (the owner's
+            // decision, 26 Sept 2026). Then, for returning readers, the rail
+            // of texts in progress, when there is one.
+            [ newcomerSection dispatch ]
+            @ continueReadingSection model dispatch
             // 1. the promise, with a passage of real Greek beside it ...
             @ [ heroSection model.Catalog startTarget (passageOfDaySection model dispatch) dispatch ]
             // 2. ... then straight to choosing something to read ...
@@ -771,11 +754,8 @@ let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
                     prop.children [ wikiCardSection model dispatch ]
                 ]
                 offlineSection model dispatch
-                // 4. the beginner lane at the foot of the page: the marks at a
-                // glance (the alphabet at a glance now lives in Study), then
-                // the guide that teaches them.
-                tipsSection model dispatch
-                startHereSection dispatch
+                // the beginner's material (alphabet, five things to know, the
+                // guide) lives in Study; the band at the top points there.
                 sourcesFooter dispatch ]
         )
     ]

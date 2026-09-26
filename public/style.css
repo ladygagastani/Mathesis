@@ -3165,3 +3165,14 @@ a.eb-col:hover i,a.eb-col:focus-visible i{background:var(--ink)}
 .nf-grc{margin:1.5rem 0 0;font-family:var(--serif);color:var(--ochre);font-size:1.3rem}
 .page.not-found code{font-size:.88em;overflow-wrap:anywhere;background:var(--paper-2);padding:.05rem .3rem;border-radius:var(--r1)}
 .f-reports > .sh:first-child{margin-top:.2rem}
+
+/* The home page's "New to Greek?" band, first on the page (§24): one compact
+   row on desktop, stacked on phones. */
+.landing .newcomer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.7rem 1.5rem;
+  padding:.8rem 1rem;border:1px solid var(--rule);border-radius:var(--r2);background:var(--paper-2);margin-top:0}
+.newcomer .nc-text{flex:1 1 26rem;min-width:0}
+.newcomer .sh{margin:0 0 .2rem}
+.newcomer p{margin:0;max-width:46rem;color:var(--ink-2);font-size:.92rem;line-height:1.5}
+.newcomer .g-begin{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
+/* on Study the tips card grid is not capped by the home page's width */
+.study .tips{max-width:none}

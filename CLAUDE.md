@@ -702,7 +702,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   3. the eras band (`Shared.erasBand`): width = years, height = works; rows on phones
      and in the wiki-home aside.
 - **Layout.** Home: continue → hero (+ Passage of the day) → find → paths → eras →
-  how it works → corpus → wiki → offline → tips → Start here → sources (the alphabet at a glance moved to Study, §23). Wiki home is a ruled
+  how it works → corpus → wiki → offline → sources, with the "New to Greek?" band first of all (§24). Wiki home is a ruled
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
@@ -748,8 +748,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   (old `#wiki/start…` links still parse; `GuideData.tryFind` maps merged slugs).
   The guide hangs off the home page (crumbs Home › Start here), not the wiki.
   Entry point: the Study front page (`Guide.path`: eight steps in three
-  parts), the home page's "Start in Study" block, and the links under the
-  home tips. Each step's description in the path is its page's first
+  parts) and the home page's "New to Greek? Start in Study" band. Each step's description in the path is its page's first
   paragraph, so keep that to one or two sentences.
 - **Steps:** 1 alphabet and sounds, 2 vowels and diphthongs, 3 breathings, accents,
   punctuation (and sound change), 4 dictionary forms, 5 looking up a word,
@@ -803,7 +802,7 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Home sections on phones.** One list of fold-by-default keys,
   `Views.Shared.collapsedByDefault` (State.fs calls it; the two copies had
   drifted, so the first tap on "How it works" did nothing). Folded on first
-  open: picks, wiki, paths, eras, tips, corpus. Passage of the day
+  open: picks, wiki, paths, eras, corpus. Passage of the day
   stays open. How it works uses `Shared.fixedSection` and never folds.
   `SetFilter` opens "picks" so the filter always shows its effect.
 - **Sticky header on phones** needs `overflow-x:clip` (not `hidden`) on
@@ -1155,7 +1154,18 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   Practise → On learning. It sits *after* the guide so its 24 cells don't
   push the guide down on phones, and it has no link of its own: step 1 and
   the Begin button are directly above it.
-- The home page's beginner lane is now "five things to know" (tips) and
-  "New to Greek? Start in Study". There is no "alphabet" key in
-  `Shared.collapsedByDefault` any more.
+- The home page's beginner lane at its foot is gone (see §24). There is no
+  "alphabet" or "tips" key in `Shared.collapsedByDefault` any more.
+
+
+## 24. "Five things to know" in Study; "New to Greek?" at the top of home (added 2026-09-26)
+
+- **Home** starts with the compact "New to Greek? Start in Study" band
+  (`Home.newcomerSection`, `.newcomer`: text left, "Go to Study" and "Begin
+  with the alphabet" right; stacked on phones), above Continue reading and
+  the hero. The home page no longer has a beginner lane at its foot.
+- **Study** order: hero → Start here → the alphabet at a glance → "Reading
+  Greek: five things to know" (`Study.tips`, from `Content.tips`) → Practise
+  → On learning. Neither reference carries a link to the guide: its steps and
+  Begin button are directly above.
 
