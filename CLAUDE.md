@@ -702,7 +702,7 @@ Token and class names did not change; values did, plus a final layer at the end 
   3. the eras band (`Shared.erasBand`): width = years, height = works; rows on phones
      and in the wiki-home aside.
 - **Layout.** Home: continue → hero (+ Passage of the day) → find → paths → eras →
-  how it works → corpus → wiki → offline → alphabet → tips → Start here → sources. Wiki home is a ruled
+  how it works → corpus → wiki → offline → tips → Start here → sources (the alphabet at a glance moved to Study, §23). Wiki home is a ruled
   contents list (`.wcat` rows with a Greek label). Author page: `.ap-main` article
   left, `.ap-rail` (works, timeline, notes) right; rail first in the DOM so phones
   see works first. My library: `.lib-main` bookmarks, `.lib-rail` favourites, author
@@ -747,9 +747,9 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Route:** `GuideRoute of string option`, hashes `#start` and `#start/<slug>`
   (old `#wiki/start…` links still parse; `GuideData.tryFind` maps merged slugs).
   The guide hangs off the home page (crumbs Home › Start here), not the wiki.
-  Entry point: the "Start here" block at the foot of the home page
-  (`Guide.path`: eight steps in three parts), plus the links under the home
-  alphabet and tips. Each step's description in the path is its page's first
+  Entry point: the Study front page (`Guide.path`: eight steps in three
+  parts), the home page's "Start in Study" block, and the links under the
+  home tips. Each step's description in the path is its page's first
   paragraph, so keep that to one or two sentences.
 - **Steps:** 1 alphabet and sounds, 2 vowels and diphthongs, 3 breathings, accents,
   punctuation (and sound change), 4 dictionary forms, 5 looking up a word,
@@ -803,7 +803,7 @@ Token and class names did not change; values did, plus a final layer at the end 
 - **Home sections on phones.** One list of fold-by-default keys,
   `Views.Shared.collapsedByDefault` (State.fs calls it; the two copies had
   drifted, so the first tap on "How it works" did nothing). Folded on first
-  open: picks, wiki, paths, eras, alphabet, tips, corpus. Passage of the day
+  open: picks, wiki, paths, eras, tips, corpus. Passage of the day
   stays open. How it works uses `Shared.fixedSection` and never folds.
   `SetFilter` opens "picks" so the filter always shows its effect.
 - **Sticky header on phones** needs `overflow-x:clip` (not `hidden`) on
@@ -1145,3 +1145,17 @@ hand-drawn corners. The design's page turn and ink-in reveal are kept.
   (`Header.accountButton`), no "Your account" search hit, the forum and
   account pages say accounts aren't switched on, and the privacy page
   describes the site without accounts.
+
+
+## 23. The alphabet at a glance lives in Study (added 2026-09-26)
+
+- Moved from the home page to the Study front page (`Views.Study.alphabet`,
+  from `Content.alphabet`, `.alpha`/`.al`). Order on Study: hero → Start here
+  (guide path + "Begin with the alphabet") → the alphabet at a glance →
+  Practise → On learning. It sits *after* the guide so its 24 cells don't
+  push the guide down on phones, and it has no link of its own: step 1 and
+  the Begin button are directly above it.
+- The home page's beginner lane is now "five things to know" (tips) and
+  "New to Greek? Start in Study". There is no "alphabet" key in
+  `Shared.collapsedByDefault` any more.
+

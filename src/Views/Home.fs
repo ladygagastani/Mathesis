@@ -541,10 +541,9 @@ let private tipsSection (model: Model) (dispatch: Msg -> unit) : ReactElement =
         deeperLink dispatch "breathings-accents-punctuation" "Breathings, accents and punctuation: step 3 of the guide in Study →"
     ]
 
-/// The beginner's guide, at the foot of the page: its steps from the alphabet
-/// to a word study, and a way in. Never folds: it is the page's last word.
-/// The foot of the home page points to Study, where the guide and the
-/// practice lessons now live.
+/// The foot of the home page points to Study, where the guide, the alphabet
+/// at a glance and the practice lessons live. Never folds: it is the page's
+/// last word.
 let private startHereSection (dispatch: Msg -> unit) : ReactElement =
     let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
     Shared.fixedSection "home-block start-here" "sh" [ Html.text "New to Greek? Start in Study" ] [
