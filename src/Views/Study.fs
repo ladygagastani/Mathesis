@@ -1,6 +1,7 @@
 /// `#study`: the front page of the Study section. The word the site is named
 /// after and what the Greeks made of learning (text in `WikiData.wikiIntro`),
-/// then the alphabet at a glance, the "Start here" guide, then the practice
+/// then the "Start here" guide, the alphabet at a glance (a reference, after
+/// the guide so it doesn't push the guide down on phones), the practice
 /// lessons (Views.Learn), then a short essay on learning with three quotations.
 module Views.Study
 
@@ -82,15 +83,15 @@ let private hero (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
-/// The alphabet at a glance: moved here from the home page, since Study is
-/// now where the beginner's lane lives.
-let private alphabet (dispatch: Msg -> unit) : ReactElement =
-    let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
+/// The alphabet at a glance: moved here from the home page. It follows the
+/// guide, whose first step (linked just above it) teaches the sounds, so it
+/// carries no link of its own.
+let private alphabet : ReactElement =
     Html.section [
         prop.className "study-block"
         prop.ariaLabel "The alphabet at a glance"
         prop.children [
-            Html.h2 [ prop.className "sh"; prop.text "New to Greek? The alphabet at a glance" ]
+            Html.h2 [ prop.className "sh"; prop.text "The alphabet at a glance" ]
             Html.div [
                 prop.className "alpha"
                 prop.children [
@@ -104,16 +105,6 @@ let private alphabet (dispatch: Msg -> unit) : ReactElement =
                                 Html.span [ prop.className "t"; prop.text row.Translit ]
                             ]
                         ]
-                ]
-            ]
-            Html.p [
-                prop.className "deeper"
-                prop.children [
-                    Html.a [
-                        prop.href (Router.href first)
-                        prop.text "How to say each letter: step 1 of the guide →"
-                        prop.onClick (navigateTo dispatch first)
-                    ]
                 ]
             ]
         ]
@@ -208,5 +199,5 @@ let private onLearning (dispatch: Msg -> unit) : ReactElement =
 let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "page study"
-        prop.children [ hero dispatch; alphabet dispatch; startHere dispatch; practise model dispatch; onLearning dispatch ]
+        prop.children [ hero dispatch; startHere dispatch; alphabet; practise model dispatch; onLearning dispatch ]
     ]
