@@ -1,8 +1,9 @@
 /// `#study`: the front page of the Study section. The word the site is named
 /// after and what the Greeks made of learning (text in `WikiData.wikiIntro`),
-/// then the "Start here" guide, the alphabet at a glance (a reference, after
-/// the guide so it doesn't push the guide down on phones), the practice
-/// lessons (Views.Learn), then a short essay on learning with three quotations.
+/// then the "Start here" guide, two references after it (the alphabet at a
+/// glance and "five things to know", both moved here from the home page; after
+/// the guide so they don't push it down on phones), the practice lessons
+/// (Views.Learn), then a short essay on learning with three quotations.
 module Views.Study
 
 open Feliz
@@ -110,6 +111,32 @@ let private alphabet : ReactElement =
         ]
     ]
 
+/// "Reading Greek: five things to know": the marks over and under the
+/// letters, in short (moved here from the home page). Step 3 of the guide,
+/// listed just above, teaches them in full, so no link of its own.
+let private tips : ReactElement =
+    Html.section [
+        prop.className "study-block"
+        prop.ariaLabel "Reading Greek: five things to know"
+        prop.children [
+            Html.h2 [ prop.className "sh"; prop.text "Reading Greek: five things to know" ]
+            Html.div [
+                prop.className "tips"
+                prop.children [
+                    for t in Content.tips ->
+                        Html.div [
+                            prop.key t.Label
+                            prop.children [
+                                Html.span [ prop.className "grc"; prop.lang "grc"; prop.text t.Grc ]
+                                Html.b [ prop.text t.Label ]
+                                Html.span [ prop.text t.Text ]
+                            ]
+                        ]
+                ]
+            ]
+        ]
+    ]
+
 let private startHere (dispatch: Msg -> unit) : ReactElement =
     let first = GuideData.hashOf (snd GuideData.steps.Head).Slug
     Html.section [
@@ -199,5 +226,5 @@ let private onLearning (dispatch: Msg -> unit) : ReactElement =
 let render (model: Model) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "page study"
-        prop.children [ hero dispatch; startHere dispatch; alphabet; practise model dispatch; onLearning dispatch ]
+        prop.children [ hero dispatch; startHere dispatch; alphabet; tips; practise model dispatch; onLearning dispatch ]
     ]
